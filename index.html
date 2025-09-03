@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eture Scholarship Platform</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha3-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha34-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2090,334 +2090,314 @@
                                  <label class="form-label">¿Qué hiciste ese curso académico?</label>
                                  <textarea class="form-control" rows="2"></textarea>
                             </div>
-                            <div class="col-12 graduation-details">
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input graduation-check" type="checkbox" id="graduated-check-${yearStart}">
-                                    <label class="form-check-label" for="graduated-check-${yearStart}">¿Te graduaste este año?</label>
+                        </div>
+
+                        <!-- This is also conditional on NOT being 'No estudie' -->
+                        <div class="graduation-wrapper mt-3">
+                            <div class="form-check">
+                                <input class="form-check-input graduation-check" type="checkbox" id="graduated-check-${yearEnd}">
+                                <label class="form-check-label" for="graduated-check-${yearEnd}">
+                                    Marcar si te graduaste este año
+                                </label>
+                            </div>
+                            <div class="row g-2 mt-2 d-none graduation-details" id="graduation-details-${yearEnd}">
+                                <div class="col-md-6">
+                                    <label class="form-label small">Mes de Graduación</label>
+                                    <select class="form-select form-select-sm">${monthOptions}</select>
                                 </div>
-                                <div class="row g-2 mt-1 d-none" id="graduation-date-fields-${yearStart}">
-                                    <div class="col-md-4"><label class="form-label small">Mes de Graduación</label><select class="form-select">${monthOptions}</select></div>
-                                    <div class="col-md-4"><label class="form-label small">Año de Graduación</label><input type="number" class="form-control" value="${yearEnd}"></div>
+                                <div class="col-md-6">
+                                    <label class="form-label small">Año de Graduación</label>
+                                    <input type="number" class="form-control form-control-sm" value="${yearEnd}">
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-              `;
+                </div>`;
               container.insertAdjacentHTML('beforeend', cardHTML);
               academicYearIndex++;
           }
-          
+          // After rendering, trigger change event for pre-selected dropdowns to show/hide correct fields
           container.querySelectorAll('.academic-level-select').forEach(select => {
-            handleAcademicLevelChange(select); // Trigger on initial load
+            if (select.value && select.value !== 'Selecciona...') {
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
           });
-      }
-
-      function handleAcademicLevelChange(selectElement) {
-        const cardBody = selectElement.closest('.card-body');
-        const level = selectElement.value;
-
-        const courseDetails = cardBody.querySelector('.course-details');
-        const universityDetails = cardBody.querySelector('.university-details');
-        const otherDetails = cardBody.querySelector('.other-details');
-        const gpaDetails = cardBody.querySelector('.gpa-details');
-        const fileDetails = cardBody.querySelector('.file-details');
-        const graduationDetails = cardBody.querySelector('.graduation-details');
-        
-        // Hide all conditional fields first
-        [courseDetails, universityDetails, otherDetails].forEach(el => el.classList.add('d-none'));
-        
-        if (level === 'Universidad') {
-            universityDetails.classList.remove('d-none');
-            gpaDetails.classList.remove('d-none');
-            fileDetails.classList.remove('d-none');
-            graduationDetails.classList.remove('d-none');
-        } else if (level === 'No estudié/Otro') {
-            otherDetails.classList.remove('d-none');
-            gpaDetails.classList.add('d-none');
-            fileDetails.classList.add('d-none');
-            graduationDetails.classList.add('d-none');
-        } else { // ESO, Bachillerato, etc.
-            courseDetails.classList.remove('d-none');
-            gpaDetails.classList.remove('d-none');
-            fileDetails.classList.remove('d-none');
-            graduationDetails.classList.remove('d-none');
-        }
-      }
-
-      function generateTeamHistory() {
-          const container = document.getElementById('team-history-container');
-          if (!container) return;
-
-          const birthDateStr = userProfileData.personal.birthDate;
-          if (!birthDateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateStr)) {
-              container.innerHTML = `<div class="alert alert-info">Por favor, introduce tu fecha de nacimiento en "Datos Personales" para generar tu historial de equipos.</div>`;
-              return;
-          }
-
-          const birthYear = parseInt(birthDateStr.split('/')[2], 10);
-          const currentYear = new Date().getFullYear();
-          
-          if ((currentYear - birthYear) < 14) {
-              container.innerHTML = `<div class="alert alert-warning">El historial de equipos se genera para mayores de 14 años.</div>`;
-              return;
-          }
-          
-          container.innerHTML = `
-              <div class="row g-2 text-muted small d-none d-md-flex mb-2">
-                  <div class="col-md-3">Temporada</div>
-                  <div class="col-md-5">Nombre del Club</div>
-                  <div class="col-md-4">División / Categoría</div>
-              </div>
-          `;
-          const currentAcademicYearStart = (new Date().getMonth() < 8) ? currentYear - 1 : currentYear;
-          const firstAcademicYearStart = birthYear + 14;
-
-          for (let yearStart = firstAcademicYearStart; yearStart <= currentAcademicYearStart; yearStart++) {
-              const season = `${yearStart}-${yearStart + 1}`;
-              container.innerHTML += `
-                  <div class="row g-2 mb-2 align-items-center">
-                      <div class="col-md-3"><input type="text" class="form-control form-control-sm" value="${season}" readonly></div>
-                      <div class="col-md-5"><input type="text" class="form-control form-control-sm" placeholder="Nombre del club"></div>
-                      <div class="col-md-4"><input type="text" class="form-control form-control-sm" placeholder="División / Categoría"></div>
-                  </div>
-              `;
-          }
       }
 
       // -- Athletic info handlers
       function renderSecondaryPositions() {
           const container = document.getElementById('secondary-positions-container');
           if (!container) return;
-          container.innerHTML = '';
+          container.innerHTML = ''; // Clear existing
           (userProfileData.athletic.secondaryPositions || []).forEach(pos => addSecondaryPosition(pos));
       }
 
       function addSecondaryPosition(value = '') {
-        const container = document.getElementById('secondary-positions-container');
-        if (!container) return;
-        const div = document.createElement('div');
-        div.className = 'input-group mb-2';
-        
-        let options = footballPositions.map(p => `<option value="${p.value}" ${p.value === value ? 'selected' : ''}>${p.text}</option>`).join('');
-        div.innerHTML = `
-            <select class="form-select secondary-position-select">${options}</select>
-            <button class="btn btn-outline-danger remove-secondary-pos-btn" type="button">Eliminar</button>`;
-        container.appendChild(div);
-      }
-      
-      function renderPitchMarkers() {
-          const container = document.getElementById('pitch-markers-container');
-          if(!container) return;
-          container.innerHTML = footballPositions.map(p => `<div class="position-marker" id="marker-${p.value.replace(' ', '-')}" style="top: ${p.coords.top}; left: ${p.coords.left};">${p.value}</div>`).join('');
-          updateFootballPitch();
+          const container = document.getElementById('secondary-positions-container');
+          if (!container) return;
+          const div = document.createElement('div');
+          div.className = 'input-group mb-2';
+          const options = footballPositions.map(p => `<option value="${p.value}" ${p.value === value ? 'selected' : ''}>${p.text}</option>`).join('');
+          div.innerHTML = `
+              <select class="form-select secondary-position-select">${options}</select>
+              <button class="btn btn-outline-danger remove-secondary-pos-btn" type="button">Eliminar</button>
+          `;
+          container.appendChild(div);
       }
 
-      function updateFootballPitch() {
-          document.querySelectorAll('.position-marker').forEach(m => m.classList.remove('main', 'secondary'));
-          const mainPosition = document.getElementById('athletic-mainPosition')?.value;
-          if (mainPosition) {
-              const mainMarker = document.getElementById(`marker-${mainPosition.replace(' ', '-')}`);
-              if (mainMarker) mainMarker.classList.add('main');
+      function renderPitchMarkers() {
+          const container = document.getElementById('pitch-markers-container');
+          if (!container) return;
+          
+          container.innerHTML = '';
+          
+          const mainPosValue = document.getElementById('athletic-mainPosition')?.value;
+          const secondaryPosValues = Array.from(document.querySelectorAll('.secondary-position-select')).map(s => s.value);
+          
+          const mainPosData = footballPositions.find(p => p.value === mainPosValue);
+          if (mainPosData) {
+              container.innerHTML += `<div class="position-marker main" style="top: ${mainPosData.coords.top}; left: ${mainPosData.coords.left};">${mainPosData.value}</div>`;
           }
           
-          document.querySelectorAll('.secondary-position-select').forEach(sel => {
-              if (sel.value) {
-                const secMarker = document.getElementById(`marker-${sel.value.replace(' ', '-')}`);
-                if (secMarker) secMarker.classList.add('secondary');
+          secondaryPosValues.forEach(secPosValue => {
+              if (secPosValue === mainPosValue) return;
+              const posData = footballPositions.find(p => p.value === secPosValue);
+              if (posData) {
+                  container.innerHTML += `<div class="position-marker secondary" style="top: ${posData.coords.top}; left: ${posData.coords.left};">${posData.value}</div>`;
               }
           });
+      }
+      
+      function generateTeamHistory() {
+          const container = document.getElementById('team-history-container');
+          if (!container) return;
+
+          const birthDateStr = userProfileData.personal.birthDate;
+          if (!birthDateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateStr)) {
+              container.innerHTML = `<div class="alert alert-warning">Introduce una fecha de nacimiento válida en "Datos Personales" para generar tu historial de equipos.</div>`;
+              return;
+          }
+          
+          const birthDateParts = birthDateStr.split('/');
+          const birthDate = new Date(parseInt(birthDateParts[2]), parseInt(birthDateParts[1]) - 1, parseInt(birthDateParts[0]));
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+          }
+          
+          if (age < 14) {
+              container.innerHTML = `<div class="alert alert-info">El historial de equipos se genera a partir de los 14 años.</div>`;
+              return;
+          }
+
+          const seasons = [];
+          for (let i = age; i >= 14; i--) {
+              const yearEnd = today.getFullYear() - (age - i);
+              const yearStart = yearEnd - 1;
+              seasons.push({ season: `${yearStart}-${yearEnd}`, age: i });
+          }
+
+          container.innerHTML = `
+              <div class="row g-3 fw-bold text-muted d-none d-md-flex mb-2">
+                  <div class="col-md-2">Temporada (Edad)</div>
+                  <div class="col-md-3">Nombre del Club</div>
+                  <div class="col-md-3">División / Categoría</div>
+                  <div class="col-md-1 text-center">PJ</div>
+                  <div class="col-md-1 text-center">Goles</div>
+                  <div class="col-md-2 text-center">Asistencias</div>
+              </div>
+              ${seasons.map(({season, age}) => `
+                  <div class="row g-2 mb-2 align-items-center">
+                      <div class="col-md-2"><label class="form-label d-md-none">Temporada (Edad)</label><input type="text" class="form-control" value="${season} (${age} años)" readonly></div>
+                      <div class="col-md-3"><label class="form-label d-md-none">Club</label><input type="text" class="form-control" placeholder="Nombre del club"></div>
+                      <div class="col-md-3"><label class="form-label d-md-none">División</label><input type="text" class="form-control" placeholder="Categoría"></div>
+                      <div class="col-md-1"><label class="form-label d-md-none">PJ</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                      <div class="col-md-1"><label class="form-label d-md-none">Goles</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                      <div class="col-md-2"><label class="form-label d-md-none">Asistencias</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                  </div>
+              `).join('')}`;
       }
 
       function renderStats() {
           const container = document.getElementById('stats-container');
-          if(!container) return;
-          const mainPosSelect = document.getElementById('athletic-mainPosition');
-          const isGoalkeeper = mainPosSelect?.value === 'POR';
-          
-          container.innerHTML = isGoalkeeper
-            ? `<div class="col-md-6"><label class="form-label">Goles encajados</label><input type="number" id="stat-goals-conceded" class="form-control" value="${userProfileData.athletic.stats.goalsConceded || ''}"></div>
-               <div class="col-md-6"><label class="form-label">Porterías a cero</label><input type="number" id="stat-clean-sheets" class="form-control" value="${userProfileData.athletic.stats.cleanSheets || ''}"></div>`
-            : `<div class="col-md-4"><label class="form-label">Partidos jugados</label><input type="number" id="stat-played" class="form-control" value="${userProfileData.athletic.stats.played || ''}"></div>
-               <div class="col-md-4"><label class="form-label">Goles</label><input type="number" id="stat-goals" class="form-control" value="${userProfileData.athletic.stats.goals || ''}"></div>
-               <div class="col-md-4"><label class="form-label">Asistencias</label><input type="number" id="stat-assists" class="form-control" value="${userProfileData.athletic.stats.assists || ''}"></div>`;
+          if (!container) return;
+          const stats = userProfileData.athletic.stats || {};
+          container.innerHTML = `
+              <div class="col-4"><label class="form-label">Partidos Jugados</label><input type="number" class="form-control" id="stat-played" value="${stats.played || ''}"></div>
+              <div class="col-4"><label class="form-label">Goles</label><input type="number" class="form-control" id="stat-goals" value="${stats.goals || ''}"></div>
+              <div class="col-4"><label class="form-label">Asistencias</label><input type="number" class="form-control" id="stat-assists" value="${stats.assists || ''}"></div>
+          `;
       }
       
-      // --- AUTHENTICATION & APP FLOW ---
-      function setupAuthFlow() {
-        document.getElementById('show-register').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('login-view').classList.add('d-none'); document.getElementById('register-view').classList.remove('d-none'); });
-        document.getElementById('show-login').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('register-view').classList.add('d-none'); document.getElementById('login-view').classList.remove('d-none'); });
-        
-        const showApp = (e) => {
+      // --- INITIALIZATION ---
+      function initApp() {
+        // Auth logic
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register');
+        const showLoginBtn = document.getElementById('show-login');
+        const logoutBtn = document.getElementById('logout-button');
+
+        loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             document.getElementById('auth-container').classList.add('d-none');
             document.getElementById('app-container').classList.remove('d-none');
-            const initialTab = new bootstrap.Tab(document.querySelector('a[href="#inicio"]'));
-            initialTab.show();
-        };
+            renderPage('inicio');
+        });
+        registerForm.addEventListener('submit', (e) => { e.preventDefault(); alert("¡Registro exitoso! Por favor, inicia sesión."); showLoginBtn.click(); });
+        showRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('login-view').classList.add('d-none'); document.getElementById('register-view').classList.remove('d-none'); });
+        showLoginBtn.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('register-view').classList.add('d-none'); document.getElementById('login-view').classList.remove('d-none'); });
+        logoutBtn.addEventListener('click', () => { location.reload(); });
+
+        // Main navigation
+        document.getElementById('main-nav').addEventListener('show.bs.tab', (event) => {
+            const pageId = event.target.getAttribute('href').substring(1);
+            renderPage(pageId);
+        });
         
-        document.getElementById('login-form').addEventListener('submit', showApp);
-        document.getElementById('register-form').addEventListener('submit', showApp);
-        document.getElementById('logout-button').addEventListener('click', () => { location.reload(); });
-      }
-      
-      function setupGlobalEventListeners() {
+        // --- CENTRALIZED DELEGATED EVENT LISTENERS ---
         const mainContent = document.getElementById('main-content');
         
-        // Tab loading
-        document.querySelectorAll('#main-nav .nav-link').forEach(link => {
-            link.addEventListener('shown.bs.tab', (event) => renderPage(event.target.getAttribute('href').substring(1)));
-        });
-
-        // Universal click handler using event delegation
         mainContent.addEventListener('click', e => {
             const target = e.target;
-            const saveBtn = target.closest('.save-profile-btn');
-            const addTaskBtn = target.closest('#add-task-btn');
-            
-            // Perfil: Save buttons
-            if (saveBtn) {
-                e.preventDefault();
-                const formId = saveBtn.dataset.form;
-                saveProfileData(formId);
-                const statusEl = saveBtn.parentElement.querySelector('.save-status');
-                saveBtn.disabled = true;
-                if(statusEl) statusEl.textContent = 'Guardando...';
-                setTimeout(() => {
-                    if(statusEl) statusEl.textContent = '¡Guardado!';
-                    setTimeout(() => {
-                        if(statusEl) statusEl.textContent = '';
-                        saveBtn.disabled = false;
-                    }, 2000);
-                }, 1000);
-                return;
+            const button = target.closest('button');
+
+            // --- MI PERFIL ---
+            if (target.closest('#perfil-content')) {
+                if (!button) return; // Only interested in button clicks within profile
+                
+                // ADD BUTTONS
+                if (button.id === 'add-social-link-btn') openSocialLinkModalForAdd();
+                if (button.id === 'add-study-option-btn') addStudyOption();
+                if (button.id === 'add-exam-btn') addExam();
+                if (button.id === 'add-secondary-pos-btn') addSecondaryPosition();
+                if (button.id === 'add-highlights-btn') openMultimediaModal(null, 'highlights', 'Nombre del vídeo', 'Highlights 2024');
+                if (button.id === 'add-match-btn') openMultimediaModal(null, 'matches', 'Descripción (Rival, color camiseta, dorsal)', 'vs Equipo X - Blanco #10');
+
+                // EDIT/REMOVE/SET-MAIN BUTTONS
+                if (button.classList.contains('edit-social-link-btn')) openSocialLinkModalForEdit(parseInt(button.dataset.index, 10));
+                if (button.classList.contains('remove-social-link-btn')) removeSocialLink(parseInt(button.dataset.index, 10));
+                if (button.classList.contains('edit-multimedia-btn')) openMultimediaModal(button);
+                if (button.classList.contains('remove-multimedia-btn')) removeMultimediaLink(button);
+                if (button.classList.contains('set-main-highlight-btn')) setMainHighlight(button);
+                
+                // SIMPLE REMOVE BUTTONS
+                if (button.classList.contains('remove-study-option-btn')) { button.closest('.input-group')?.remove(); }
+                if (button.classList.contains('remove-exam-btn')) { button.closest('.input-group')?.remove(); }
+                if (button.classList.contains('remove-secondary-pos-btn')) { button.closest('.input-group')?.remove(); renderPitchMarkers(); }
+
+                // SAVE PROFILE
+                if (button.classList.contains('save-profile-btn')) {
+                    const formId = button.dataset.form;
+                    saveProfileData(formId);
+                    const statusEl = button.parentElement.querySelector('.save-status');
+                    if (statusEl) {
+                        statusEl.textContent = "¡Guardado!";
+                        setTimeout(() => { statusEl.textContent = ""; }, 2000);
+                    }
+                }
             }
 
-            // Tareas: Add task button
-            if (addTaskBtn) {
-                addTask();
-                return;
-            }
-
-            // Tareas: Filter buttons
-            const statusButton = target.closest('#task-status-filter button[data-status]');
-            if (statusButton) {
-                document.querySelectorAll('#task-status-filter button').forEach(b => b.classList.replace('btn-eture-red', 'btn-outline-secondary'));
-                statusButton.classList.replace('btn-outline-secondary', 'btn-eture-red');
-                currentTaskFilter.status = statusButton.dataset.status;
-                renderTasks();
-                return;
-            }
-
-            // Proceso: Overview quick links
-            const overviewLink = target.closest('#proceso-overview-content a[data-target-tab]');
-            if (overviewLink) {
-                e.preventDefault();
-                const tabButton = document.querySelector(`#proceso-nav button[data-bs-target="#${overviewLink.dataset.targetTab}"]`);
-                if (tabButton) new bootstrap.Tab(tabButton).show();
-                return;
-            }
-            
-            // Perfil: Social Media
-            if (target.matches('#add-social-link-btn')) { openSocialLinkModalForAdd(); return; }
-            if (target.matches('.edit-social-link-btn')) { openSocialLinkModalForEdit(parseInt(target.dataset.index, 10)); return; }
-            if (target.matches('.remove-social-link-btn')) { removeSocialLink(parseInt(target.dataset.index, 10)); return; }
-            
-            // Perfil: Multimedia
-            if (target.matches('#add-highlights-btn')) { openMultimediaModal(null, 'highlights', 'Nombre del vídeo', 'Highlights 2023-24'); return; }
-            if (target.matches('#add-match-btn')) { openMultimediaModal(null, 'matches', 'Descripción del partido', 'Final Campeonato vs. Rival FC (blanco, #10)'); return; }
-            if (target.matches('.edit-multimedia-btn')) { openMultimediaModal(target); return; }
-            if (target.matches('.remove-multimedia-btn')) { removeMultimediaLink(target); return; }
-            if (target.matches('.set-main-highlight-btn')) { setMainHighlight(target); return; }
-
-            // Perfil: Academic
-            if (target.matches('#add-study-option-btn')) { addStudyOption(); return; }
-            if (target.matches('.remove-study-option-btn')) { target.closest('.input-group').remove(); return; }
-            if (target.matches('#add-exam-btn')) { addExam(); return; }
-            if (target.matches('.remove-exam-btn')) { target.closest('.input-group').remove(); return; }
-
-            // Perfil: Athletic
-            if (target.matches('#add-secondary-pos-btn')) { addSecondaryPosition(); return; }
-            if (target.matches('.remove-secondary-pos-btn')) { target.closest('.input-group').remove(); updateFootballPitch(); return; }
-
-            // Proceso: University Interest
-            const modalBtn = target.closest('.open-scholarship-modal-btn');
-            if(modalBtn) {
-                openScholarshipModal(modalBtn.dataset.universityId);
-            }
-        });
-        
-        // Universal change/input handler
-        mainContent.addEventListener('change', e => {
-            const target = e.target;
-            
-            // Personal: Birthdate change
-            if (target.matches('#personal-birthDate')) {
-                userProfileData.personal.birthDate = toSpanishDate(target.value);
-                generateAcademicHistory();
-                generateTeamHistory();
-            }
-
-            // Athletic: Position change
-            if (target.matches('#athletic-mainPosition, .secondary-position-select')) {
-                updateFootballPitch();
-                if(target.matches('#athletic-mainPosition')) renderStats();
-            }
-
-            // Academic: Dynamic history form
-            const academicLevelSelect = target.closest('.academic-level-select');
-            if (academicLevelSelect) {
-                handleAcademicLevelChange(academicLevelSelect);
-            }
-            const gradCheck = target.closest('.graduation-check');
-            if(gradCheck) {
-                const fields = gradCheck.closest('.card-body').querySelector(`#graduation-date-fields-${gradCheck.id.split('-')[2]}`);
-                fields.classList.toggle('d-none', !gradCheck.checked);
-            }
-
-            // Academic: 'Other' exam name
-            const examTypeSelect = target.closest('.exam-type');
-            if(examTypeSelect) {
-                const otherInput = examTypeSelect.closest('.input-group').querySelector('.exam-name-other');
-                otherInput.classList.toggle('d-none', examTypeSelect.value !== 'Otro');
-            }
-            
-            // Proceso: University Decision
-            const decisionSelect = target.closest('.university-decision-select');
-            if (decisionSelect) {
-                const uni = userProfileData.universityInterest.find(u => u.id === decisionSelect.dataset.universityId);
-                if (uni) {
-                    uni.playerDecision = decisionSelect.value;
-                    renderUniversityInterest(); // Re-render to show potential style changes
+            // --- MI PROCESO ---
+            if (target.closest('#proceso-content')) {
+                const overviewLink = target.closest('.list-group-item[data-target-tab]');
+                if (overviewLink) {
+                    e.preventDefault();
+                    const targetTabId = overviewLink.dataset.targetTab;
+                    const targetTabButton = document.querySelector(`button[data-bs-target="#${targetTabId}"]`);
+                    if(targetTabButton) new bootstrap.Tab(targetTabButton).show();
                 }
             }
         });
+
+        mainContent.addEventListener('change', e => {
+            const target = e.target;
+            
+            // --- MI PERFIL ---
+             if (target.closest('#perfil-content')) {
+                if (target.matches('#athletic-mainPosition, .secondary-position-select')) renderPitchMarkers();
+                
+                if (target.id === 'personal-birthDate') {
+                    userProfileData.personal.birthDate = toSpanishDate(target.value);
+                    generateAcademicHistory();
+                    generateTeamHistory();
+                }
+                
+                if (target.classList.contains('graduation-check')) {
+                    const detailsDiv = target.closest('.graduation-wrapper').querySelector('.graduation-details');
+                    if (detailsDiv) detailsDiv.classList.toggle('d-none', !target.checked);
+                }
+
+                if (target.classList.contains('academic-level-select')) {
+                    const cardBody = target.closest('.card-body');
+                    cardBody.querySelector('.course-details')?.classList.toggle('d-none', target.value === 'Universidad' || target.value === 'No estudié/Otro');
+                    cardBody.querySelector('.university-details')?.classList.toggle('d-none', target.value !== 'Universidad');
+                    cardBody.querySelector('.other-details')?.classList.toggle('d-none', target.value !== 'No estudié/Otro');
+                    const showGpaAndFile = target.value !== 'No estudié/Otro';
+                    cardBody.querySelector('.gpa-details')?.classList.toggle('d-none', !showGpaAndFile);
+                    cardBody.querySelector('.file-details')?.classList.toggle('d-none', !showGpaAndFile);
+                    cardBody.querySelector('.graduation-wrapper')?.classList.toggle('d-none', !showGpaAndFile);
+                }
+
+                if (target.classList.contains('exam-type')) {
+                    const otherNameInput = target.closest('.input-group').querySelector('.exam-name-other');
+                    if (otherNameInput) otherNameInput.classList.toggle('d-none', target.value !== 'Otro');
+                }
+             }
+        });
+
+
+        // Listeners for elements outside the main content area (modals, global buttons)
+        document.getElementById('save-social-link').addEventListener('click', handleSaveSocialLink);
+        document.getElementById('save-multimedia-link').addEventListener('click', handleSaveMultimediaLink);
         
-        // Tareas: Keyword filter
-        mainContent.addEventListener('input', e => {
-            if (e.target.id === 'task-keyword-filter') {
-                currentTaskFilter.keyword = e.target.value.trim();
-                renderTasks();
+        document.body.addEventListener('click', e => {
+            if (e.target.matches('.open-scholarship-modal-btn')) {
+                openScholarshipModal(e.target.dataset.universityId);
+            }
+             if (e.target.matches('#add-task-btn')) {
+                addTask();
+            }
+        });
+
+        document.body.addEventListener('change', e => {
+            if (e.target.matches('.university-decision-select')) {
+                const uniId = e.target.dataset.universityId;
+                const decision = e.target.value;
+                const uni = userProfileData.universityInterest.find(u => u.id === uniId);
+                if (uni) uni.playerDecision = decision;
             }
         });
         
-        // Modal Handlers (not delegated as they are single instances)
-        document.getElementById('save-social-link').addEventListener('click', handleSaveSocialLink);
-        document.getElementById('save-multimedia-link').addEventListener('click', handleSaveMultimediaLink);
+        // Task filter listeners
+        document.getElementById('task-status-filter')?.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('#task-status-filter button').forEach(btn => {
+                    btn.classList.remove('btn-eture-red');
+                    btn.classList.add('btn-outline-secondary');
+                });
+                e.target.classList.add('btn-eture-red');
+                e.target.classList.remove('btn-outline-secondary');
+                currentTaskFilter.status = e.target.dataset.status;
+                renderTasks();
+            }
+        });
+        document.getElementById('task-keyword-filter')?.addEventListener('input', e => {
+            currentTaskFilter.keyword = e.target.value;
+            renderTasks();
+        });
+
       }
       
+      // Auto-run on script load
+      if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initApp);
+      } else {
+          initApp();
+      }
 
-      // --- INITIALIZATION ---
-      document.addEventListener('DOMContentLoaded', () => {
-          setupAuthFlow();
-          setupGlobalEventListeners();
-          
-          // Initial load check
-          if (!document.getElementById('app-container').classList.contains('d-none')) {
-            const initialPageId = document.querySelector('#main-nav .nav-link.active')?.getAttribute('href')?.substring(1) || 'inicio';
-            renderPage(initialPageId);
-          }
-      });
     </script>
 </body>
 </html>
