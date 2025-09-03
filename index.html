@@ -2107,7 +2107,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small">Año de Graduación</label>
-                                    <input type="number" class="form-control form-control-sm" value="${yearEnd}">
+                                    <input type="number" class="form-control form-select-sm" value="${yearEnd}">
                                 </div>
                             </div>
                         </div>
@@ -2201,21 +2201,15 @@
 
           container.innerHTML = `
               <div class="row g-3 fw-bold text-muted d-none d-md-flex mb-2">
-                  <div class="col-md-2">Temporada (Edad)</div>
-                  <div class="col-md-3">Nombre del Club</div>
-                  <div class="col-md-3">División / Categoría</div>
-                  <div class="col-md-1 text-center">PJ</div>
-                  <div class="col-md-1 text-center">Goles</div>
-                  <div class="col-md-2 text-center">Asistencias</div>
+                  <div class="col-md-3">Temporada (Edad)</div>
+                  <div class="col-md-5">Nombre del Club</div>
+                  <div class="col-md-4">División / Categoría</div>
               </div>
               ${seasons.map(({season, age}) => `
                   <div class="row g-2 mb-2 align-items-center">
-                      <div class="col-md-2"><label class="form-label d-md-none">Temporada (Edad)</label><input type="text" class="form-control" value="${season} (${age} años)" readonly></div>
-                      <div class="col-md-3"><label class="form-label d-md-none">Club</label><input type="text" class="form-control" placeholder="Nombre del club"></div>
-                      <div class="col-md-3"><label class="form-label d-md-none">División</label><input type="text" class="form-control" placeholder="Categoría"></div>
-                      <div class="col-md-1"><label class="form-label d-md-none">PJ</label><input type="number" class="form-control text-center" placeholder="0"></div>
-                      <div class="col-md-1"><label class="form-label d-md-none">Goles</label><input type="number" class="form-control text-center" placeholder="0"></div>
-                      <div class="col-md-2"><label class="form-label d-md-none">Asistencias</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                      <div class="col-md-3"><label class="form-label d-md-none">Temporada (Edad)</label><input type="text" class="form-control" value="${season} (${age} años)" readonly></div>
+                      <div class="col-md-5"><label class="form-label d-md-none">Club</label><input type="text" class="form-control" placeholder="Nombre del club"></div>
+                      <div class="col-md-4"><label class="form-label d-md-none">División</label><input type="text" class="form-control" placeholder="Categoría"></div>
                   </div>
               `).join('')}`;
       }
