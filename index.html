@@ -126,7 +126,7 @@
             transition: all 0.3s ease;
             cursor: default;
         }
-        .position-marker.main { background-color: #198754; color: white; border-color: white; transform: translate(-50%, -50%) scale(1.1); }
+        .position-marker.main { background-color: #0d6efd; color: white; border-color: white; transform: translate(-50%, -50%) scale(1.1); }
         .position-marker.secondary { background-color: #ffc107; color: #3a3a3a; border-color: #3a3a3a; }
         
         /* Auth screen logo */
@@ -1081,7 +1081,7 @@
                 </div>
                 <div class="card-footer text-end bg-light">
                     <span class="save-status me-3 text-success fw-bold"></span>
-                    <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="form-deportiva">Guardar Cambios</button>
+                    <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="deportiva">Guardar Cambios</button>
                 </div>
             </div>`
       };
@@ -2149,23 +2149,18 @@
           const container = document.getElementById('pitch-markers-container');
           if (!container) return;
           
-          container.innerHTML = '';
-          
           const mainPosValue = document.getElementById('athletic-mainPosition')?.value;
           const secondaryPosValues = Array.from(document.querySelectorAll('.secondary-position-select')).map(s => s.value);
           
-          const mainPosData = footballPositions.find(p => p.value === mainPosValue);
-          if (mainPosData) {
-              container.innerHTML += `<div class="position-marker main" style="top: ${mainPosData.coords.top}; left: ${mainPosData.coords.left};">${mainPosData.value}</div>`;
-          }
-          
-          secondaryPosValues.forEach(secPosValue => {
-              if (secPosValue === mainPosValue) return;
-              const posData = footballPositions.find(p => p.value === secPosValue);
-              if (posData) {
-                  container.innerHTML += `<div class="position-marker secondary" style="top: ${posData.coords.top}; left: ${posData.coords.left};">${posData.value}</div>`;
+          container.innerHTML = footballPositions.map(pos => {
+              let className = 'position-marker';
+              if (pos.value === mainPosValue) {
+                  className += ' main';
+              } else if (secondaryPosValues.includes(pos.value)) {
+                  className += ' secondary';
               }
-          });
+              return `<div class="${className}" style="top: ${pos.coords.top}; left: ${pos.coords.left};">${pos.value}</div>`;
+          }).join('');
       }
       
       function generateTeamHistory() {
@@ -2201,9 +2196,9 @@
 
           container.innerHTML = `
               <div class="row g-3 fw-bold text-muted d-none d-md-flex mb-2">
-                  <div class="col-md-3">Temporada (Edad)</div>
+                  <div class="col-md-3">Temporadas</div>
                   <div class="col-md-5">Nombre del Club</div>
-                  <div class="col-md-4">División / Categoría</div>
+                  <div class="col-md-4">División Categoría</div>
               </div>
               ${seasons.map(({season, age}) => `
                   <div class="row g-2 mb-2 align-items-center">
