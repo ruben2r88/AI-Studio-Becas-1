@@ -1,0 +1,2403 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eture Scholarship Platform</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha34-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- Chart.js for Finanzas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bs-primary: #9E2B25;
+            --bs-primary-rgb: 158, 43, 37;
+            --bs-body-bg: #f8f7f4;
+            --bs-body-color: #3a3a3a;
+            --bs-font-sans-serif: 'Inter', sans-serif;
+            --eture-red: #A53724;
+            --eture-dark-gray: #3a3a3a;
+            --eture-light-gray: #b5b5b5;
+        }
+        body {
+            font-family: var(--bs-font-sans-serif);
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+        }
+        .bg-eture-red { background-color: var(--eture-red) !important; }
+        .text-eture-red { color: var(--eture-red) !important; }
+        .btn-eture-red {
+            background-color: var(--eture-red);
+            border-color: var(--eture-red);
+            color: #fff;
+        }
+        .btn-eture-red:hover {
+            background-color: #85241F;
+            border-color: #85241F;
+            color: #fff;
+        }
+        .sidebar {
+            background-color: #9E2B25;
+            min-height: 100vh;
+            width: 280px;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.2s ease-in-out;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #9E2B25;
+            box-shadow: 0 0 0 0.25rem rgba(158, 43, 37, 0.25);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-tabs .nav-link.active {
+            color: #9E2B25;
+            border-color: #dee2e6 #dee2e6 #fff;
+            font-weight: 600;
+        }
+        
+        /* Nav-pills for Mi Proceso */
+        .nav-pills .nav-link {
+            color: var(--bs-body-color);
+        }
+        .nav-pills .nav-link.active {
+            background-color: #9E2B25;
+            color: white;
+        }
+
+        /* Football Pitch */
+        .football-pitch {
+            width: 100%;
+            max-width: 350px; /* Increased size */
+            margin: 0 auto;
+            aspect-ratio: 7/10; /* More realistic pitch ratio */
+            background-color: #28a745;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            position: relative;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .pitch-marking { border: 2px solid rgba(255, 255, 255, 0.7); position: absolute; box-sizing: border-box; }
+        .center-circle { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 25%; height: 17%; border-radius: 50%; }
+        .center-line { top: 50%; left: 5%; right: 5%; height: 2px; background-color: rgba(255, 255, 255, 0.7); }
+        .penalty-area-top { top: 0; left: 50%; transform: translateX(-50%); width: 80%; height: 20%; border-top: 0; }
+        .penalty-area-bottom { bottom: 0; left: 50%; transform: translateX(-50%); width: 80%; height: 20%; border-bottom: 0; }
+        .goal-area-top { top: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 8%; border-top: 0; }
+        .goal-area-bottom { bottom: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 8%; border-bottom: 0; }
+        
+        .position-marker {
+            position: absolute;
+            width: 38px; height: 38px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.65rem;
+            color: #3a3a3a;
+            border: 4px solid #3a3a3a; /* Thicker border */
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+        .position-marker.main { background-color: #198754; color: white; border-color: white; transform: translate(-50%, -50%) scale(1.1); }
+        .position-marker.secondary { background-color: #ffc107; color: #3a3a3a; border-color: #3a3a3a; }
+        
+        /* Auth screen logo */
+        #auth-container .logo-container {
+             width: 80%;
+             max-width: 300px;
+             margin-left: auto;
+             margin-right: auto;
+             margin-bottom: 1rem;
+        }
+
+        .sidebar .logo-container {
+            width: 90%;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .sidebar .sidebar-logo {
+            filter: brightness(0) invert(1);
+        }
+        
+        /* Task List styles */
+        .task-item .accordion-button:not(.collapsed) {
+            background-color: rgba(158, 43, 37, 0.05);
+            color: var(--bs-body-color);
+        }
+        .task-item .task-title.completed {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+        .task-status-select {
+            width: 150px;
+            font-size: 0.8rem;
+        }
+        .accordion-button::after {
+            margin-left: 1rem;
+        }
+        #task-status-filter .btn {
+            font-size: 0.9rem;
+        }
+
+        /* Promotional Profile Styles */
+        .profile-promocional .profile-header-banner {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+        }
+        .profile-promocional .profile-main-info {
+            margin-top: -80px; /* Pull up the content */
+        }
+        .profile-promocional .profile-picture {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background-color: #eee;
+            flex-shrink: 0;
+        }
+        .profile-promocional .profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-promocional .stat-card {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .profile-promocional .video-placeholder {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: #3a3a3a;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        .profile-promocional .video-placeholder:hover {
+            transform: scale(1.03);
+        }
+        .profile-promocional .play-icon {
+            font-size: 3rem;
+            color: white;
+            background-color: rgba(0,0,0,0.5);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 80px;
+            padding-left: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Auth Container -->
+    <div id="auth-container">
+        <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background-image: url('https://images.unsplash.com/photo-1551958214-2d5b3943c7a4?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); background-size: cover; background-position: center;">
+            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark" style="opacity: 0.6;"></div>
+            <div class="position-relative bg-white p-4 rounded-3 shadow-lg" style="width: 100%; max-width: 420px;">
+                <!-- Login View -->
+                <div id="login-view">
+                    <div class="logo-container">
+                        <img src="https://storage.googleapis.com/altara-6c510.appspot.com/projects/238473216503028390/files/LogotipoNegro.png" alt="Eture Logo" class="img-fluid">
+                    </div>
+                    <h2 class="h4 fw-bold text-center mb-2">Bienvenido a Eture</h2>
+                    <p class="text-center text-muted mb-4">Inicia sesión para continuar tu sueño americano.</p>
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="login-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="login-email" value="carlos.rodriguez@email.com" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="login-password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="login-password" value="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-eture-red w-100 fw-bold py-2">Iniciar Sesión</button>
+                    </form>
+                    <p class="text-center small mt-4">¿No tienes una cuenta? <a href="#" id="show-register" class="fw-bold text-eture-red text-decoration-none">Crea una aquí</a></p>
+                </div>
+                <!-- Register View -->
+                <div id="register-view" class="d-none">
+                     <div class="logo-container">
+                        <img src="https://storage.googleapis.com/altara-6c510.appspot.com/projects/238473216503028390/files/LogotipoNegro.png" alt="Eture Logo" class="img-fluid">
+                    </div>
+                    <h2 class="h4 fw-bold text-center mb-2">Crea tu Cuenta</h2>
+                    <p class="text-center text-muted mb-4">Empieza tu camino hacia una beca en EE.UU.</p>
+                    <form id="register-form">
+                        <div class="mb-3"><label for="register-name" class="form-label">Nombre Completo</label><input type="text" class="form-control" id="register-name" required></div>
+                        <div class="mb-3"><label for="register-email" class="form-label">Email</label><input type="email" class="form-control" id="register-email" required></div>
+                        <div class="mb-4"><label for="register-password" class="form-label">Contraseña</label><input type="password" class="form-control" id="register-password" required></div>
+                        <button type="submit" class="btn btn-eture-red w-100 fw-bold py-2">Crear Cuenta</button>
+                    </form>
+                    <p class="text-center small mt-4">¿Ya tienes una cuenta? <a href="#" id="show-login" class="fw-bold text-eture-red text-decoration-none">Inicia sesión</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- App Container -->
+    <div id="app-container" class="d-none">
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <aside class="sidebar d-flex flex-column justify-content-between p-3 vh-100 position-sticky top-0 flex-shrink-0">
+                <div>
+                    <div class="mb-4 logo-container">
+                       <img src="https://storage.googleapis.com/altara-6c510.appspot.com/projects/238473216503028390/files/LogotipoNegro.png" alt="Eture Logo" class="img-fluid sidebar-logo">
+                    </div>
+                    <ul class="nav nav-pills flex-column mb-auto gap-2" id="main-nav" role="tablist">
+                        <li class="nav-item"><a href="#inicio" class="nav-link d-flex align-items-center active" data-bs-toggle="tab" data-bs-target="#inicio-content">🏠<span class="ms-3">Inicio</span></a></li>
+                        <li class="nav-item"><a href="#perfil" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#perfil-content">👤<span class="ms-3">Mi Perfil</span></a></li>
+                        <li class="nav-item"><a href="#proceso" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#proceso-content">🚀<span class="ms-3">Mi Proceso</span></a></li>
+                        <li class="nav-item"><a href="#tareas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#tareas-content">✔️<span class="ms-3">Task List</span></a></li>
+                        <li class="nav-item"><a href="#documentos" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#documentos-content">📄<span class="ms-3">Mis Documentos</span></a></li>
+                        <li class="nav-item"><a href="#finanzas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#finanzas-content">💰<span class="ms-3">Estado Financiero</span></a></li>
+                        <li class="nav-item"><a href="#chat" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#chat-content">💬<span class="ms-3">Chat</span></a></li>
+                        <li class="nav-item"><a href="#ayuda" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#ayuda-content">❓<span class="ms-3">Ayuda</span></a></li>
+                    </ul>
+                </div>
+                <div>
+                    <button id="logout-button" class="btn nav-link d-flex align-items-center w-100 text-start">🚪<span class="ms-3">Cerrar Sesión</span></button>
+                </div>
+            </aside>
+            <!-- Main Content -->
+            <main class="flex-grow-1 p-4" style="overflow-y: auto; height: 100vh;">
+                <div class="tab-content" id="main-content">
+                    <div class="tab-pane fade show active" id="inicio-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="perfil-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="proceso-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="tareas-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="documentos-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="finanzas-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="chat-content" role="tabpanel"></div>
+                    <div class="tab-pane fade" id="ayuda-content" role="tabpanel"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div class="modal fade" id="social-media-modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Añadir Red Social</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="social-type" class="form-label">Tipo de red</label>
+              <select class="form-select" id="social-type">
+                <option>Instagram</option>
+                <option>Twitter</option>
+                <option>TikTok</option>
+                <option>Facebook</option>
+              </select>
+            </div>
+            <div>
+              <label for="social-url" class="form-label">URL del perfil</label>
+              <input type="url" class="form-control" id="social-url" placeholder="https://...">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="save-social-link">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal fade" id="multimedia-modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">Añadir Multimedia</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <input type="hidden" id="multimedia-type">
+            <div class="mb-3"><label for="multimedia-name" class="form-label"></label><input type="text" class="form-control" id="multimedia-name"></div>
+            <div><label for="multimedia-url" class="form-label">Enlace (URL)</label><input type="url" class="form-control" id="multimedia-url" placeholder="https://..."></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="save-multimedia-link">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scholarship Breakdown Modal -->
+    <div class="modal fade" id="scholarship-modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="scholarship-modal-title">Desglose de Beca</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="scholarship-modal-body">
+            <p class="text-center">Cargando detalles...</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    
+    <!-- App Logic -->
+    <script type="module" id="app-logic">
+      import { GoogleGenAI } from "https://esm.run/@google/genai";
+      
+      let editingMultimediaElement = null;
+      let editingSocialLinkIndex = null;
+
+      // --- HELPERS ---
+      function toISODate(dateString) { // DD/MM/YYYY -> YYYY-MM-DD
+          if (!dateString || !/^\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4}$/.test(dateString)) return '';
+          const parts = dateString.replace(/\s/g, '').split('/');
+          return `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`;
+      }
+      function toSpanishDate(dateString) { // YYYY-MM-DD -> DD/MM/YYYY
+          if (!dateString) return '';
+          const parts = dateString.split('-');
+          if (parts.length !== 3) return '';
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+
+      // --- CENTRAL USER DATA (SINGLE SOURCE OF TRUTH) ---
+      let userProfileData = {
+        personal: {
+            name: "Carlos",
+            surname: "Rodríguez",
+            email: "carlos.rodriguez@email.com",
+            nationality: "España",
+            birthDate: "15/07/2006",
+            passportNumber: "ABC123456",
+            passportExpiry: "15/07/2030",
+        },
+        contact: {
+            phoneCode: "+34",
+            phoneNumber: "600111222",
+            address1: "Calle Falsa 123",
+            address2: "",
+            city: "Madrid",
+            postalCode: "28080",
+            province: "Madrid",
+            country: "España",
+        },
+        parent: {
+            name: "Juan Rodríguez",
+            relation: "Padre",
+            email: "juan.rodriguez@email.com",
+            phone: "600333444",
+        },
+        academic: {
+            status: "Freshman",
+            gpa: 3.8,
+            englishLevel: "C1 - Avanzado",
+            studyOptions: ["Business Administration", "Sports Management"],
+            exams: [
+                { type: "TOEFL", score: "95" },
+                { type: "SAT", score: "1350" }
+            ]
+        },
+        athletic: {
+            height: 185,
+            weight: 78,
+            dominantFoot: "Derecho",
+            mainPosition: "MP",
+            secondaryPositions: ["MC"],
+            currentTeam: "Club Deportivo Ficticio",
+            currentDivision: "División de Honor Juvenil",
+            stats: {
+                played: 25,
+                goals: 12,
+                assists: 15
+            }
+        },
+        media: {
+            social: [
+                { type: "Instagram", url: "https://instagram.com/carlos.r" }
+            ],
+            highlights: [
+                { name: "Highlights 2023-2024", url: "https://youtube.com/highlights", isMain: true },
+                { name: "Mejores Goles", url: "https://youtube.com/goals", isMain: false }
+            ],
+            matches: [
+                { name: "Final del Campeonato - Blanco, #10", url: "https://youtube.com/fullmatch" }
+            ],
+            profilePicture: "https://images.unsplash.com/photo-1599566203534-78b1b2123d1b?q=80&w=1887&auto=format&fit=crop",
+            banner: "https://images.unsplash.com/photo-1594464433463-531513a05923?q=80&w=1974&auto=format&fit=crop",
+            videoThumbnail: "https://images.unsplash.com/photo-1517423568342-be835882b568?q=80&w=2070&auto=format&fit=crop"
+        },
+        promotion: {
+            universityType: ["Pública", "Grande"],
+            locationType: ["Urbano", "Costa Este"],
+            sportsDivision: ["NCAA D1"],
+            budget: "30000",
+            objectives: "Busco un programa académico competitivo en Ingeniería y un equipo de fútbol con aspiraciones al título nacional."
+        },
+        universityInterest: [
+            {
+                id: 'ucla',
+                name: 'University of California, LA',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/UCLA_Bruins_logo.svg/2048px-UCLA_Bruins_logo.svg.png',
+                status: 'Oferta Recibida',
+                statusColor: 'success',
+                playerDecision: 'Pendiente',
+                offerDetails: {
+                    costs: [
+                        { name: 'Tuition (Matrícula)', amount: 45000 },
+                        { name: 'Fees (Tasas)', amount: 3000 },
+                        { name: 'Room & Board', amount: 15000 }
+                    ],
+                    scholarships: [
+                        { name: 'Beca Deportiva', amount: 38400 },
+                        { name: 'Beca Académica', amount: 5000 }
+                    ],
+                    documentUrl: '#'
+                }
+            },
+            {
+                id: 'duke',
+                name: 'Duke University',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Duke_Athletics_logo.svg/1200px-Duke_Athletics_logo.svg.png',
+                status: 'En Contacto',
+                statusColor: 'primary',
+                playerDecision: 'Pendiente',
+                offerDetails: {
+                    costs: [],
+                    scholarships: [],
+                    documentUrl: null
+                }
+            },
+            {
+                id: 'stanford',
+                name: 'Stanford University',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Stanford_Cardinal_logo.svg/2560px-Stanford_Cardinal_logo.svg.png',
+                status: 'Interés Mostrado',
+                statusColor: 'info',
+                playerDecision: 'Pendiente',
+                offerDetails: {
+                    costs: [],
+                    scholarships: [],
+                    documentUrl: null
+                }
+            },
+            {
+                id: 'unc',
+                name: 'University of North Carolina',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/North_Carolina_Tar_Heels_logo.svg/1280px-North_Carolina_Tar_Heels_logo.svg.png',
+                status: 'Comprometido',
+                statusColor: 'warning',
+                playerDecision: 'Aceptada',
+                offerDetails: {
+                    costs: [
+                        { name: 'Tuition (Matrícula)', amount: 36000 },
+                        { name: 'Fees (Tasas)', amount: 2500 },
+                        { name: 'Room & Board', amount: 12000 }
+                    ],
+                    scholarships: [
+                        { name: 'Beca Deportiva', amount: 50500 }
+                    ],
+                    documentUrl: '#'
+                }
+            }
+        ]
+      };
+      
+      // --- DATA ---
+       let tasksData = [
+        { id: 1, title: 'Registrarse en la NCAA', description: 'Abre una cuenta en el NCAA Eligibility Center para que puedan certificar tu historial académico y deportivo.', status: 'Completado', notes: 'Cuenta creada el 01/08. ID: 123456789' },
+        { id: 2, title: 'Preparar y realizar el examen TOEFL', description: 'Consigue la puntuación mínima requerida por las universidades. La mayoría pide un 80 o superior.', status: 'En Progreso', notes: 'Examen agendado para el 15/09. Estudiando 1h al día.' },
+        { id: 3, title: 'Preparar y realizar el examen SAT', description: 'Algunas universidades lo requieren. Una buena puntuación puede aumentar tus opciones de beca académica.', status: 'Pendiente', notes: '' },
+        { id: 4, title: 'Grabar y editar vídeo de Highlights', description: 'Crea un vídeo de 3-5 minutos con tus mejores jugadas de la última temporada.', status: 'Pendiente', notes: '' },
+        { id: 5, title: 'Solicitar expedientes académicos', description: 'Pide a tu instituto los expedientes de los últimos 4 años traducidos oficialmente al inglés.', status: 'Pendiente', notes: '' },
+      ];
+      
+      let currentTaskFilter = { status: 'All', keyword: '' };
+
+      const countries = [
+        { name: 'Afghanistan', code: '+93', emoji: '🇦🇫' }, { name: 'Albania', code: '+355', emoji: '🇦🇱' }, { name: 'Algeria', code: '+213', emoji: '🇩🇿' },
+        { name: 'Andorra', code: '+376', emoji: '🇦🇩' }, { name: 'Angola', code: '+244', emoji: '🇦🇴' }, { name: 'Argentina', code: '+54', emoji: '🇦🇷' },
+        { name: 'Armenia', code: '+374', emoji: '🇦🇲' }, { name: 'Australia', code: '+61', emoji: '🇦🇺' }, { name: 'Austria', code: '+43', emoji: '🇦🇹' },
+        { name: 'Azerbaijan', code: '+994', emoji: '🇦🇿' }, { name: 'Bahamas', code: '+1-242', emoji: '🇧🇸' }, { name: 'Bahrain', code: '+973', emoji: '🇧🇭' },
+        { name: 'Bangladesh', code: '+880', emoji: '🇧🇩' }, { name: 'Belarus', code: '+375', emoji: '🇧🇾' }, { name: 'Belgium', code: '+32', emoji: '🇧🇪' },
+        { name: 'Bolivia', code: '+591', emoji: '🇧🇴' }, { name: 'Bosnia and Herzegovina', code: '+387', emoji: '🇧🇦' }, { name: 'Brazil', code: '+55', emoji: '🇧🇷' },
+        { name: 'Bulgaria', code: '+359', emoji: '🇧🇬' }, { name: 'Cambodia', code: '+855', emoji: '🇰🇭' }, { name: 'Cameroon', code: '+237', emoji: '🇨🇲' },
+        { name: 'Canada', code: '+1', emoji: '🇨🇦' }, { name: 'Chile', code: '+56', emoji: '🇨🇱' }, { name: 'China', code: '+86', emoji: '🇨🇳' },
+        { name: 'Colombia', code: '+57', emoji: '🇨🇴' }, { name: 'Costa Rica', code: '+506', emoji: '🇨🇷' }, { name: 'Croatia', code: '+385', emoji: '🇭🇷' },
+        { name: 'Cuba', code: '+53', emoji: '🇨🇺' }, { name: 'Cyprus', code: '+357', emoji: '🇨🇾' }, { name: 'Czech Republic', code: '+420', emoji: '🇨🇿' },
+        { name: 'Denmark', code: '+45', emoji: '🇩🇰' }, { name: 'Dominican Republic', code: '+1-809', emoji: '🇩🇴' }, { name: 'Ecuador', code: '+593', emoji: '🇪🇨' },
+        { name: 'Egypt', code: '+20', emoji: '🇪🇬' }, { name: 'El Salvador', code: '+503', emoji: '🇸🇻' }, { name: 'Estonia', code: '+372', emoji: '🇪🇪' },
+        { name: 'Finland', code: '+358', emoji: '🇫🇮' }, { name: 'France', code: '+33', emoji: '🇫🇷' }, { name: 'Georgia', code: '+995', emoji: '🇬🇪' },
+        { name: 'Germany', code: '+49', emoji: '🇩🇪' }, { name: 'Ghana', code: '+233', emoji: '🇬🇭' }, { name: 'Greece', code: '+30', emoji: '🇬🇷' },
+        { name: 'Guatemala', code: '+502', emoji: '🇬🇹' }, { name: 'Honduras', code: '+504', emoji: '🇭🇳' }, { name: 'Hungary', code: '+36', emoji: '🇭🇺' },
+        { name: 'Iceland', code: '+354', emoji: '🇮🇸' }, { name: 'India', code: '+91', emoji: '🇮🇳' }, { name: 'Indonesia', code: '+62', emoji: '🇮🇩' },
+        { name: 'Iran', code: '+98', emoji: '🇮🇷' }, { name: 'Iraq', code: '+964', emoji: '🇮🇶' }, { name: 'Ireland', code: '+353', emoji: '🇮🇪' },
+        { name: 'Israel', code: '+972', emoji: '🇮🇱' }, { name: 'Italy', code: '+39', emoji: '🇮🇹' }, { name: 'Jamaica', code: '+1-876', emoji: '🇯🇲' },
+        { name: 'Japan', code: '+81', emoji: '🇯🇵' }, { name: 'Kazakhstan', code: '+7', emoji: '🇰🇿' }, { name: 'Kenya', code: '+254', emoji: '🇰🇪' },
+        { name: 'Kuwait', code: '+965', emoji: '🇰🇼' }, { name: 'Latvia', code: '+371', emoji: '🇱🇻' }, { name: 'Lebanon', code: '+961', emoji: '🇱🇧' },
+        { name: 'Lithuania', code: '+370', emoji: '🇱🇹' }, { name: 'Luxembourg', code: '+352', emoji: '🇱🇺' }, { name: 'Malaysia', code: '+60', emoji: '🇲🇾' },
+        { name: 'Malta', code: '+356', emoji: '🇲🇹' }, { name: 'Mexico', code: '+52', emoji: '🇲🇽' }, { name: 'Moldova', code: '+373', emoji: '🇲🇩' },
+        { name: 'Monaco', code: '+377', emoji: '🇲🇨' }, { name: 'Montenegro', code: '+382', emoji: '🇲🇪' }, { name: 'Morocco', code: '+212', emoji: '🇲🇦' },
+        { name: 'Netherlands', code: '+31', emoji: '🇳🇱' }, { name: 'New Zealand', code: '+64', emoji: '🇳🇿' }, { name: 'Nicaragua', code: '+505', emoji: '🇳🇮' },
+        { name: 'Nigeria', code: '+234', emoji: '🇳🇬' }, { name: 'North Korea', code: '+850', emoji: '🇰🇵' }, { name: 'North Macedonia', code: '+389', emoji: '🇲🇰' },
+        { name: 'Norway', code: '+47', emoji: '🇳🇴' }, { name: 'Oman', code: '+968', emoji: '🇴🇲' }, { name: 'Pakistan', code: '+92', emoji: '🇵🇰' },
+        { name: 'Panama', code: '+507', emoji: '🇵🇦' }, { name: 'Paraguay', code: '+595', emoji: '🇵🇾' }, { name: 'Peru', code: '+51', emoji: '🇵🇪' },
+        { name: 'Philippines', code: '+63', emoji: '🇵🇭' }, { name: "Poland", code: "+48", emoji: "🇵🇱" }, { name: "Portugal", code: "+351", emoji: "🇵🇹" },
+        { name: "Qatar", code: "+974", emoji: "🇶🇦" }, { name: "Romania", code: "+40", emoji: "🇷🇴" }, { name: "Russia", code: "+7", emoji: "🇷🇺" },
+        { name: "Saudi Arabia", code: "+966", emoji: "🇸🇦" }, { name: "Senegal", code: "+221", emoji: "🇸🇳" }, { name: "Serbia", code: "+381", emoji: "🇷🇸" },
+        { name: "Singapore", code: "+65", emoji: "🇸🇬" }, { name: "Slovakia", code: "+421", emoji: "🇸🇰" }, { name: "Slovenia", code: "+386", emoji: "🇸🇮" },
+        { name: "South Africa", code: "+27", emoji: "🇿🇦" }, { name: "South Korea", code: "+82", emoji: "🇰🇷" }, { name: "España", code: "+34", emoji: "🇪🇸" },
+        { name: "Sweden", code: "+46", emoji: "🇸🇪" }, { name: "Switzerland", code: "+41", emoji: "🇨🇭" }, { name: "Syria", code: "+963", emoji: "🇸🇾" },
+        { name: "Taiwan", code: "+886", emoji: "🇹🇼" }, { name: "Thailand", code: "+66", emoji: "🇹🇭" }, { name: "Trinidad and Tobago", code: "+1-868", emoji: "🇹🇹" },
+        { name: "Tunisia", code: "+216", emoji: "🇹🇳" }, { name: "Turkey", code: "+90", emoji: "🇹🇷" }, { name: "Ukraine", code: "+380", emoji: "🇺🇦" },
+        { name: "United Arab Emirates", code: "+971", emoji: "🇦🇪" }, { name: "United Kingdom", code: "+44", emoji: "🇬🇧" }, { name: "United States", code: "+1", emoji: "🇺🇸" },
+        { name: "Uruguay", code: "+598", emoji: "🇺🇾" }, { name: "Uzbekistan", code: "+998", emoji: "🇺🇿" }, { name: "Venezuela", code: "+58", emoji: "🇻🇪" },
+        { name: "Vietnam", code: "+84", emoji: "🇻🇳" }
+      ].sort((a,b) => a.name.localeCompare(b.name));
+
+      const footballPositions = [
+        { value: "POR", text: "Portero", coords: { top: '92%', left: '50%'} }, { value: "LD", text: "Lateral Derecho", coords: { top: '75%', left: '85%'} },
+        { value: "CEN D", text: "Central Derecho", coords: { top: '75%', left: '65%'} }, { value: "CEN I", text: "Central Izquierdo", coords: { top: '75%', left: '35%'} },
+        { value: "LI", text: "Lateral Izquierdo", coords: { top: '75%', left: '15%'} }, { value: "MCD", text: "Mediocentro Defensivo", coords: { top: '60%', left: '50%'} },
+        { value: "MD", text: "Medio Derecho", coords: { top: '45%', left: '80%'} }, { value: "MC", text: "Mediocentro", coords: { top: '45%', left: '50%'} },
+        { value: "MI", text: "Medio Izquierdo", coords: { top: '45%', left: '20%'} }, { value: "MP", text: "Mediapunta", coords: { top: '30%', left: '50%'} },
+        { value: "ED", text: "Extremo Derecho", coords: { top: '15%', left: '85%'} }, { value: "DEL", text: "Delantero", coords: { top: '15%', left: '50%'} },
+        { value: "EI", text: "Extremo Izquierdo", coords: { top: '15%', left: '15%'} },
+      ];
+
+      // --- PAGE TEMPLATES ---
+      const pages = {
+        inicio: `
+            <div class="fade-in">
+                <h1 class="h2 fw-bold mb-2">Dashboard Principal</h1>
+                <p class="text-muted mb-4">Bienvenido, aquí tienes un resumen de tu progreso y próximas tareas.</p>
+
+                <p class="text-muted">Progreso General (1 de 6 pasos iniciados)</p>
+                <div class="progress mb-4" style="height: 25px;">
+                    <div class="progress-bar bg-eture-red" role="progressbar" style="width: 17%;" aria-valuenow="17" aria-valuemin="0" aria-valuemax="100">17%</div>
+                </div>
+
+                <div class="alert bg-eture-red text-white text-center fw-bold fs-5 mb-4" style="background-color: #A53724 !important;">
+                    ¡Tu éxito es nuestra prioridad!
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body text-center d-flex flex-column justify-content-center">
+                                <h5 class="card-title text-eture-red">🚀 Tareas Clave Pendientes</h5>
+                                <p class="card-text display-4 fw-bold text-dark">3</p>
+                                <button class="btn btn-sm btn-outline-primary mt-auto" onclick="document.querySelector('a[href=\\'#tareas\\']').click()">Ver todas las tareas</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-danger h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title text-danger">⚠️ Avisos Críticos</h5>
+                                <p>Tienes un pago de servicio pendiente. Fecha límite: <strong>30 de Septiembre</strong>.</p>
+                                <p class="small text-muted mb-2">Asegúrate de estar al día para no interrumpir tu proceso.</p>
+                                <button class="btn btn-sm btn-danger" onclick="document.querySelector('a[href=\\'#finanzas\\']').click()">Ir a Finanzas</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold">Próximas Tareas</h4>
+                <div class="list-group mb-4 shadow-sm">
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold">Preparar y realizar el examen TOEFL</h6>
+                            <small class="text-muted">Examen agendado para el 15/09. Estudiando 1h al día.</small>
+                        </div>
+                        <span class="badge bg-warning rounded-pill">En Progreso</span>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold">Preparar y realizar el examen SAT</h6>
+                            <small class="text-muted">Algunas universidades lo requieren.</small>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill" style="background-color: #b5b5b5 !important;">Pendiente</span>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold">Grabar y editar vídeo de Highlights</h6>
+                            <small class="text-muted">Crea un vídeo de 3-5 minutos con tus mejores jugadas.</small>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill" style="background-color: #b5b5b5 !important;">Pendiente</span>
+                    </div>
+                </div>
+                
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold">Anuncios Importantes</h5>
+                        <p class="mb-0">Recuerda que la fecha límite para el registro temprano en la NCAA es el <strong>1 de Octubre</strong>. ¡No lo dejes para el último día!</p>
+                    </div>
+                </div>
+
+                <div class="text-center p-3 rounded" style="background-color: #f0f0f0;">
+                    <p class="mb-0 fw-bold h5" style="color: #3a3a3a;">Completa tu perfil para empezar a mover el balón hacia la meta.</p>
+                </div>
+            </div>`,
+        perfil: `
+            <div class="fade-in">
+                <h1 class="h2 fw-bold mb-2">Mi Perfil</h1>
+                <p class="text-muted mb-4">Esta es la información que compartiremos con los entrenadores. Asegúrate de que esté completa y actualizada. Los campos marcados con * son obligatorios.</p>
+                
+                <ul class="nav nav-tabs mb-4" id="perfil-nav" role="tablist">
+                  <li class="nav-item" role="presentation"><button class="nav-link active" id="personales-tab-btn" data-bs-toggle="tab" data-bs-target="#personales-tab-content" type="button" role="tab">Datos Personales</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link" id="academica-tab-btn" data-bs-toggle="tab" data-bs-target="#academica-tab-content" type="button" role="tab">Información Académica</button></li>
+                  <li class="nav-item" role="presentation"><button class="nav-link" id="deportiva-tab-btn" data-bs-toggle="tab" data-bs-target="#deportiva-tab-content" type="button" role="tab">Información Deportiva</button></li>
+                </ul>
+
+                <div class="tab-content" id="perfil-tab-content">
+                  <div class="tab-pane fade show active" id="personales-tab-content" role="tabpanel"></div>
+                  <div class="tab-pane fade" id="academica-tab-content" role="tabpanel"></div>
+                  <div class="tab-pane fade" id="deportiva-tab-content" role="tabpanel"></div>
+                </div>
+            </div>`,
+        proceso: `
+            <div class="fade-in">
+                <h1 class="h2 fw-bold mb-2">Mi Proceso</h1>
+                <p class="text-muted mb-4">Sigue cada paso de tu camino hacia una beca en EE.UU.</p>
+                
+                <ul class="nav nav-tabs mb-4" id="proceso-nav" role="tablist">
+                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#proceso-overview-content" type="button" role="tab">Overview</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-perfil-content" type="button" role="tab">Mi Perfil Promocional</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-promocion-content" type="button" role="tab">Mi Promoción</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-universidad-content" type="button" role="tab">Mi Universidad</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-evaluacion-content" type="button" role="tab">Mi Evaluación</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-liga-content" type="button" role="tab">Mi Liga</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-visa-content" type="button" role="tab">Mi Visa</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-viaje-content" type="button" role="tab">Mi Viaje</button></li>
+                </ul>
+
+                <div class="tab-content" id="proceso-tab-content">
+                    <div class="tab-pane fade show active" id="proceso-overview-content" role="tabpanel">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h3 class="fw-bold text-eture-red mb-3">Estado Actual: Fase 1 - Creación de Perfil</h3>
+                                <p class="lead mb-4">Navega por cada etapa para completar tu camino hacia una beca deportiva en EE.UU. Utiliza los siguientes accesos directos para ir a cada fase del proceso.</p>
+                                
+                                <div class="list-group">
+                                    <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-target-tab="proceso-perfil-content">
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">1. Mi Perfil Promocional</h6>
+                                            <small>Visualiza la ficha que verán los entrenadores.</small>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">Ver Ficha →</span>
+                                    </a>
+                                    <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-promocion-content">2. Mi Promoción</a>
+                                    <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-universidad-content">3. Mi Universidad</a>
+                                    <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-evaluacion-content">4. Mi Evaluación</a>
+                                    <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-liga-content">5. Mi Liga</a>
+                                    <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-visa-content">6. Mi Visa</a>
+                                    <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-viaje-content">7. Mi Viaje</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="proceso-perfil-content" role="tabpanel">
+                        <!-- Promotional Profile will be rendered here dynamically -->
+                    </div>
+                    <div class="tab-pane fade" id="proceso-promocion-content" role="tabpanel">
+                        <form class="card" id="form-promocion">
+                            <div class="card-body">
+                                <h3 class="fw-bold">Mis Prioridades Universitarias</h3>
+                                <p class="text-muted mb-4">Define tus preferencias para que podamos encontrar las mejores opciones para ti.</p>
+
+                                <div class="mb-4">
+                                    <h5 class="fw-bold">Tipo de Universidad</h5>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Pública" id="uni-publica"><label class="form-check-label" for="uni-publica">Pública</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Privada" id="uni-privada"><label class="form-check-label" for="uni-privada">Privada</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Grande" id="uni-grande"><label class="form-check-label" for="uni-grande">Grande (+15,000)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Mediana" id="uni-mediana"><label class="form-check-label" for="uni-mediana">Mediana (5,000-15,000)</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Pequeña" id="uni-pequena"><label class="form-check-label" for="uni-pequena">Pequeña (-5,000)</label></div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h5 class="fw-bold">Ubicación y Entorno</h5>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Urbano" id="loc-urbano"><label class="form-check-label" for="loc-urbano">Campus Urbano</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Suburbano" id="loc-suburbano"><label class="form-check-label" for="loc-suburbano">Campus Suburbano</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Rural" id="loc-rural"><label class="form-check-label" for="loc-rural">Campus Rural</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Costa Este" id="loc-este"><label class="form-check-label" for="loc-este">Costa Este</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Costa Oeste" id="loc-oeste"><label class="form-check-label" for="loc-oeste">Costa Oeste</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Medio Oeste" id="loc-mediooeste"><label class="form-check-label" for="loc-mediooeste">Medio Oeste</label></div>
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" value="Sur" id="loc-sur"><label class="form-check-label" for="loc-sur">Sur</label></div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h5 class="fw-bold">Nivel Deportivo y Beca</h5>
+                                    <div class="d-flex flex-wrap gap-3">
+                                         <div class="form-check"><input class="form-check-input" type="checkbox" value="NCAA D1" id="div-ncaa1"><label class="form-check-label" for="div-ncaa1">NCAA D1</label></div>
+                                         <div class="form-check"><input class="form-check-input" type="checkbox" value="NCAA D2" id="div-ncaa2"><label class="form-check-label" for="div-ncaa2">NCAA D2</label></div>
+                                         <div class="form-check"><input class="form-check-input" type="checkbox" value="NCAA D3" id="div-ncaa3"><label class="form-check-label" for="div-ncaa3">NCAA D3</label></div>
+                                         <div class="form-check"><input class="form-check-input" type="checkbox" value="NAIA" id="div-naia"><label class="form-check-label" for="div-naia">NAIA</label></div>
+                                         <div class="form-check"><input class="form-check-input" type="checkbox" value="NJCAA" id="div-njcaa"><label class="form-check-label" for="div-njcaa">NJCAA (Junior College)</label></div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6 mb-4">
+                                        <h5 class="fw-bold">Inversión Económica</h5>
+                                        <label for="promotion-budget" class="form-label">Presupuesto máximo anual (USD)</label>
+                                        <input type="number" class="form-control" id="promotion-budget" placeholder="Ej: 25000">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <h5 class="fw-bold">Mis Objetivos</h5>
+                                        <label for="promotion-objectives" class="form-label">Describe tus metas y preferencias</label>
+                                        <textarea class="form-control" id="promotion-objectives" rows="3" placeholder="Busco un programa académico fuerte en 'Business' y un equipo de fútbol competitivo..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end bg-light">
+                                <span class="save-status me-3 text-success fw-bold"></span>
+                                <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="form-promocion">Guardar Cambios</button>
+                            </div>
+                        </form>
+                        
+                        <div class="card mt-4" id="university-interest-card">
+                            <div class="card-body">
+                                <h3 class="fw-bold">Interés de Universidades</h3>
+                                <p class="text-muted mb-4">Aquí puedes ver y gestionar las universidades que han mostrado interés en tu perfil.</p>
+                                <div id="university-interest-list">
+                                    <!-- University list will be rendered here -->
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="tab-pane fade" id="proceso-universidad-content" role="tabpanel">
+                         <div class="card"><div class="card-body">
+                            <h3 class="fw-bold">Mi Universidad</h3>
+                            <p class="text-muted">Sigue el estado de las aplicaciones, ofertas y comunicaciones con las universidades.</p>
+                            <hr><p>En construcción.</p>
+                         </div></div>
+                    </div>
+                     <div class="tab-pane fade" id="proceso-evaluacion-content" role="tabpanel">
+                         <div class="card"><div class="card-body">
+                            <h3 class="fw-bold">Mi Evaluación</h3>
+                            <p class="text-muted">Accede a las evaluaciones de nuestros expertos sobre tu perfil y potencial.</p>
+                            <hr><p>En construcción.</p>
+                         </div></div>
+                    </div>
+                    <div class="tab-pane fade" id="proceso-liga-content" role="tabpanel">
+                         <div class="card"><div class="card-body">
+                            <h3 class="fw-bold">Mi Liga</h3>
+                            <p class="text-muted">Completa los procesos de registro y elegibilidad para las ligas universitarias (NCAA, NAIA).</p>
+                            <hr><p>En construcción.</p>
+                         </div></div>
+                    </div>
+                    <div class="tab-pane fade" id="proceso-visa-content" role="tabpanel">
+                         <div class="card"><div class="card-body">
+                            <h3 class="fw-bold">Mi Visa</h3>
+                            <p class="text-muted">Guía y seguimiento de los pasos necesarios para obtener tu visado de estudiante F-1.</p>
+                            <hr><p>En construcción.</p>
+                         </div></div>
+                    </div>
+                    <div class="tab-pane fade" id="proceso-viaje-content" role="tabpanel">
+                         <div class="card"><div class="card-body">
+                            <h3 class="fw-bold">Mi Viaje</h3>
+                            <p class="text-muted">Organiza los detalles finales de tu viaje e instalación en Estados Unidos.</p>
+                            <hr><p>En construcción.</p>
+                         </div></div>
+                    </div>
+                </div>
+            </div>`,
+        tareas: `
+            <div class="fade-in">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h2 fw-bold mb-0">Task List</h1>
+                        <p class="text-muted mb-0">Organiza y sigue el progreso de tus tareas pendientes.</p>
+                    </div>
+                    <button class="btn btn-eture-red" id="add-task-btn">Añadir Tarea</button>
+                </div>
+
+                <div class="card mb-4">
+                     <div class="card-body">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-lg-6">
+                                <input type="search" id="task-keyword-filter" class="form-control" placeholder="Buscar por palabra clave...">
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="btn-group w-100" role="group" id="task-status-filter">
+                                    <button type="button" class="btn btn-eture-red" data-status="All">Todas</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-status="Pendiente">Pendientes</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-status="En Progreso">En Progreso</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-status="Completado">Completadas</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <label for="task-progress-bar" class="form-label fw-bold">Progreso General</label>
+                        <div class="progress" style="height: 20px;" id="task-progress-bar-container">
+                            <div id="task-progress-bar" class="progress-bar bg-eture-red" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion" id="task-list-accordion">
+                    <!-- Tasks will be rendered here by JavaScript -->
+                </div>
+            </div>`,
+        documentos: `<div class="fade-in"><h1 class="h2 fw-bold">Mis Documentos</h1><p class="text-muted">En construcción.</p></div>`,
+        finanzas: `
+            <div class="fade-in">
+                <h1 class="h2 fw-bold mb-2">Estado Financiero</h1>
+                <p class="text-muted mb-4">Consulta tu balance, plan de pagos y realiza transacciones.</p>
+                <div class="card">
+                    <div class="card-body">
+                        <div style="max-width: 300px; margin: auto;"><canvas id="financial-chart"></canvas></div>
+                    </div>
+                </div>
+            </div>`,
+        chat: `<div class="fade-in"><h1 class="h2 fw-bold">Chat</h1><p class="text-muted">En construcción.</p></div>`,
+        ayuda: `
+            <div class="fade-in">
+                 <h1 class="h2 fw-bold mb-2">Centro de Ayuda</h1>
+                 <p class="text-muted mb-4">Encuentra respuestas a preguntas frecuentes.</p>
+                 <div class="accordion" id="ayuda-accordion">
+                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q1">¿Cuáles son los costes adicionales?</button></h2><div id="q1" class="accordion-collapse collapse" data-bs-parent="#ayuda-accordion"><div class="accordion-body">Además de nuestros honorarios, debes considerar los costes de los exámenes (TOEFL, SAT), las tasas de solicitud de las universidades, la tasa SEVIS, la tasa del visado y los vuelos a EE.UU.</div></div></div>
+                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">¿Qué pasa si mis notas bajan?</button></h2><div id="q2" class="accordion-collapse collapse" data-bs-parent="#ayuda-accordion"><div class="accordion-body">Es crucial mantener tu rendimiento académico. Una bajada significativa podría afectar tu elegibilidad.</div></div></div>
+                </div>
+            </div>`
+      };
+      
+      const perfilSubPages = {
+          personales: `
+            <form class="card" id="form-personales"><div class="card-body">
+                <h5 class="fw-bold">Credenciales</h5>
+                <div class="mb-4"><label class="form-label">Correo electrónico principal *</label><input type="email" class="form-control" id="personal-email" readonly></div>
+                
+                <h5 class="fw-bold">Datos Personales</h5>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6"><label class="form-label">Nombre *</label><input type="text" class="form-control" id="personal-name"></div>
+                  <div class="col-md-6"><label class="form-label">Apellidos *</label><input type="text" class="form-control" id="personal-surname"></div>
+                  <div class="col-md-6"><label class="form-label">Nacionalidad *</label><select class="form-select" id="personal-nationality"></select></div>
+                  <div class="col-md-6"><label class="form-label">Fecha de nacimiento *</label><input type="date" class="form-control" id="personal-birthDate"></div>
+                  <div class="col-md-6"><label class="form-label">Número de pasaporte *</label><input type="text" class="form-control" id="personal-passportNumber"></div>
+                  <div class="col-md-6"><label class="form-label">Fecha de caducidad del pasaporte *</label><input type="date" class="form-control" id="personal-passportExpiry"></div>
+                </div>
+
+                <h5 class="fw-bold">Información de Contacto (Para Contrato)</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6"><label class="form-label">Código País *</label><select class="form-select" id="contact-phoneCode"></select></div>
+                    <div class="col-md-6"><label class="form-label">Teléfono móvil *</label><input type="tel" class="form-control" id="contact-phoneNumber"></div>
+                    <div class="col-md-8"><label class="form-label">Calle y Número *</label><input type="text" class="form-control" id="contact-address1"></div>
+                    <div class="col-md-4"><label class="form-label">Línea 2 de dirección</label><input type="text" class="form-control" id="contact-address2"></div>
+                    <div class="col-md-6"><label class="form-label">Ciudad *</label><input type="text" class="form-control" id="contact-city"></div>
+                    <div class="col-md-6"><label class="form-label">Código Postal *</label><input type="text" class="form-control" id="contact-postalCode"></div>
+                    <div class="col-md-6"><label class="form-label">Provincia/Estado *</label><input type="text" class="form-control" id="contact-province"></div>
+                    <div class="col-md-6"><label class="form-label">País *</label><select class="form-select" id="contact-country"></select></div>
+                </div>
+
+                <h5 class="fw-bold">Información de Contacto (Padre, Madre o Tutor)</h5>
+                <div class="row g-3 mb-4">
+                  <div class="col-md-6"><label class="form-label">Nombre del Contacto *</label><input type="text" class="form-control" id="parent-name"></div>
+                  <div class="col-md-6"><label class="form-label">Relación *</label><input type="text" class="form-control" id="parent-relation" placeholder="Ej: Padre, Madre"></div>
+                  <div class="col-md-6"><label class="form-label">Email del Contacto *</label><input type="email" class="form-control" id="parent-email"></div>
+                  <div class="col-md-6"><label class="form-label">Teléfono del Contacto *</label><input type="tel" class="form-control" id="parent-phone"></div>
+                </div>
+
+                <h5 class="fw-bold">Redes Sociales</h5>
+                <div id="social-links-container" class="mb-3"></div>
+                <button type="button" class="btn btn-outline-primary" id="add-social-link-btn">Añadir Red Social</button>
+            
+            </div>
+            <div class="card-footer text-end bg-light">
+                <span class="save-status me-3 text-success fw-bold"></span>
+                <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="form-personales">Guardar Cambios</button>
+            </div>
+            </form>`,
+          academica: `
+            <div class="card" id="form-academica">
+                <div class="card-body">
+                    <h5 class="fw-bold">Estado Académico</h5>
+                    <div class="row g-3 mb-4 align-items-center">
+                        <div class="col-md-auto">
+                            <label class="form-label" for="academic-status">Estado actual *</label>
+                            <select class="form-select" id="academic-status" style="width: auto;">
+                                <option value="Freshman">Freshman</option>
+                                <option value="Transfer">Transfer</option>
+                                <option value="Graduate">Graduate</option>
+                            </select>
+                        </div>
+                        <div class="col-md">
+                            <small class="text-muted lh-sm">
+                                <b>Freshman:</b> Vas a empezar tu carrera universitaria en Estados Unidos.
+                                <br/>
+                                <b>Transfer:</b> Ya estudias en una universidad y vas a transferir tus créditos.
+                                <br/>
+                                <b>Graduate:</b> Vas a realizar un máster o estudios de postgrado.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="fw-bold">Opciones de Carrera Universitaria en EEUU</h5>
+                    <p class="text-muted small">Añade hasta tres opciones de carrera que te gustaría estudiar. Tener varias alternativas aumenta tus posibilidades.</p>
+                    <div id="study-options-container" class="mb-2"></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-study-option-btn">Añadir otra opción</button>
+                    
+                    <hr class="my-4">
+
+                    <h5 class="fw-bold">Nivel de Inglés y Exámenes Estandarizados</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nivel de Inglés (Marco Común Europeo)</label>
+                            <select class="form-select" id="academic-englishLevel"><option>A1 - Básico</option><option>A2 - Básico</option><option>B1 - Intermedio</option><option>B2 - Intermedio-Alto</option><option>C1 - Avanzado</option><option>C2 - Dominio</option></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Exámenes Estandarizados</label>
+                            <div id="exam-container"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-exam-btn">Añadir Examen</button>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="fw-bold">Historial Académico Detallado</h5>
+                    <p class="text-muted small">Asegúrate de que el historial se genere correctamente después de introducir tu fecha de nacimiento en la sección de Datos Personales.</p>
+                    <div id="academic-history-container" class="mb-4">
+                        <div class="alert alert-info">Por favor, introduce tu fecha de nacimiento en "Datos Personales" para generar tu historial académico.</div>
+                    </div>
+                </div>
+                <div class="card-footer text-end bg-light">
+                    <span class="save-status me-3 text-success fw-bold"></span>
+                    <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="form-academica">Guardar Cambios</button>
+                </div>
+            </div>`,
+          deportiva: `
+            <div class="card" id="form-deportiva">
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-lg-7">
+                            <h5 class="fw-bold">Datos Físicos</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6"><label class="form-label">Altura (cm) *</label><input type="number" class="form-control" id="athletic-height"></div>
+                                <div class="col-md-6"><label class="form-label">Peso (kg) *</label><input type="number" class="form-control" id="athletic-weight"></div>
+                            </div>
+                            
+                            <h5 class="fw-bold">Equipo Actual</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6"><label class="form-label">Nombre del Equipo Actual *</label><input type="text" class="form-control" id="athletic-currentTeam"></div>
+                                <div class="col-md-6"><label class="form-label">División / Categoría Actual *</label><input type="text" class="form-control" id="athletic-currentDivision"></div>
+                            </div>
+
+                            <h5 class="fw-bold">Contenido Multimedia</h5>
+                            <div class="mb-4">
+                                <h6>Vídeos de Highlights *</h6>
+                                <div id="highlights-container"></div>
+                                <button type="button" class="btn btn-outline-primary" id="add-highlights-btn">Añadir Vídeo</button>
+                            </div>
+                            <div class="mb-4">
+                                <h6>Partidos Completos</h6>
+                                <div id="matches-container"></div>
+                                <button type="button" class="btn btn-outline-primary" id="add-match-btn">Añadir Partido</button>
+                            </div>
+
+                            <h5 class="fw-bold">Historial de Equipos y Estadísticas</h5>
+                            <p class="text-muted small">Por favor, añade TODOS los clubes en los que has jugado desde los 14 años (categoría Cadete) hasta la actualidad.</p>
+                            <div id="team-history-container" class="mb-4">
+                                <div class="alert alert-info">Por favor, introduce tu fecha de nacimiento en "Datos Personales" para generar tu historial de equipos.</div>
+                            </div>
+                            <h6>Estadísticas de la Última Temporada</h6>
+                            <div id="stats-container" class="row g-3"></div>
+                        </div>
+                        <div class="col-lg-5">
+                            <h5 class="fw-bold">Posición de Juego</h5>
+                            <div class="mb-3"><label class="form-label">Posición principal *</label><select class="form-select" id="athletic-mainPosition"></select></div>
+                            <div class="mb-3">
+                                <label class="form-label">Posición secundaria</label>
+                                <div id="secondary-positions-container"></div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="add-secondary-pos-btn">Añadir otra posición</button>
+                            </div>
+                             <div class="mb-4"><label class="form-label">Pie dominante *</label><select class="form-select" id="athletic-dominantFoot"><option>Derecho</option><option>Izquierdo</option><option>Ambos</option></select></div>
+                            
+                            <div class="football-pitch">
+                                <div class="pitch-marking center-line"></div>
+                                <div class="pitch-marking center-circle"></div>
+                                <div class="pitch-marking penalty-area-top"></div>
+                                <div class="pitch-marking penalty-area-bottom"></div>
+                                <div class="pitch-marking goal-area-top"></div>
+                                <div class="pitch-marking goal-area-bottom"></div>
+                                <div id="pitch-markers-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-end bg-light">
+                    <span class="save-status me-3 text-success fw-bold"></span>
+                    <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="form-deportiva">Guardar Cambios</button>
+                </div>
+            </div>`
+      };
+
+       // --- DATA MANAGEMENT ---
+       function saveProfileData(formId) {
+            const getDynamicValues = (containerId, valueSelector) => {
+                const container = document.getElementById(containerId);
+                if (!container) return [];
+                return Array.from(container.querySelectorAll(valueSelector)).map(input => input.value).filter(value => value.trim() !== '');
+            };
+
+            const getDynamicObjects = (containerId, typeSelector, scoreSelector, otherNameSelector) => {
+                 const container = document.getElementById(containerId);
+                 if (!container) return [];
+                 const items = [];
+                 Array.from(container.children).forEach(node => {
+                    let type = node.querySelector(typeSelector)?.value;
+                    const score = node.querySelector(scoreSelector)?.value;
+
+                    if (type === 'Otro') {
+                        const otherName = node.querySelector(otherNameSelector)?.value.trim();
+                        if (otherName) {
+                            type = otherName; // Overwrite 'Otro' with the custom name
+                        } else {
+                            type = ''; // Invalid if 'Otro' is selected but no name is given
+                        }
+                    }
+
+                    if (type && score) {
+                        items.push({ type, score });
+                    }
+                 });
+                 return items;
+            };
+
+            switch(formId) {
+                case 'form-personales':
+                    userProfileData.personal.name = document.getElementById('personal-name').value;
+                    userProfileData.personal.surname = document.getElementById('personal-surname').value;
+                    userProfileData.personal.nationality = document.getElementById('personal-nationality').value;
+                    userProfileData.personal.birthDate = toSpanishDate(document.getElementById('personal-birthDate').value);
+                    userProfileData.personal.passportNumber = document.getElementById('personal-passportNumber').value;
+                    userProfileData.personal.passportExpiry = toSpanishDate(document.getElementById('personal-passportExpiry').value);
+                    
+                    userProfileData.contact.phoneCode = document.getElementById('contact-phoneCode').value;
+                    userProfileData.contact.phoneNumber = document.getElementById('contact-phoneNumber').value;
+                    userProfileData.contact.address1 = document.getElementById('contact-address1').value;
+                    userProfileData.contact.address2 = document.getElementById('contact-address2').value;
+                    userProfileData.contact.city = document.getElementById('contact-city').value;
+                    userProfileData.contact.postalCode = document.getElementById('contact-postalCode').value;
+                    userProfileData.contact.province = document.getElementById('contact-province').value;
+                    userProfileData.contact.country = document.getElementById('contact-country').value;
+
+                    userProfileData.parent.name = document.getElementById('parent-name').value;
+                    userProfileData.parent.relation = document.getElementById('parent-relation').value;
+                    userProfileData.parent.email = document.getElementById('parent-email').value;
+                    userProfileData.parent.phone = document.getElementById('parent-phone').value;
+                    break;
+                case 'form-academica':
+                    userProfileData.academic.status = document.getElementById('academic-status').value;
+                    userProfileData.academic.englishLevel = document.getElementById('academic-englishLevel').value;
+                    userProfileData.academic.studyOptions = getDynamicValues('study-options-container', 'input.study-option-input');
+                    userProfileData.academic.exams = getDynamicObjects('exam-container', 'select.exam-type', 'input.exam-score', '.exam-name-other');
+                    break;
+                case 'form-deportiva':
+                    userProfileData.athletic.height = parseInt(document.getElementById('athletic-height').value, 10) || 0;
+                    userProfileData.athletic.weight = parseInt(document.getElementById('athletic-weight').value, 10) || 0;
+                    userProfileData.athletic.currentTeam = document.getElementById('athletic-currentTeam').value;
+                    userProfileData.athletic.currentDivision = document.getElementById('athletic-currentDivision').value;
+                    userProfileData.athletic.mainPosition = document.getElementById('athletic-mainPosition').value;
+                    userProfileData.athletic.secondaryPositions = getDynamicValues('secondary-positions-container', 'select.secondary-position-select');
+                    userProfileData.athletic.dominantFoot = document.getElementById('athletic-dominantFoot').value;
+                    userProfileData.athletic.stats.played = parseInt(document.getElementById('stat-played')?.value, 10) || 0;
+                    userProfileData.athletic.stats.goals = parseInt(document.getElementById('stat-goals')?.value, 10) || 0;
+                    userProfileData.athletic.stats.assists = parseInt(document.getElementById('stat-assists')?.value, 10) || 0;
+                    break;
+                case 'form-promocion':
+                    const getCheckedValues = (selector) => {
+                        return Array.from(document.querySelectorAll(selector + ':checked')).map(cb => cb.value);
+                    };
+                    userProfileData.promotion.universityType = getCheckedValues('#proceso-promocion-content input[id^="uni-"]');
+                    userProfileData.promotion.locationType = getCheckedValues('#proceso-promocion-content input[id^="loc-"]');
+                    userProfileData.promotion.sportsDivision = getCheckedValues('#proceso-promocion-content input[id^="div-"]');
+                    userProfileData.promotion.budget = document.getElementById('promotion-budget').value;
+                    userProfileData.promotion.objectives = document.getElementById('promotion-objectives').value;
+                    break;
+            }
+            renderPromotionalProfile();
+       }
+      
+      // --- RENDER & NAVIGATION ---
+      function renderPage(pageId) {
+        const targetId = `${pageId}-content`;
+        const contentDiv = document.getElementById(targetId);
+        if (!contentDiv) return;
+        contentDiv.innerHTML = pages[pageId] || `<p>Contenido no encontrado para ${pageId}.</p>`;
+        
+        if (pageId === 'finanzas') renderFinancialChart();
+        if (pageId === 'perfil') renderPerfilSubPages();
+        if (pageId === 'proceso') {
+            renderPromotionalProfile();
+            populatePromotionForm();
+            renderUniversityInterest();
+        }
+        if (pageId === 'tareas') renderTasks();
+      }
+
+      function renderPerfilSubPages() {
+          document.getElementById('personales-tab-content').innerHTML = perfilSubPages.personales;
+          document.getElementById('academica-tab-content').innerHTML = perfilSubPages.academica;
+          document.getElementById('deportiva-tab-content').innerHTML = perfilSubPages.deportiva;
+          populateProfileForms();
+      }
+
+      function renderPromotionalProfile() {
+        const container = document.getElementById('proceso-perfil-content');
+        if (!container) return;
+        
+        const data = userProfileData;
+        const mainPosData = footballPositions.find(p => p.value === data.athletic.mainPosition) || {coords:{top:'0',left:'0'}, value:''};
+        const mainHighlight = data.media.highlights.find(h => h.isMain) || data.media.highlights[0] || { url: '', name: 'No video selected' };
+        
+        const studyOptionsHTML = data.academic.studyOptions.length > 0
+            ? data.academic.studyOptions.map(option => `<span class="badge bg-secondary me-1">${option}</span>`).join(' ')
+            : 'No especificada';
+        
+        const examsHTML = data.academic.exams.length > 0
+            ? data.academic.exams.map(exam => `<strong>${exam.type}:</strong> ${exam.score}`).join(' | ')
+            : 'No hay exámenes registrados.';
+
+        const secondaryPositionsHTML = data.athletic.secondaryPositions.map(secPosValue => {
+            const posData = footballPositions.find(p => p.value === secPosValue);
+            if (!posData) return '';
+            return `<div class="position-marker secondary" style="top: ${posData.coords.top}; left: ${posData.coords.left};">${posData.value}</div>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="card shadow-sm overflow-hidden profile-promocional">
+                <!-- Header Banner -->
+                <div class="profile-header-banner" style="background-image: url('${data.media.banner}');">
+                </div>
+                
+                <!-- Profile Picture and Main Info -->
+                <div class="card-body position-relative">
+                    <div class="profile-main-info d-flex flex-column flex-md-row align-items-center">
+                        <div class="profile-picture">
+                            <img src="${data.media.profilePicture}" alt="Foto de Perfil de ${data.personal.name}">
+                        </div>
+                        <div class="ms-md-4 mt-3 mt-md-0 text-center text-md-start">
+                            <h2 class="fw-bold mb-0">${data.personal.name} ${data.personal.surname}</h2>
+                            <p class="lead text-eture-red fw-bold mb-1">${data.athletic.currentTeam || 'Sin equipo'} - ${data.athletic.currentDivision || 'Sin división'}</p>
+                            <p class="text-muted mb-1">Estado: <span class="fw-bold text-dark">${data.academic.status}</span></p>
+                            <div>
+                                <p class="text-muted d-inline">Carreras de interés: </p>
+                                <div class="d-inline-block">${studyOptionsHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="row g-3 text-center my-4">
+                        <div class="col-4">
+                            <div class="stat-card p-2 rounded">
+                                <div class="fs-4 fw-bold">${data.athletic.height || 'N/A'}<span class="fs-6 fw-normal">cm</span></div>
+                                <div class="small text-muted">Altura</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card p-2 rounded">
+                                <div class="fs-4 fw-bold">${data.athletic.weight || 'N/A'}<span class="fs-6 fw-normal">kg</span></div>
+                                <div class="small text-muted">Peso</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-card p-2 rounded">
+                                <div class="fs-4 fw-bold">${data.academic.gpa || 'N/A'}</div>
+                                <div class="small text-muted">GPA</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pitch and Video -->
+                    <div class="row g-4 align-items-center mb-4">
+                        <div class="col-lg-7">
+                            <h5 class="fw-bold text-center mb-3">Vídeo de Highlights (${mainHighlight.name})</h5>
+                             <a href="${mainHighlight.url}" target="_blank" class="text-decoration-none">
+                                <div class="video-placeholder rounded" style="background-image: url('${data.media.videoThumbnail}');">
+                                    <div class="play-icon">▶</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-lg-5">
+                            <h5 class="fw-bold text-center mb-3">Posiciones en Campo</h5>
+                                <div class="football-pitch mx-auto" style="max-width: 250px;">
+                                <div class="pitch-marking center-line"></div><div class="pitch-marking center-circle"></div>
+                                <div class="pitch-marking penalty-area-top"></div><div class="pitch-marking penalty-area-bottom"></div>
+                                <div class="pitch-marking goal-area-top"></div><div class="pitch-marking goal-area-bottom"></div>
+                                <div class="position-marker main" style="top: ${mainPosData.coords.top}; left: ${mainPosData.coords.left};">${mainPosData.value}</div>
+                                ${secondaryPositionsHTML}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bottom Tabs -->
+                    <ul class="nav nav-tabs nav-fill" id="promocional-info-tabs" role="tablist">
+                        <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#promo-bio" type="button">Bio</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#promo-academica" type="button">Info. Académica</button></li>
+                        <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#promo-deportiva" type="button">Info. Deportiva</button></li>
+                    </ul>
+                    <div class="tab-content p-3 border border-top-0 rounded-bottom">
+                        <div class="tab-pane fade show active" id="promo-bio" role="tabpanel">
+                            <p class="mb-0 text-muted">Soy un mediapunta creativo y trabajador, con gran visión de juego y capacidad para llegar al área. Mi objetivo es compaginar mi pasión por el fútbol con una educación de primer nivel en Estados Unidos. Estoy listo para aportar mi máximo esfuerzo tanto en el campo como en el aula.</p>
+                        </div>
+                        <div class="tab-pane fade p-3" id="promo-academica" role="tabpanel">
+                             <p class="fw-bold mb-2">Resultados de Exámenes</p>
+                             <p class="small text-muted mb-3">${examsHTML}</p>
+                             <div class="text-center">
+                                <p class="small text-muted mb-2">El historial completo y expedientes están disponibles bajo solicitud.</p>
+                                <button class="btn btn-sm btn-outline-secondary">Solicitar Acceso</button>
+                             </div>
+                        </div>
+                        <div class="tab-pane fade text-center p-4" id="promo-deportiva" role="tabpanel">
+                            <p class="fw-bold mb-2">🔒 Información Deportiva Completa</p>
+                            <p class="small text-muted mb-2">El historial de equipos, estadísticas detalladas y vídeos de partidos completos están disponibles bajo solicitud.</p>
+                            <button class="btn btn-sm btn-outline-secondary">Solicitar Acceso</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center text-muted small">
+                    <p class="mb-0">Esta ficha se actualiza automáticamente con los datos de tu sección "Mi Perfil".</p>
+                </div>
+            </div>`;
+      }
+
+      function renderUniversityInterest() {
+          const container = document.getElementById('university-interest-list');
+          if (!container) return;
+
+          const interestData = userProfileData.universityInterest || [];
+
+          if (interestData.length === 0) {
+              container.innerHTML = `<div class="alert alert-info">Aún no hay universidades que hayan mostrado interés.</div>`;
+              return;
+          }
+          
+          const decisionOptions = ['Pendiente', 'Aceptada', 'Rechazada'];
+
+          container.innerHTML = `
+            <div class="d-none d-md-flex row fw-bold text-muted small mb-2 border-bottom pb-2">
+                <div class="col-md-4">Universidad</div>
+                <div class="col-md-2">Estado</div>
+                <div class="col-md-4">Oferta de Beca</div>
+                <div class="col-md-2">Tu Decisión</div>
+            </div>
+            ${interestData.map(uni => {
+                let offerPercentage = 0;
+                let totalCost = 0;
+                if (uni.offerDetails && Array.isArray(uni.offerDetails.costs) && Array.isArray(uni.offerDetails.scholarships)) {
+                    const { costs, scholarships } = uni.offerDetails;
+                    totalCost = costs.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                    const totalScholarship = scholarships.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+                    if (totalCost > 0) {
+                        offerPercentage = Math.round((totalScholarship / totalCost) * 100);
+                    }
+                }
+                
+                return `
+                <div class="row align-items-center border-bottom py-3">
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <div class="d-flex align-items-center">
+                            <img src="${uni.logo}" alt="${uni.name} Logo" style="width: 40px; height: 40px; object-fit: contain;" class="me-3 rounded-circle bg-light p-1">
+                            <span class="fw-bold">${uni.name}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-2 mb-md-0">
+                        <span class="badge bg-${uni.statusColor}">${uni.status}</span>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        ${totalCost > 0 ? `
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1" style="height: 25px;">
+                                    <div class="progress-bar bg-eture-red fw-bold" role="progressbar" style="width: ${offerPercentage}%;" aria-valuenow="${offerPercentage}" aria-valuemin="0" aria-valuemax="100">${offerPercentage}%</div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary open-scholarship-modal-btn ms-3" data-university-id="${uni.id}">
+                                    Ver Desglose
+                                </button>
+                            </div>
+                        ` : `
+                            <p class="mb-0 text-muted small">Sin oferta registrada</p>
+                        `}
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm university-decision-select" data-university-id="${uni.id}">
+                            ${decisionOptions.map(opt => `<option value="${opt}" ${uni.playerDecision === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                `;
+            }).join('')}
+          `;
+      }
+      
+      function openScholarshipModal(universityId) {
+        const modalEl = document.getElementById('scholarship-modal');
+        if (!modalEl) return;
+
+        const uniData = userProfileData.universityInterest.find(u => u.id === universityId);
+        if (!uniData || !uniData.offerDetails) return;
+        
+        const formatCurrency = (amount) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+
+        const modalTitle = modalEl.querySelector('.modal-title');
+        const modalBody = modalEl.querySelector('.modal-body');
+        const modalFooter = modalEl.querySelector('.modal-footer');
+
+        modalTitle.innerHTML = `Editar Desglose: <span class="fw-normal">${uniData.name}</span>`;
+        
+        function renderForm() {
+            const createRow = (item, type) => `
+                <div class="input-group mb-2" data-type="${type}">
+                    <input type="text" class="form-control item-name" value="${item.name || ''}" placeholder="Nombre del concepto">
+                    <span class="input-group-text">$</span>
+                    <input type="number" class="form-control item-amount" value="${item.amount || 0}" placeholder="0">
+                    <button class="btn btn-outline-danger delete-item-btn" type="button">X</button>
+                </div>`;
+
+            modalBody.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold">Costes Anuales (COA)</div>
+                            <div class="card-body" id="costs-list">
+                                ${uniData.offerDetails.costs.map(item => createRow(item, 'cost')).join('') || '<p class="text-muted small">No hay costes añadidos.</p>'}
+                            </div>
+                            <div class="card-footer"><button class="btn btn-sm btn-outline-primary" id="add-cost-btn">+ Añadir Coste</button></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header fw-bold">Paquete de Beca</div>
+                             <div class="card-body" id="scholarships-list">
+                                ${uniData.offerDetails.scholarships.map(item => createRow(item, 'scholarship')).join('') || '<p class="text-muted small">No hay becas añadidas.</p>'}
+                            </div>
+                            <div class="card-footer"><button class="btn btn-sm btn-outline-primary" id="add-scholarship-btn">+ Añadir Beca</button></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-body bg-light">
+                        <div class="d-flex justify-content-around text-center">
+                            <div><h6 class="fw-normal mb-0">Total COA</h6><p class="fs-5 fw-bold mb-0" id="total-cost-display">$0.00</p></div>
+                            <div><h6 class="fw-normal mb-0">Beca Total</h6><p class="fs-5 fw-bold text-success mb-0" id="total-scholarship-display">$0.00</p></div>
+                            <div><h6 class="fw-normal mb-0">Coste Neto Anual</h6><p class="fs-5 fw-bold text-eture-red mb-0" id="net-cost-display">$0.00</p></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h6 class="fw-bold">Documento de la Beca</h6>
+                    <div class="input-group">
+                        <input type="file" class="form-control" id="scholarship-file-upload">
+                        <button class="btn btn-outline-secondary" type="button" ${!uniData.offerDetails.documentUrl || uniData.offerDetails.documentUrl === '#' ? 'disabled' : ''} onclick="window.open('${uniData.offerDetails.documentUrl}', '_blank')">Ver Documento</button>
+                    </div>
+                    <div class="form-text">Sube el documento oficial de la oferta para tenerlo guardado.</div>
+                </div>
+            `;
+             modalFooter.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="save-scholarship-changes-btn">Guardar Cambios</button>`;
+
+            updateTotals();
+        }
+
+        function updateTotals() {
+            let totalCost = 0;
+            document.querySelectorAll('#costs-list .item-amount').forEach(input => {
+                totalCost += Number(input.value) || 0;
+            });
+
+            let totalScholarship = 0;
+            document.querySelectorAll('#scholarships-list .item-amount').forEach(input => {
+                totalScholarship += Number(input.value) || 0;
+            });
+
+            const netCost = totalCost - totalScholarship;
+
+            document.getElementById('total-cost-display').textContent = formatCurrency(totalCost);
+            document.getElementById('total-scholarship-display').textContent = formatCurrency(totalScholarship);
+            document.getElementById('net-cost-display').textContent = formatCurrency(netCost);
+        }
+
+        function handleAddItem(type) {
+            const listId = type === 'cost' ? 'costs-list' : 'scholarships-list';
+            const list = document.getElementById(listId);
+            if (list.querySelector('p')) list.innerHTML = ''; // Clear placeholder text
+
+            const row = document.createElement('div');
+            row.className = 'input-group mb-2';
+            row.dataset.type = type;
+            row.innerHTML = `
+                <input type="text" class="form-control item-name" placeholder="Nombre del concepto">
+                <span class="input-group-text">$</span>
+                <input type="number" class="form-control item-amount" value="0" placeholder="0">
+                <button class="btn btn-outline-danger delete-item-btn" type="button">X</button>
+            `;
+            list.appendChild(row);
+        }
+        
+        function handleDeleteItem(button) {
+            const row = button.closest('.input-group');
+            row.remove();
+            updateTotals();
+        }
+
+        function saveChanges() {
+            const newCosts = [];
+            document.querySelectorAll('#costs-list .input-group').forEach(row => {
+                newCosts.push({
+                    name: row.querySelector('.item-name').value,
+                    amount: Number(row.querySelector('.item-amount').value) || 0
+                });
+            });
+
+            const newScholarships = [];
+            document.querySelectorAll('#scholarships-list .input-group').forEach(row => {
+                newScholarships.push({
+                    name: row.querySelector('.item-name').value,
+                    amount: Number(row.querySelector('.item-amount').value) || 0
+                });
+            });
+            
+            uniData.offerDetails.costs = newCosts;
+            uniData.offerDetails.scholarships = newScholarships;
+            
+            bootstrap.Modal.getInstance(modalEl).hide();
+            renderUniversityInterest();
+        }
+
+        // Use event delegation on the modal body for dynamic elements
+        modalBody.onclick = function(e) {
+            if (e.target.matches('#add-cost-btn')) handleAddItem('cost');
+            if (e.target.matches('#add-scholarship-btn')) handleAddItem('scholarship');
+            if (e.target.matches('.delete-item-btn')) handleDeleteItem(e.target);
+        };
+         modalBody.oninput = function(e) {
+            if (e.target.matches('.item-amount')) updateTotals();
+        };
+
+        // Handle the save button click separately
+        modalFooter.onclick = function(e) {
+             if (e.target.matches('#save-scholarship-changes-btn')) saveChanges();
+        }
+        
+        renderForm();
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+
+      // --- TASK LIST LOGIC ---
+      function renderTasks() {
+        const container = document.getElementById('task-list-accordion');
+        if (!container) return;
+        
+        let filteredTasks = tasksData;
+
+        // Apply status filter
+        if (currentTaskFilter.status !== 'All') {
+            filteredTasks = filteredTasks.filter(t => t.status === currentTaskFilter.status);
+        }
+
+        // Apply keyword filter
+        if (currentTaskFilter.keyword) {
+            const keyword = currentTaskFilter.keyword.toLowerCase();
+            filteredTasks = filteredTasks.filter(t => 
+                t.title.toLowerCase().includes(keyword) || 
+                t.description.toLowerCase().includes(keyword) ||
+                (t.notes && t.notes.toLowerCase().includes(keyword))
+            );
+        }
+        
+        if (filteredTasks.length === 0) {
+            container.innerHTML = `<div class="alert alert-info">No hay tareas que coincidan con los filtros.</div>`;
+            return;
+        }
+
+        const completedTasks = tasksData.filter(t => t.status === 'Completado').length;
+        const progressPercentage = tasksData.length > 0 ? Math.round((completedTasks / tasksData.length) * 100) : 0;
+        
+        const progressBarContainer = document.getElementById('task-progress-bar-container');
+        if (progressBarContainer) {
+            const progressBar = document.getElementById('task-progress-bar');
+            progressBar.style.width = `${progressPercentage}%`;
+            progressBar.textContent = `${progressPercentage}%`;
+            progressBar.setAttribute('aria-valuenow', progressPercentage);
+        }
+        
+        container.innerHTML = filteredTasks.map(task => {
+             const isCompleted = task.status === 'Completado';
+             const statusColors = { 'Completado': 'success', 'En Progreso': 'warning', 'Pendiente': 'secondary' };
+             const statusColor = statusColors[task.status] || 'secondary';
+
+            return `
+            <div class="accordion-item task-item" id="task-item-${task.id}">
+                <h2 class="accordion-header" id="task-header-${task.id}">
+                    <button class="accordion-button collapsed d-flex gap-3" type="button" data-bs-toggle="collapse" data-bs-target="#task-collapse-${task.id}">
+                        <input class="form-check-input task-complete-checkbox" type="checkbox" ${isCompleted ? 'checked' : ''} data-task-id="${task.id}">
+                        <span class="fw-bold flex-grow-1 ${isCompleted ? 'text-decoration-line-through text-muted' : ''}">${task.title}</span>
+                        <span class="badge bg-${statusColor}">${task.status}</span>
+                    </button>
+                </h2>
+                <div id="task-collapse-${task.id}" class="accordion-collapse collapse" data-bs-parent="#task-list-accordion">
+                    <div class="accordion-body">
+                        <p>${task.description}</p>
+                        <hr>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Notas</label>
+                            <textarea class="form-control form-control-sm task-notes" rows="2" data-task-id="${task.id}" placeholder="Añade tus notas aquí...">${task.notes || ''}</textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                             <div>
+                                <label class="form-label small fw-bold me-2">Estado:</label>
+                                <select class="form-select form-select-sm d-inline-block task-status-select" data-task-id="${task.id}">
+                                    <option value="Pendiente" ${task.status === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                                    <option value="En Progreso" ${task.status === 'En Progreso' ? 'selected' : ''}>En Progreso</option>
+                                    <option value="Completado" ${task.status === 'Completado' ? 'selected' : ''}>Completado</option>
+                                </select>
+                             </div>
+                             <button class="btn btn-sm btn-outline-danger delete-task-btn" data-task-id="${task.id}">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+        setupTaskListeners();
+      }
+
+      function updateTask(id, updates) {
+        const taskIndex = tasksData.findIndex(t => t.id === id);
+        if (taskIndex !== -1) {
+            tasksData[taskIndex] = { ...tasksData[taskIndex], ...updates };
+            renderTasks();
+        }
+      }
+
+      function deleteTask(id) {
+        tasksData = tasksData.filter(t => t.id !== id);
+        renderTasks();
+      }
+      
+      function addTask() {
+        const title = prompt("Introduce el título de la nueva tarea:");
+        if (title) {
+            const newTask = {
+                id: Date.now(),
+                title: title,
+                description: '',
+                status: 'Pendiente',
+                notes: ''
+            };
+            tasksData.unshift(newTask); // Add to the beginning of the list
+            renderTasks();
+        }
+      }
+      
+      function setupTaskListeners() {
+        const container = document.getElementById('task-list-accordion');
+        if (!container) return;
+        
+        container.addEventListener('change', e => {
+            const target = e.target;
+            const taskId = parseInt(target.dataset.taskId, 10);
+            
+            if (target.classList.contains('task-complete-checkbox')) {
+                const newStatus = target.checked ? 'Completado' : 'Pendiente';
+                updateTask(taskId, { status: newStatus });
+            } else if (target.classList.contains('task-status-select')) {
+                updateTask(taskId, { status: target.value });
+            }
+        });
+        
+        container.addEventListener('focusout', e => {
+             if (e.target.classList.contains('task-notes')) {
+                 const taskId = parseInt(e.target.dataset.taskId, 10);
+                 updateTask(taskId, { notes: e.target.value });
+             }
+        });
+
+        container.addEventListener('click', e => {
+            if (e.target.classList.contains('delete-task-btn')) {
+                 if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+                     const taskId = parseInt(e.target.dataset.taskId, 10);
+                     deleteTask(taskId);
+                 }
+            }
+        });
+      }
+
+      function renderFinancialChart() {
+          const ctx = document.getElementById('financial-chart')?.getContext('2d');
+          if (!ctx) return;
+          new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+              labels: ['Pagado', 'Pendiente'],
+              datasets: [{
+                label: 'Estado de Pagos',
+                data: [4000, 6000],
+                backgroundColor: ['#28a745', '#dc3545'],
+                hoverOffset: 4
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Balance Total del Servicio (€)' }
+              }
+            }
+          });
+      }
+      
+      function populatePromotionForm() {
+        const promotionData = userProfileData.promotion;
+        if (!promotionData) return;
+
+        (promotionData.universityType || []).forEach(val => {
+            const el = document.querySelector(`#proceso-promocion-content input[value="${val}"]`);
+            if (el) el.checked = true;
+        });
+        (promotionData.locationType || []).forEach(val => {
+            const el = document.querySelector(`#proceso-promocion-content input[value="${val}"]`);
+            if (el) el.checked = true;
+        });
+        (promotionData.sportsDivision || []).forEach(val => {
+            const el = document.querySelector(`#proceso-promocion-content input[value="${val}"]`);
+            if (el) el.checked = true;
+        });
+        
+        document.getElementById('promotion-budget').value = promotionData.budget || '';
+        document.getElementById('promotion-objectives').value = promotionData.objectives || '';
+      }
+
+      function populateProfileForms() {
+        // Personales
+        document.getElementById('personal-email').value = userProfileData.personal.email;
+        document.getElementById('personal-name').value = userProfileData.personal.name;
+        document.getElementById('personal-surname').value = userProfileData.personal.surname;
+        document.getElementById('personal-birthDate').value = toISODate(userProfileData.personal.birthDate);
+        document.getElementById('personal-passportNumber').value = userProfileData.personal.passportNumber;
+        document.getElementById('personal-passportExpiry').value = toISODate(userProfileData.personal.passportExpiry);
+        
+        const nationalitySelect = document.getElementById('personal-nationality');
+        const countrySelect = document.getElementById('contact-country');
+        const phoneCodeSelect = document.getElementById('contact-phoneCode');
+        
+        countries.forEach(c => {
+            nationalitySelect.innerHTML += `<option value="${c.name}" ${c.name === userProfileData.personal.nationality ? 'selected' : ''}>${c.emoji} ${c.name}</option>`;
+            countrySelect.innerHTML += `<option value="${c.name}" ${c.name === userProfileData.contact.country ? 'selected' : ''}>${c.emoji} ${c.name}</option>`;
+            phoneCodeSelect.innerHTML += `<option value="${c.code}" ${c.code === userProfileData.contact.phoneCode ? 'selected' : ''}>${c.emoji} ${c.name} (${c.code})</option>`;
+        });
+        
+        // Contacto
+        document.getElementById('contact-phoneNumber').value = userProfileData.contact.phoneNumber;
+        document.getElementById('contact-address1').value = userProfileData.contact.address1;
+        document.getElementById('contact-address2').value = userProfileData.contact.address2;
+        document.getElementById('contact-city').value = userProfileData.contact.city;
+        document.getElementById('contact-postalCode').value = userProfileData.contact.postalCode;
+        document.getElementById('contact-province').value = userProfileData.contact.province;
+        
+        // Tutor
+        document.getElementById('parent-name').value = userProfileData.parent.name;
+        document.getElementById('parent-relation').value = userProfileData.parent.relation;
+        document.getElementById('parent-email').value = userProfileData.parent.email;
+        document.getElementById('parent-phone').value = userProfileData.parent.phone;
+        
+        renderSocialLinks();
+        
+        // Academica
+        document.getElementById('academic-status').value = userProfileData.academic.status;
+        document.getElementById('academic-englishLevel').value = userProfileData.academic.englishLevel;
+        renderStudyOptions();
+        renderExams();
+        generateAcademicHistory();
+        
+        // Deportiva
+        document.getElementById('athletic-height').value = userProfileData.athletic.height;
+        document.getElementById('athletic-weight').value = userProfileData.athletic.weight;
+        document.getElementById('athletic-currentTeam').value = userProfileData.athletic.currentTeam;
+        document.getElementById('athletic-currentDivision').value = userProfileData.athletic.currentDivision;
+        document.getElementById('athletic-dominantFoot').value = userProfileData.athletic.dominantFoot;
+
+        const mainPositionSelect = document.getElementById('athletic-mainPosition');
+        footballPositions.forEach(p => mainPositionSelect.innerHTML += `<option value="${p.value}">${p.text}</option>`);
+        mainPositionSelect.value = userProfileData.athletic.mainPosition;
+        
+        renderSecondaryPositions();
+        renderPitchMarkers();
+        renderMultimediaLinks('highlights', userProfileData.media.highlights);
+        renderMultimediaLinks('matches', userProfileData.media.matches);
+        generateTeamHistory();
+        renderStats();
+      }
+      
+      // -- Social & Multimedia handlers
+      function openSocialLinkModalForAdd() {
+          const modalEl = document.getElementById('social-media-modal');
+          const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+          editingSocialLinkIndex = null; // Reset
+          document.getElementById('social-type').value = 'Instagram'; // Reset to default
+          document.getElementById('social-url').value = '';
+          modalEl.querySelector('.modal-title').textContent = 'Añadir Red Social';
+          modal.show();
+      }
+
+      function openSocialLinkModalForEdit(index) {
+          const modalEl = document.getElementById('social-media-modal');
+          const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+          const link = userProfileData.media.social[index];
+
+          if (link) {
+              editingSocialLinkIndex = index;
+              document.getElementById('social-type').value = link.type;
+              document.getElementById('social-url').value = link.url;
+              modalEl.querySelector('.modal-title').textContent = 'Editar Red Social';
+              modal.show();
+          }
+      }
+
+      function renderSocialLinks() {
+          const container = document.getElementById('social-links-container');
+          if (!container) return;
+          const links = userProfileData.media.social || [];
+          if (links.length === 0) {
+              container.innerHTML = `<p class="text-muted small">No hay redes sociales añadidas.</p>`;
+              return;
+          }
+          container.innerHTML = links.map((link, index) => `
+              <div class="input-group mb-2">
+                  <span class="input-group-text" style="width: 120px;">${link.type}</span>
+                   <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="form-control text-truncate d-flex align-items-center text-decoration-none">${link.url}</a>
+                  <button class="btn btn-outline-primary edit-social-link-btn" type="button" data-index="${index}">Editar</button>
+                  <button class="btn btn-outline-danger remove-social-link-btn" type="button" data-index="${index}">Eliminar</button>
+              </div>
+          `).join('');
+      }
+      
+      function removeSocialLink(index) {
+        if (confirm('¿Estás seguro de que quieres eliminar esta red social?')) {
+            userProfileData.media.social.splice(index, 1);
+            renderSocialLinks();
+        }
+      }
+
+      function handleSaveSocialLink() {
+          const type = document.getElementById('social-type').value;
+          const url = document.getElementById('social-url').value;
+          if (url) {
+              if (!userProfileData.media.social) userProfileData.media.social = [];
+              
+              if (editingSocialLinkIndex !== null) {
+                  userProfileData.media.social[editingSocialLinkIndex] = { type, url };
+              } else {
+                  userProfileData.media.social.push({ type, url });
+              }
+              
+              renderSocialLinks();
+              bootstrap.Modal.getInstance(document.getElementById('social-media-modal')).hide();
+              editingSocialLinkIndex = null;
+          }
+      }
+      
+      function openMultimediaModal(element = null, type, label, placeholder) {
+          const modalEl = document.getElementById('multimedia-modal');
+          const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+          
+          editingMultimediaElement = element;
+          
+          const typeInput = modalEl.querySelector('#multimedia-type');
+          const nameLabel = modalEl.querySelector('label[for="multimedia-name"]');
+          const nameInput = modalEl.querySelector('#multimedia-name');
+          const urlInput = modalEl.querySelector('#multimedia-url');
+          
+          if (element) { // Editing existing
+              const dataType = element.dataset.type;
+              const dataIndex = parseInt(element.dataset.index, 10);
+              const item = userProfileData.media[dataType][dataIndex];
+              const currentLabel = dataType === 'highlights' ? 'Nombre del vídeo' : 'Descripción (Rival, color camiseta, dorsal)';
+              
+              typeInput.value = dataType;
+              nameLabel.textContent = currentLabel;
+              nameInput.value = item.name;
+              urlInput.value = item.url;
+              modalEl.querySelector('.modal-title').textContent = 'Editar Multimedia';
+
+          } else { // Adding new
+              typeInput.value = type;
+              nameLabel.textContent = label;
+              nameInput.placeholder = placeholder;
+              nameInput.value = '';
+              urlInput.value = '';
+              modalEl.querySelector('.modal-title').textContent = 'Añadir Multimedia';
+          }
+          
+          modal.show();
+      }
+
+      function handleSaveMultimediaLink() {
+          const type = document.getElementById('multimedia-type').value;
+          const name = document.getElementById('multimedia-name').value;
+          const url = document.getElementById('multimedia-url').value;
+
+          if (!name || !url || !type) return;
+
+          if (editingMultimediaElement) { // Update existing
+              const index = parseInt(editingMultimediaElement.dataset.index, 10);
+              userProfileData.media[type][index] = { ...userProfileData.media[type][index], name, url };
+          } else { // Add new
+              if (!userProfileData.media[type]) userProfileData.media[type] = [];
+              const isMain = type === 'highlights' && userProfileData.media[type].length === 0; // First highlight is main by default
+              userProfileData.media[type].push({ name, url, isMain });
+          }
+
+          renderMultimediaLinks(type, userProfileData.media[type]);
+          bootstrap.Modal.getInstance(document.getElementById('multimedia-modal')).hide();
+          editingMultimediaElement = null;
+          renderPromotionalProfile();
+      }
+
+      function renderMultimediaLinks(type, data) {
+          const container = document.getElementById(`${type}-container`);
+          if (!container) return;
+          
+          if (!data || data.length === 0) {
+              container.innerHTML = `<p class="text-muted small">No hay ${type === 'highlights' ? 'vídeos' : 'partidos'} añadidos.</p>`;
+              return;
+          }
+
+          container.innerHTML = data.map((item, index) => `
+              <div class="input-group mb-2">
+                  <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="form-control d-flex align-items-center text-truncate text-decoration-none" title="${item.url}">${item.name}</a>
+                  ${type === 'highlights' ? `<button class="btn ${item.isMain ? 'btn-success' : 'btn-outline-secondary'} set-main-highlight-btn" type="button" data-index="${index}" title="Marcar como vídeo principal">★</button>` : ''}
+                  <button class="btn btn-outline-primary edit-multimedia-btn" type="button" data-type="${type}" data-index="${index}">Editar</button>
+                  <button class="btn btn-outline-danger remove-multimedia-btn" type="button" data-type="${type}" data-index="${index}">Eliminar</button>
+              </div>
+          `).join('');
+      }
+
+      function removeMultimediaLink(element) {
+          const type = element.dataset.type;
+          const index = parseInt(element.dataset.index, 10);
+          if (confirm(`¿Estás seguro de que quieres eliminar este ${type === 'highlights' ? 'vídeo' : 'partido'}?`)) {
+              const removedItem = userProfileData.media[type].splice(index, 1)[0];
+              if (type === 'highlights' && removedItem.isMain && userProfileData.media.highlights.length > 0) {
+                  userProfileData.media.highlights[0].isMain = true;
+              }
+              renderMultimediaLinks(type, userProfileData.media[type]);
+              renderPromotionalProfile();
+          }
+      }
+
+      function setMainHighlight(element) {
+          const index = parseInt(element.dataset.index, 10);
+          userProfileData.media.highlights.forEach((h, i) => {
+              h.isMain = (i === index);
+          });
+          renderMultimediaLinks('highlights', userProfileData.media.highlights);
+          renderPromotionalProfile();
+      }
+      
+      // -- Academic info handlers
+      function renderStudyOptions() {
+          const container = document.getElementById('study-options-container');
+          if (!container) return;
+          container.innerHTML = ''; // Clear existing before rendering
+          (userProfileData.academic.studyOptions || []).forEach(option => addStudyOption(option));
+      }
+
+      function addStudyOption(value = '') {
+          const container = document.getElementById('study-options-container');
+          if (!container) return;
+          const div = document.createElement('div');
+          div.className = 'input-group mb-2';
+          div.innerHTML = `
+              <input type="text" class="form-control study-option-input" value="${value}" placeholder="Ej: Business Administration">
+              <button class="btn btn-outline-danger remove-study-option-btn" type="button">Eliminar</button>
+          `;
+          container.appendChild(div);
+      }
+
+      function renderExams() {
+          const container = document.getElementById('exam-container');
+          if (!container) return;
+          container.innerHTML = ''; // Clear existing
+          (userProfileData.academic.exams || []).forEach(exam => addExam(exam));
+      }
+
+      function addExam(exam = { type: 'Duolingo', score: ''}) {
+          const container = document.getElementById('exam-container');
+          if (!container) return;
+          const div = document.createElement('div');
+          div.className = 'input-group mb-2';
+          
+          const standardExams = ["Duolingo", "TOEFL", "IELTS", "SAT"];
+          const isOther = !standardExams.includes(exam.type);
+          
+          const optionsHTML = standardExams.map(t => `<option value="${t}" ${t === exam.type ? 'selected' : ''}>${t}</option>`).join('');
+
+          div.innerHTML = `
+              <select class="form-select exam-type" style="flex-basis: 150px; flex-grow: 0;">
+                  ${optionsHTML}
+                  <option value="Otro" ${isOther ? 'selected' : ''}>Otro</option>
+              </select>
+              <input type="text" class="form-control exam-name-other ${isOther ? '' : 'd-none'}" placeholder="Nombre del examen" value="${isOther ? exam.type : ''}">
+              <input type="text" class="form-control exam-score" value="${exam.score}" placeholder="Puntuación">
+              <button class="btn btn-outline-danger remove-exam-btn" type="button">Eliminar</button>
+          `;
+          container.appendChild(div);
+      }
+
+      function generateAcademicHistory() {
+          const container = document.getElementById('academic-history-container');
+          if (!container) return;
+
+          const birthDateStr = userProfileData.personal.birthDate;
+          if (!birthDateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateStr)) {
+              container.innerHTML = `<div class="alert alert-info">Por favor, introduce tu fecha de nacimiento en "Datos Personales" para generar tu historial académico.</div>`;
+              return;
+          }
+
+          const birthYear = parseInt(birthDateStr.split('/')[2], 10);
+          const currentYear = new Date().getFullYear();
+          
+          if ((currentYear - birthYear) < 14) {
+              container.innerHTML = `<div class="alert alert-warning">El historial académico se genera para mayores de 14 años.</div>`;
+              return;
+          }
+
+          container.innerHTML = ''; // Clear previous content
+          
+          const defaults = [
+              { level: 'ESO', course: '3' },
+              { level: 'ESO', course: '4' },
+              { level: 'Bachillerato', course: '1' },
+              { level: 'Bachillerato', course: '2' }
+          ];
+          
+          const currentAcademicYearStart = (new Date().getMonth() < 8) ? currentYear - 1 : currentYear;
+          const firstAcademicYearStart = birthYear + 14;
+          
+          let academicYearIndex = 0;
+          for (let yearStart = firstAcademicYearStart; yearStart <= currentAcademicYearStart; yearStart++) {
+              const yearEnd = yearStart + 1;
+              const season = `${yearStart}-${yearEnd}`;
+              const currentDefault = defaults[academicYearIndex] || null;
+              
+              const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+              const monthOptions = months.map(m => `<option>${m}</option>`).join('');
+
+              const cardHTML = `
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">${season}</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Nivel Educativo</label>
+                                <select class="form-select academic-level-select">
+                                    <option ${!currentDefault ? 'selected' : ''} disabled>Selecciona...</option>
+                                    <option ${currentDefault?.level === 'ESO' ? 'selected' : ''}>ESO</option>
+                                    <option ${currentDefault?.level === 'Bachillerato' ? 'selected' : ''}>Bachillerato</option>
+                                    <option>Grado Medio</option>
+                                    <option>Grado Superior</option>
+                                    <option>Universidad</option>
+                                    <option>No estudié/Otro</option>
+                                </select>
+                            </div>
+                            <!-- These three swap places -->
+                            <div class="col-md-3 course-details">
+                                <label class="form-label">Curso</label>
+                                <select class="form-select academic-course-select">
+                                    <option ${currentDefault?.course === '1' ? 'selected' : ''}>1</option>
+                                    <option ${currentDefault?.course === '2' ? 'selected' : ''}>2</option>
+                                    <option ${currentDefault?.course === '3' ? 'selected' : ''}>3</option>
+                                    <option ${currentDefault?.course === '4' ? 'selected' : ''}>4</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 university-details d-none">
+                                <label class="form-label">Créditos aprobados/matriculados</label>
+                                <input type="number" class="form-control" placeholder="Ej: 60">
+                            </div>
+                            
+                            <!-- These two are conditional on NOT being 'No estudie' -->
+                            <div class="col-md-2 gpa-details">
+                                <label class="form-label">Nota Media</label>
+                                <input type="number" step="0.01" class="form-control" placeholder="Ej: 3.8">
+                            </div>
+                            <div class="col-md-3 file-details">
+                                <label class="form-label">Adjuntar Notas</label>
+                                <input type="file" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- This appears on a new row when selected -->
+                        <div class="row g-3 mt-1">
+                            <div class="col-12 other-details d-none">
+                                 <label class="form-label">¿Qué hiciste ese curso académico?</label>
+                                 <textarea class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- This is also conditional on NOT being 'No estudie' -->
+                        <div class="graduation-wrapper mt-3">
+                            <div class="form-check">
+                                <input class="form-check-input graduation-check" type="checkbox" id="graduated-check-${yearEnd}">
+                                <label class="form-check-label" for="graduated-check-${yearEnd}">
+                                    Marcar si te graduaste este año
+                                </label>
+                            </div>
+                            <div class="row g-2 mt-2 d-none graduation-details" id="graduation-details-${yearEnd}">
+                                <div class="col-md-6">
+                                    <label class="form-label small">Mes de Graduación</label>
+                                    <select class="form-select form-select-sm">${monthOptions}</select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small">Año de Graduación</label>
+                                    <input type="number" class="form-control form-control-sm" value="${yearEnd}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+              container.insertAdjacentHTML('beforeend', cardHTML);
+              academicYearIndex++;
+          }
+          // After rendering, trigger change event for pre-selected dropdowns to show/hide correct fields
+          container.querySelectorAll('.academic-level-select').forEach(select => {
+            if (select.value && select.value !== 'Selecciona...') {
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          });
+      }
+
+      // -- Athletic info handlers
+      function renderSecondaryPositions() {
+          const container = document.getElementById('secondary-positions-container');
+          if (!container) return;
+          container.innerHTML = ''; // Clear existing
+          (userProfileData.athletic.secondaryPositions || []).forEach(pos => addSecondaryPosition(pos));
+      }
+
+      function addSecondaryPosition(value = '') {
+          const container = document.getElementById('secondary-positions-container');
+          if (!container) return;
+          const div = document.createElement('div');
+          div.className = 'input-group mb-2';
+          const options = footballPositions.map(p => `<option value="${p.value}" ${p.value === value ? 'selected' : ''}>${p.text}</option>`).join('');
+          div.innerHTML = `
+              <select class="form-select secondary-position-select">${options}</select>
+              <button class="btn btn-outline-danger remove-secondary-pos-btn" type="button">Eliminar</button>
+          `;
+          container.appendChild(div);
+      }
+
+      function renderPitchMarkers() {
+          const container = document.getElementById('pitch-markers-container');
+          if (!container) return;
+          
+          container.innerHTML = '';
+          
+          const mainPosValue = document.getElementById('athletic-mainPosition')?.value;
+          const secondaryPosValues = Array.from(document.querySelectorAll('.secondary-position-select')).map(s => s.value);
+          
+          const mainPosData = footballPositions.find(p => p.value === mainPosValue);
+          if (mainPosData) {
+              container.innerHTML += `<div class="position-marker main" style="top: ${mainPosData.coords.top}; left: ${mainPosData.coords.left};">${mainPosData.value}</div>`;
+          }
+          
+          secondaryPosValues.forEach(secPosValue => {
+              if (secPosValue === mainPosValue) return;
+              const posData = footballPositions.find(p => p.value === secPosValue);
+              if (posData) {
+                  container.innerHTML += `<div class="position-marker secondary" style="top: ${posData.coords.top}; left: ${posData.coords.left};">${posData.value}</div>`;
+              }
+          });
+      }
+      
+      function generateTeamHistory() {
+          const container = document.getElementById('team-history-container');
+          if (!container) return;
+
+          const birthDateStr = userProfileData.personal.birthDate;
+          if (!birthDateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateStr)) {
+              container.innerHTML = `<div class="alert alert-warning">Introduce una fecha de nacimiento válida en "Datos Personales" para generar tu historial de equipos.</div>`;
+              return;
+          }
+          
+          const birthDateParts = birthDateStr.split('/');
+          const birthDate = new Date(parseInt(birthDateParts[2]), parseInt(birthDateParts[1]) - 1, parseInt(birthDateParts[0]));
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+          }
+          
+          if (age < 14) {
+              container.innerHTML = `<div class="alert alert-info">El historial de equipos se genera a partir de los 14 años.</div>`;
+              return;
+          }
+
+          const seasons = [];
+          for (let i = age; i >= 14; i--) {
+              const yearEnd = today.getFullYear() - (age - i);
+              const yearStart = yearEnd - 1;
+              seasons.push({ season: `${yearStart}-${yearEnd}`, age: i });
+          }
+
+          container.innerHTML = `
+              <div class="row g-3 fw-bold text-muted d-none d-md-flex mb-2">
+                  <div class="col-md-2">Temporada (Edad)</div>
+                  <div class="col-md-3">Nombre del Club</div>
+                  <div class="col-md-3">División / Categoría</div>
+                  <div class="col-md-1 text-center">PJ</div>
+                  <div class="col-md-1 text-center">Goles</div>
+                  <div class="col-md-2 text-center">Asistencias</div>
+              </div>
+              ${seasons.map(({season, age}) => `
+                  <div class="row g-2 mb-2 align-items-center">
+                      <div class="col-md-2"><label class="form-label d-md-none">Temporada (Edad)</label><input type="text" class="form-control" value="${season} (${age} años)" readonly></div>
+                      <div class="col-md-3"><label class="form-label d-md-none">Club</label><input type="text" class="form-control" placeholder="Nombre del club"></div>
+                      <div class="col-md-3"><label class="form-label d-md-none">División</label><input type="text" class="form-control" placeholder="Categoría"></div>
+                      <div class="col-md-1"><label class="form-label d-md-none">PJ</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                      <div class="col-md-1"><label class="form-label d-md-none">Goles</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                      <div class="col-md-2"><label class="form-label d-md-none">Asistencias</label><input type="number" class="form-control text-center" placeholder="0"></div>
+                  </div>
+              `).join('')}`;
+      }
+
+      function renderStats() {
+          const container = document.getElementById('stats-container');
+          if (!container) return;
+          const stats = userProfileData.athletic.stats || {};
+          container.innerHTML = `
+              <div class="col-4"><label class="form-label">Partidos Jugados</label><input type="number" class="form-control" id="stat-played" value="${stats.played || ''}"></div>
+              <div class="col-4"><label class="form-label">Goles</label><input type="number" class="form-control" id="stat-goals" value="${stats.goals || ''}"></div>
+              <div class="col-4"><label class="form-label">Asistencias</label><input type="number" class="form-control" id="stat-assists" value="${stats.assists || ''}"></div>
+          `;
+      }
+      
+      // --- INITIALIZATION ---
+      function initApp() {
+        // Auth logic
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterBtn = document.getElementById('show-register');
+        const showLoginBtn = document.getElementById('show-login');
+        const logoutBtn = document.getElementById('logout-button');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('auth-container').classList.add('d-none');
+            document.getElementById('app-container').classList.remove('d-none');
+            renderPage('inicio');
+        });
+        registerForm.addEventListener('submit', (e) => { e.preventDefault(); alert("¡Registro exitoso! Por favor, inicia sesión."); showLoginBtn.click(); });
+        showRegisterBtn.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('login-view').classList.add('d-none'); document.getElementById('register-view').classList.remove('d-none'); });
+        showLoginBtn.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('register-view').classList.add('d-none'); document.getElementById('login-view').classList.remove('d-none'); });
+        logoutBtn.addEventListener('click', () => { location.reload(); });
+
+        // Main navigation
+        document.getElementById('main-nav').addEventListener('show.bs.tab', (event) => {
+            const pageId = event.target.getAttribute('href').substring(1);
+            renderPage(pageId);
+        });
+        
+        // --- CENTRALIZED DELEGATED EVENT LISTENERS ---
+        const mainContent = document.getElementById('main-content');
+        
+        mainContent.addEventListener('click', e => {
+            const target = e.target;
+            const button = target.closest('button');
+
+            // --- MI PERFIL ---
+            if (target.closest('#perfil-content')) {
+                if (!button) return; // Only interested in button clicks within profile
+                
+                // ADD BUTTONS
+                if (button.id === 'add-social-link-btn') openSocialLinkModalForAdd();
+                if (button.id === 'add-study-option-btn') addStudyOption();
+                if (button.id === 'add-exam-btn') addExam();
+                if (button.id === 'add-secondary-pos-btn') addSecondaryPosition();
+                if (button.id === 'add-highlights-btn') openMultimediaModal(null, 'highlights', 'Nombre del vídeo', 'Highlights 2024');
+                if (button.id === 'add-match-btn') openMultimediaModal(null, 'matches', 'Descripción (Rival, color camiseta, dorsal)', 'vs Equipo X - Blanco #10');
+
+                // EDIT/REMOVE/SET-MAIN BUTTONS
+                if (button.classList.contains('edit-social-link-btn')) openSocialLinkModalForEdit(parseInt(button.dataset.index, 10));
+                if (button.classList.contains('remove-social-link-btn')) removeSocialLink(parseInt(button.dataset.index, 10));
+                if (button.classList.contains('edit-multimedia-btn')) openMultimediaModal(button);
+                if (button.classList.contains('remove-multimedia-btn')) removeMultimediaLink(button);
+                if (button.classList.contains('set-main-highlight-btn')) setMainHighlight(button);
+                
+                // SIMPLE REMOVE BUTTONS
+                if (button.classList.contains('remove-study-option-btn')) { button.closest('.input-group')?.remove(); }
+                if (button.classList.contains('remove-exam-btn')) { button.closest('.input-group')?.remove(); }
+                if (button.classList.contains('remove-secondary-pos-btn')) { button.closest('.input-group')?.remove(); renderPitchMarkers(); }
+
+                // SAVE PROFILE
+                if (button.classList.contains('save-profile-btn')) {
+                    const formId = button.dataset.form;
+                    saveProfileData(formId);
+                    const statusEl = button.parentElement.querySelector('.save-status');
+                    if (statusEl) {
+                        statusEl.textContent = "¡Guardado!";
+                        setTimeout(() => { statusEl.textContent = ""; }, 2000);
+                    }
+                }
+            }
+
+            // --- MI PROCESO ---
+            if (target.closest('#proceso-content')) {
+                const overviewLink = target.closest('.list-group-item[data-target-tab]');
+                if (overviewLink) {
+                    e.preventDefault();
+                    const targetTabId = overviewLink.dataset.targetTab;
+                    const targetTabButton = document.querySelector(`button[data-bs-target="#${targetTabId}"]`);
+                    if(targetTabButton) new bootstrap.Tab(targetTabButton).show();
+                }
+            }
+        });
+
+        mainContent.addEventListener('change', e => {
+            const target = e.target;
+            
+            // --- MI PERFIL ---
+             if (target.closest('#perfil-content')) {
+                if (target.matches('#athletic-mainPosition, .secondary-position-select')) renderPitchMarkers();
+                
+                if (target.id === 'personal-birthDate') {
+                    userProfileData.personal.birthDate = toSpanishDate(target.value);
+                    generateAcademicHistory();
+                    generateTeamHistory();
+                }
+                
+                if (target.classList.contains('graduation-check')) {
+                    const detailsDiv = target.closest('.graduation-wrapper').querySelector('.graduation-details');
+                    if (detailsDiv) detailsDiv.classList.toggle('d-none', !target.checked);
+                }
+
+                if (target.classList.contains('academic-level-select')) {
+                    const cardBody = target.closest('.card-body');
+                    cardBody.querySelector('.course-details')?.classList.toggle('d-none', target.value === 'Universidad' || target.value === 'No estudié/Otro');
+                    cardBody.querySelector('.university-details')?.classList.toggle('d-none', target.value !== 'Universidad');
+                    cardBody.querySelector('.other-details')?.classList.toggle('d-none', target.value !== 'No estudié/Otro');
+                    const showGpaAndFile = target.value !== 'No estudié/Otro';
+                    cardBody.querySelector('.gpa-details')?.classList.toggle('d-none', !showGpaAndFile);
+                    cardBody.querySelector('.file-details')?.classList.toggle('d-none', !showGpaAndFile);
+                    cardBody.querySelector('.graduation-wrapper')?.classList.toggle('d-none', !showGpaAndFile);
+                }
+
+                if (target.classList.contains('exam-type')) {
+                    const otherNameInput = target.closest('.input-group').querySelector('.exam-name-other');
+                    if (otherNameInput) otherNameInput.classList.toggle('d-none', target.value !== 'Otro');
+                }
+             }
+        });
+
+
+        // Listeners for elements outside the main content area (modals, global buttons)
+        document.getElementById('save-social-link').addEventListener('click', handleSaveSocialLink);
+        document.getElementById('save-multimedia-link').addEventListener('click', handleSaveMultimediaLink);
+        
+        document.body.addEventListener('click', e => {
+            if (e.target.matches('.open-scholarship-modal-btn')) {
+                openScholarshipModal(e.target.dataset.universityId);
+            }
+             if (e.target.matches('#add-task-btn')) {
+                addTask();
+            }
+        });
+
+        document.body.addEventListener('change', e => {
+            if (e.target.matches('.university-decision-select')) {
+                const uniId = e.target.dataset.universityId;
+                const decision = e.target.value;
+                const uni = userProfileData.universityInterest.find(u => u.id === uniId);
+                if (uni) uni.playerDecision = decision;
+            }
+        });
+        
+        // Task filter listeners
+        document.getElementById('task-status-filter')?.addEventListener('click', e => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('#task-status-filter button').forEach(btn => {
+                    btn.classList.remove('btn-eture-red');
+                    btn.classList.add('btn-outline-secondary');
+                });
+                e.target.classList.add('btn-eture-red');
+                e.target.classList.remove('btn-outline-secondary');
+                currentTaskFilter.status = e.target.dataset.status;
+                renderTasks();
+            }
+        });
+        document.getElementById('task-keyword-filter')?.addEventListener('input', e => {
+            currentTaskFilter.keyword = e.target.value;
+            renderTasks();
+        });
+
+      }
+      
+      // Auto-run on script load
+      if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initApp);
+      } else {
+          initApp();
+      }
+
+    </script>
+</body>
+</html>
