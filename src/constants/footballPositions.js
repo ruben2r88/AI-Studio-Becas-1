@@ -11,7 +11,7 @@ export const footballPositions = [
 
   { value: 'CDM', text: 'Mediocentro Defensivo',coords: { top: '62%', left: '50%' } },
   { value: 'RM',  text: 'Interior Derecho',     coords: { top: '48%', left: '75%' } },
-  { value: 'CM',  text: 'Centrocampista',       coords: { top: '48%', left: '50%' } },
+  { value: 'CM',  text: 'Mediocentro',          coords: { top: '48%', left: '50%' } },
   { value: 'LM',  text: 'Interior Izquierdo',   coords: { top: '48%', left: '25%' } },
 
   { value: 'RW',  text: 'Extremo Derecho',      coords: { top: '26%', left: '85%' } },
