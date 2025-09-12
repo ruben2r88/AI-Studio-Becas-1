@@ -1,0 +1,160 @@
+
+      <div class="fade-in">
+          <h1 class="h2 fw-bold mb-2">Mi Proceso</h1>
+          <p class="text-muted mb-4">Sigue cada paso de tu camino hacia una beca en EE.UU.</p>
+          
+          <ul class="nav nav-tabs mb-4" id="proceso-nav" role="tablist">
+              <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#proceso-overview-content" type="button" role="tab">Overview</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-perfil-content" type="button" role="tab">Mi Perfil Promocional</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-promocion-content" type="button" role="tab">Mi Promoción</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-universidad-content" type="button" role="tab">Mi Universidad</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-evaluacion-content" type="button" role="tab">Mi Evaluación</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-liga-content" type="button" role="tab">Mi Liga</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-visa-content" type="button" role="tab">Mi Visa</button></li>
+              <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#proceso-viaje-content" type="button" role="tab">Mi Viaje</button></li>
+          </ul>
+          <div class="tab-content" id="proceso-tab-content">
+              <div class="tab-pane fade show active" id="proceso-overview-content" role="tabpanel">
+                  <div class="card shadow-sm">
+                      <div class="card-body">
+                          <h3 class="fw-bold text-eture-red mb-3">Estado Actual: Fase 1 - Creación de Perfil</h3>
+                          <p class="lead mb-4">Navega por cada etapa para completar tu camino hacia una beca deportiva en EE.UU. Utiliza los siguientes accesos directos para ir a cada fase del proceso.</p>
+                          <!-- KPIs dinámicos -->
+                            <div class="row g-3 mb-4" id="proceso-kpis"></div>
+
+                            <!-- Lista dinámica de pasos -->
+                            <div class="card mt-3">
+                            <div class="card-header fw-bold">Mi Proceso</div>
+                            <div class="list-group list-group-flush" id="proceso-steps-list"></div>
+                            </div>
+                          <div class="list-group">
+                              <a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-target-tab="proceso-perfil-content">
+                                  <div>
+                                      <h6 class="mb-1 fw-bold">1. Mi Perfil Promocional</h6>
+                                      <small>Visualiza la ficha que verán los entrenadores.</small>
+                                  </div>
+                                  <span class="badge bg-primary rounded-pill">Ver Ficha →</span>
+                              </a>
+                              <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-promocion-content">2. Mi Promoción</a>
+                              <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-universidad-content">3. Mi Universidad</a>
+                              <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-evaluacion-content">4. Mi Evaluación</a>
+                              <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-liga-content">5. Mi Liga</a>
+                              <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-visa-content">6. Mi Visa</a>
+                              <a href="#" class="list-group-item list-group-item-action" data-target-tab="proceso-viaje-content">7. Mi Viaje</a>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="card mt-3">
+                    <div class="card-header fw-bold">Mi Proceso</div>
+                    <div class="list-group list-group-flush" id="proceso-steps-list"></div>
+                    </div>
+              </div>
+              <div class="tab-pane fade" id="proceso-perfil-content" role="tabpanel">
+                  </div>
+              <div class="tab-pane fade" id="proceso-promocion-content" role="tabpanel">
+                  <form class="card" id="form-promocion">
+                      <div class="card-body">
+                          <h3 class="fw-bold">Mis Prioridades Universitarias</h3>
+                          <p class="text-muted mb-4">Define tus preferencias para que podamos encontrar las mejores opciones para ti.</p>
+                          <div class="mb-4">
+                              <h5 class="fw-bold">Tipo de Universidad</h5>
+                              <div class="d-flex flex-wrap gap-3">
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Pública" id="uni-publica"><label class="form-check-label" for="uni-publica">Pública</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Privada" id="uni-privada"><label class="form-check-label" for="uni-privada">Privada</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Grande" id="uni-grande"><label class="form-check-label" for="uni-grande">Grande (+15,000)</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Mediana" id="uni-mediana"><label class="form-check-label" for="uni-mediana">Mediana (5,000-15,000)</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Pequeña" id="uni-pequena"><label class="form-check-label" for="uni-pequena">Pequeña (-5,000)</label></div>
+                              </div>
+                          </div>
+                          <div class="mb-4">
+                              <h5 class="fw-bold">Ubicación y Entorno</h5>
+                              <div class="d-flex flex-wrap gap-3">
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Urbano" id="loc-urbano"><label class="form-check-label" for="loc-urbano">Campus Urbano</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Suburbano" id="loc-suburbano"><label class="form-check-label" for="loc-suburbano">Campus Suburbano</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Rural" id="loc-rural"><label class="form-check-label" for="loc-rural">Campus Rural</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Costa Este" id="loc-este"><label class="form-check-label" for="loc-este">Costa Este</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Costa Oeste" id="loc-oeste"><label class="form-check-label" for="loc-oeste">Costa Oeste</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Medio Oeste" id="loc-mediooeste"><label class="form-check-label" for="loc-mediooeste">Medio Oeste</label></div>
+                                  <div class="form-check"><input class="form-check-input" type="checkbox" value="Sur" id="loc-sur"><label class="form-check-label" for="loc-sur">Sur</label></div>
+                              </div>
+                          </div>
+                          <div class="mb-4">
+                              <h5 class="fw-bold">Nivel Deportivo y Beca</h5>
+                              <div class="d-flex flex-wrap gap-3">
+                                   <div class="form-check"><input class="form-check-input" type="checkbox" value="NCAA D1" id="div-ncaa1"><label class="form-check-label" for="div-ncaa1">NCAA D1</label></div>
+                                   <div class="form-check"><input class="form-check-input" type="checkbox" value="NCAA D2" id="div-ncaa2"><label class="form-check-label" for="div-ncaa2">NCAA D2</label></div>
+                                   <div class="form-check"><input class="form-check-input" type="checkbox" value="NCAA D3" id="div-ncaa3"><label class="form-check-label" for="div-ncaa3">NCAA D3</label></div>
+                                   <div class="form-check"><input class="form-check-input" type="checkbox" value="NAIA" id="div-naia"><label class="form-check-label" for="div-naia">NAIA</label></div>
+                                   <div class="form-check"><input class="form-check-input" type="checkbox" value="NJCAA" id="div-njcaa"><label class="form-check-label" for="div-njcaa">NJCAA (Junior College)</label></div>
+                              </div>
+                          </div>
+                          <div class="row g-3">
+                              <div class="col-md-6 mb-4">
+                                  <h5 class="fw-bold">Inversión Económica</h5>
+                                  <label for="promotion-budget" class="form-label">Presupuesto máximo anual (USD)</label>
+                                  <input type="number" class="form-control" id="promotion-budget" placeholder="Ej: 25000">
+                              </div>
+                              <div class="col-md-6 mb-4">
+                                  <h5 class="fw-bold">Mis Objetivos</h5>
+                                  <label for="promotion-objectives" class="form-label">Describe tus metas y preferencias</label>
+                                  <textarea class="form-control" id="promotion-objectives" rows="3" placeholder="Busco un programa académico fuerte en 'Business' y un equipo de fútbol competitivo..."></textarea>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="card-footer text-end bg-light">
+                          <span class="save-status me-3 text-success fw-bold"></span>
+                          <button type="button" class="btn btn-eture-red fw-bold save-profile-btn" data-form="form-promocion">Guardar Cambios</button>
+                      </div>
+                  </form>
+                  
+                  <!-- REEMPLAZA SOLO ESTE BLOQUE (la card de Interés de Universidades) -->
+                <div class="card mt-4" id="university-interest-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="fw-bold mb-0">Interés de Universidades</h3>
+                        <button type="button" class="btn btn-sm btn-eture-red fw-bold add-university-btn">
+                            + Añadir Universidad
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Aquí puedes ver y gestionar las universidades que han mostrado interés en tu perfil.</p>
+                        <div id="university-interest-list"></div>
+                    </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="proceso-universidad-content" role="tabpanel">
+                   <div class="card"><div class="card-body">
+                      <h3 class="fw-bold">Mi Universidad</h3>
+                      <p class="text-muted">Sigue el estado de las aplicaciones, ofertas y comunicaciones con las universidades.</p>
+                      <hr><p>En construcción.</p>
+                   </div></div>
+              </div>
+               <div class="tab-pane fade" id="proceso-evaluacion-content" role="tabpanel">
+                   <div class="card"><div class="card-body">
+                      <h3 class="fw-bold">Mi Evaluación</h3>
+                      <p class="text-muted">Accede a las evaluaciones de nuestros expertos sobre tu perfil y potencial.</p>
+                      <hr><p>En construcción.</p>
+                   </div></div>
+              </div>
+              <div class="tab-pane fade" id="proceso-liga-content" role="tabpanel">
+                   <div class="card"><div class="card-body">
+                      <h3 class="fw-bold">Mi Liga</h3>
+                      <p class="text-muted">Completa los procesos de registro y elegibilidad para las ligas universitarias (NCAA, NAIA).</p>
+                      <hr><p>En construcción.</p>
+                   </div></div>
+              </div>
+              <div class="tab-pane fade" id="proceso-visa-content" role="tabpanel">
+                   <div class="card"><div class="card-body">
+                      <h3 class="fw-bold">Mi Visa</h3>
+                      <p class="text-muted">Guía y seguimiento de los pasos necesarios para obtener tu visado de estudiante F-1.</p>
+                      <hr><p>En construcción.</p>
+                   </div></div>
+              </div>
+              <div class="tab-pane fade" id="proceso-viaje-content" role="tabpanel">
+                   <div class="card"><div class="card-body">
+                      <h3 class="fw-bold">Mi Viaje</h3>
+                      <p class="text-muted">Organiza los detalles finales de tu viaje e instalación en Estados Unidos.</p>
+                      <hr><p>En construcción.</p>
+                   </div></div>
+              </div>
+          </div>
+      </div>`

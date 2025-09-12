@@ -1,0 +1,81 @@
+<div class="fade-in">
+
+  <!-- Barra superior: filtros + botón crear -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <div id="task-status-filter" class="btn-group">
+      <button type="button" class="btn btn-eture-red" data-status="All">Todas</button>
+      <button type="button" class="btn btn-outline-secondary" data-status="Pendiente">Pendientes</button>
+      <button type="button" class="btn btn-outline-secondary" data-status="En Progreso">En Progreso</button>
+      <button type="button" class="btn btn-outline-secondary" data-status="Completado">Completadas</button>
+    </div>
+
+    <div class="d-flex gap-2">
+      <input id="task-keyword-filter" type="search" class="form-control" placeholder="Buscar por palabra clave…">
+      <button id="add-task-btn" class="btn btn-danger px-4" style="white-space:nowrap;">
+        Nueva tarea
+      </button>
+    </div>
+  </div>
+
+  <!-- Progreso -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <label for="task-progress-bar" class="form-label fw-bold">Progreso General</label>
+      <div class="progress" style="height: 20px;">
+        <div id="task-progress-bar"
+             class="progress-bar bg-eture-red"
+             role="progressbar"
+             style="width: 0%;"
+             aria-valuenow="0"
+             aria-valuemin="0"
+             aria-valuemax="100">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de tareas -->
+  <div class="accordion" id="task-list-accordion"></div>
+</div>
+
+<!-- Modal: Nueva / Editar tarea -->
+<div class="modal fade" id="task-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="task-form">
+      <div class="modal-header">
+        <h5 class="modal-title">Nueva tarea</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Título *</label>
+          <input type="text" class="form-control" id="task-title-input" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Descripción</label>
+          <textarea class="form-control" id="task-desc-input" rows="3"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Notas</label>
+          <textarea class="form-control" id="task-notes-input" rows="2"></textarea>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="task-status-input">
+            <option value="Pendiente">Pendiente</option>
+            <option value="En Progreso">En Progreso</option>
+            <option value="Completado">Completado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-eture-red">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>

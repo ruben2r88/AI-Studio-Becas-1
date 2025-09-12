@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Carpeta de cada usuario
+    match /users/{uid}/docs/{file=**} {
+      // Ver y descargar
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Subir/actualizar
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // Borrar (separado a propósito: en delete no existe request.resource)
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

@@ -1,0 +1,26 @@
+<div class="card" id="docs-card">
+  <div class="card-header fw-bold">Subir documento</div>
+  <div class="card-body">
+    <div class="row g-2 align-items-center">
+      <div class="col-md-8">
+        <input id="doc-file-input" type="file" class="form-control" />
+      </div>
+      <div class="col-md-4 d-grid">
+        <button id="doc-upload-btn" class="btn btn-eture-red fw-bold">Subir</button>
+      </div>
+    </div>
+
+    <div class="progress mt-3 d-none" id="doc-progress-wrap" style="height: 22px;">
+      <div id="doc-upload-progress" class="progress-bar" role="progressbar" style="width:0%">0%</div>
+    </div>
+
+    <div class="form-text mt-2">
+      Formatos habituales: PDF, JPG/PNG (expedientes, pasaporte, etc.)
+    </div>
+  </div>
+
+  <div class="card-header fw-bold">Mis archivos</div>
+  <div class="card-body">
+    <div id="docs-list"></div>
+  </div>
+</div>

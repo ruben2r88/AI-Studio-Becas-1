@@ -1,0 +1,10 @@
+{
+  "buckets": [
+    {
+      "id": "eture-app-dev.firebasestorage.app"
+    },
+    {
+      "id": "eture-app-dev.appspot.com"
+    }
+  ]
+}

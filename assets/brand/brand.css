@@ -1,0 +1,115 @@
+/* assets/brand/brand.css */
+
+/* === 1) @font-face (rutas relativas a ESTE archivo) === */
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins/Poppins-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins/Poppins-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins/Poppins-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins/Poppins-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+@font-face {
+  font-family: "Neue Power";
+  src: url("../fonts/neue-power/NeuePower-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Neue Power";
+  src: url("../fonts/neue-power/NeuePower-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Neue Power";
+  src: url("../fonts/neue-power/NeuePower-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+/* === 2) Paleta eTure === */
+:root {
+  --brand-white: #F3F4F5;   /* Lucent White */
+  --brand-red:   #9C231F;   /* P 49-16 C */
+  --brand-gray:  #BFBFC0;   /* P 179-4 C */
+  --brand-black: #2D2A29;   /* P 179-16 C */
+
+  /* Alias para lo que ya usa tu app (no rompas nada): */
+  --eture-red: var(--brand-red);
+  --sidebar-bg: var(--brand-red);
+  --sidebar-tint: linear-gradient(180deg, #9C231F 0%, #7b1a17 100%);
+  --muted: #6c757d;
+  --bg-body: var(--brand-white);
+  --card-bg: #ffffff;
+}
+
+/* === 3) Tipografías globales === */
+html, body {
+  font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--brand-black);
+  background: var(--bg-body);
+}
+
+/* Títulos con Neue Power */
+h1, h2, h3, .display-1, .display-2, .display-3, .display-4 {
+  font-family: "Neue Power", "Poppins", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* === 4) Botones y acentos rojos eTure === */
+.btn-eture-red {
+  --bs-btn-bg: var(--brand-red);
+  --bs-btn-border-color: var(--brand-red);
+  --bs-btn-hover-bg: #7b1a17;
+  --bs-btn-hover-border-color: #7b1a17;
+  --bs-btn-color: #fff;
+  --bs-btn-hover-color: #fff;
+}
+
+/* Sidebar, si usas un menú lateral */
+.sidebar {
+  background: var(--sidebar-tint);
+  color: #fff;
+}
+.sidebar .nav-link.active,
+.sidebar .nav-link:hover { color: #fff; }
+
+/* Logos: tamaños recomendados */
+.brand-logo {
+  height: auto;
+  max-width: 180px;      /* login / cabeceras sueltas */
+}
+
+/* Sidebar: que ocupe casi todo el ancho del bloque rojo */
+.sidebar .px-3.py-3 img.sidebar-logo {
+  width: clamp(160px, 90%, 230px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Tarjetas y textos */
+.card { background: var(--card-bg); }
+.text-muted { color: var(--muted) !important; }
+.uni-status-select { max-width: 190px; }
+/* Botón de icono ultra-compacto (papelera) */
+.icon-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+}
+.icon-btn .bi { font-size: 1rem; }        /* tamaño del icono */
+.icon-btn.text-danger:hover { opacity: .8; }
