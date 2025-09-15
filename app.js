@@ -36,6 +36,24 @@ import { initProfileFeature } from "./src/features/profile/profile.js";
 let editingMultimediaElement = null;
 let editingSocialLinkIndex = null;
 
+// === Seguimiento de tareas completadas ya volcadas al timeline ===
+const processedDoneTaskIds = new Set();
+
+function isTaskDone(status) {
+  const s = (status || '').toString().toLowerCase();
+  return s === 'completado' || s === 'completed' || s === 'done' || s === 'hecho';
+}
+
+function inferActionType(task) {
+  const inTitle = (task.title || '').toLowerCase();
+  if ((task.meta && task.meta.actionType)) return task.meta.actionType; // si lo guardamos al crear
+  if (inTitle.includes('llamada')) return 'Llamada';
+  if (inTitle.includes('email') || inTitle.includes('correo')) return 'Email';
+  if (inTitle.includes('reunión') || inTitle.includes('meeting')) return 'Reunión';
+  if (inTitle.includes('mensaje') || inTitle.includes('dm')) return 'Mensaje';
+  return 'Acción';
+}
+
 // --- HELPERS ---
 function toISODate(dateString) { // DD/MM/YYYY -> YYYY-MM-DD
     if (!dateString || !/^\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4}$/.test(dateString)) return '';
@@ -720,6 +738,65 @@ function badgeForComputedStatus(status) {
   }
 }
 
+// --- Seguimiento proactivo: helpers ---
+function nextStepTypeLabel(t) {
+  const map = { llamada: 'Llamada', email: 'Email', reunion: 'Reunión', otro: 'Otro' };
+  return map[(t || '').toLowerCase()] || 'Paso';
+}
+function formatDateShort(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy}`;
+  } catch { return ''; }
+}
+
+/**
+ * Crea/actualiza la tarea en Firestore para el próximo paso de una universidad.
+ * Requiere: uni.nextStep = { type, dueAt (ISO), done: false, taskId? }
+ */
+async function ensureNextStepTask(userId, uni) {
+  if (!userId || !uni?.nextStep?.dueAt || !uni?.nextStep?.type) return;
+
+  const dueDateOnly = uni.nextStep.dueAt.split('T')[0]; // 'YYYY-MM-DD'
+  const payload = {
+    title: `Próximo paso con ${uni.name} — ${nextStepTypeLabel(uni.nextStep.type)}`,
+    status: 'Pendiente',
+    dueDate: dueDateOnly,
+    notes: 'Creado desde Interés de Universidades',
+    category: 'universities',
+    universityId: uni.id,
+  };
+
+  try {
+    if (uni.nextStep.taskId) {
+      await updateTaskSvc(userId, uni.nextStep.taskId, payload);
+    } else {
+      const ref = await addTaskSvc(userId, payload);
+      // soporta ambas formas (obj con id, o string)
+      uni.nextStep.taskId = (ref && (ref.id || ref)) || uni.nextStep.taskId || null;
+    }
+    document.dispatchEvent(new Event('tasks:changed'));
+  } catch (err) {
+    console.error('No se pudo sincronizar la tarea del próximo paso:', err);
+  }
+}
+
+/** Marca como completada la tarea asociada al próximo paso (si existe) */
+async function completeNextStepTask(userId, uni) {
+  try {
+    if (uni?.nextStep?.taskId) {
+      await updateTaskSvc(userId, uni.nextStep.taskId, { status: 'Completado' });
+      document.dispatchEvent(new Event('tasks:changed'));
+    }
+  } catch (err) {
+    console.error('No se pudo completar la tarea asociada:', err);
+  }
+}
+
 function renderUniversityInterest() {
   const container = document.getElementById('university-interest-list');
   if (!container) return;
@@ -752,46 +829,62 @@ function renderUniversityInterest() {
       }
 
       const lastNote = (uni.timeline && uni.timeline.length > 0) ? uni.timeline[0].text : 'Sin notas';
-      const computed = computeUniversityStatus(uni);
-      const badgeCol = badgeForComputedStatus(computed);
-      const offerExists = hasOffer(uni);
-      const isClosed = (computed === 'Aceptada' || computed === 'Rechazada');
+      const hasOfferNow = hasOffer(uni);
+      const isClosed = (String(uni.status||'').toLowerCase() === 'aceptada' || String(uni.status||'').toLowerCase() === 'rechazada');
+
+      // Próximo paso
+      const ns = uni.nextStep || null;
+      const nextLabel = ns && !ns.done ? `Próximo paso: ${nextStepTypeLabel(ns.type)} • ${formatDateShort(ns.dueAt)}` : '';
 
       return `
         <div class="row align-items-center border-bottom py-3">
-          <!-- Universidad + Editar (a la izquierda) -->
+          <!-- Universidad (papelera a la izquierda + nombre + editar) -->
           <div class="col-md-4 mb-2 mb-md-0 d-flex align-items-center">
-          <!-- papelera a la izquierda -->
-          <button class="btn btn-link p-0 me-2 text-danger delete-university-btn"
-                  style="line-height:1" title="Eliminar" aria-label="Eliminar"
-                  data-university-id="${uni.id}">
-            <i class="bi bi-trash"></i>
-          </button>
+            <button class="btn btn-link p-0 me-2 text-danger delete-university-btn" data-university-id="${uni.id}" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
+            <span class="fw-bold me-2 flex-grow-1 text-truncate">${uni.name}</span>
+            <button class="btn btn-sm btn-outline-secondary edit-university-btn" data-university-id="${uni.id}" title="Renombrar">Editar</button>
+          </div>
 
-          <!-- nombre -->
-          <span class="fw-bold me-2 flex-grow-1">${uni.name}</span>
-
-          <!-- editar junto al nombre -->
-          <button class="btn btn-sm btn-outline-secondary edit-university-btn"
-                  data-university-id="${uni.id}" title="Renombrar">
-            Editar
-          </button>
-        </div>
-          <!-- Seguimiento (última nota + botón historial) -->
+          <!-- Seguimiento (nota rápida + historial + próximo paso) -->
           <div class="col-md-3 mb-2 mb-md-0">
             <div class="small text-muted mb-1">Última nota:</div>
             <div class="d-flex align-items-center">
               <span class="me-2 text-truncate" style="max-width: 260px;">${lastNote}</span>
-              <span class="badge bg-${badgeCol} ms-auto">${computed}</span>
+              <button class="btn btn-sm btn-outline-primary ms-auto open-timeline-modal-btn" data-university-id="${uni.id}">Historial</button>
             </div>
-            <button class="btn btn-sm btn-outline-primary mt-2 open-timeline-modal-btn" data-university-id="${uni.id}">
-              Ver historial
-            </button>
+
+            <!-- Añadir nota rápida -->
+            <div class="input-group input-group-sm mt-2" style="max-width: 360px;">
+              <input type="text" class="form-control timeline-inline-text" placeholder="Añadir nota rápida…" data-university-id="${uni.id}">
+              <button class="btn btn-outline-secondary timeline-add-inline-btn" data-university-id="${uni.id}">+ Nota</button>
+            </div>
+
+            <!-- Próximo paso -->
+            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+              <select class="form-select form-select-sm nextstep-type" data-university-id="${uni.id}" style="max-width: 150px;">
+                <option value="">Tipo…</option>
+                <option value="llamada" ${ns?.type==='llamada'?'selected':''}>Llamada</option>
+                <option value="email"   ${ns?.type==='email'?'selected':''}>Email</option>
+                <option value="reunion" ${ns?.type==='reunion'?'selected':''}>Reunión</option>
+                <option value="otro"    ${ns?.type==='otro'?'selected':''}>Otro</option>
+              </select>
+              <input type="date" class="form-control form-control-sm nextstep-date" data-university-id="${uni.id}" style="max-width: 160px;"
+                     value="${ns?.dueAt ? ns.dueAt.split('T')[0] : ''}">
+              <button class="btn btn-sm btn-primary nextstep-save-btn" data-university-id="${uni.id}">
+                ${ns ? 'Guardar' : 'Programar'}
+              </button>
+              ${ns && !ns.done ? `
+                <span class="badge bg-warning text-dark">${nextLabel}</span>
+                <button class="btn btn-sm btn-outline-success nextstep-done-btn" data-university-id="${uni.id}">Hecho</button>
+              ` : ''}
+            </div>
           </div>
 
           <!-- Oferta -->
           <div class="col-md-3 mb-3 mb-md-0">
-            ${offerExists ? `
+            ${hasOfferNow ? `
               <div class="d-flex align-items-center">
                 <div class="progress flex-grow-1" style="height: 25px;">
                   <div class="progress-bar bg-eture-red fw-bold" role="progressbar" style="width:${pct}%;" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
@@ -811,25 +904,15 @@ function renderUniversityInterest() {
             `}
           </div>
 
-          <!-- Acciones (a la derecha) -->
+          <!-- Acciones (aceptar/rechazar si hay oferta y no está cerrado) -->
           <div class="col-md-2 text-end">
-            ${offerExists && !isClosed ? `
+            ${hasOfferNow && !isClosed ? `
               <button class="btn btn-sm btn-success accept-university-btn" data-university-id="${uni.id}">Aceptar</button>
               <button class="btn btn-sm btn-outline-dark reject-university-btn ms-1" data-university-id="${uni.id}">Rechazar</button>
             ` : `
-              ${computed === 'Aceptada' ? '<span class="badge bg-success">Aceptada</span>' : ''}
-              ${computed === 'Rechazada' ? '<span class="badge bg-dark">Rechazada</span>' : ''}
+              ${String(uni.status||'').toLowerCase() === 'aceptada'  ? '<span class="badge bg-success">Aceptada</span>' : ''}
+              ${String(uni.status||'').toLowerCase() === 'rechazada' ? '<span class="badge bg-dark">Rechazada</span>' : ''}
             `}
-            <div class="col-md-2 text-end">
-              ${offerExists && !isClosed ? `
-                <button class="btn btn-sm btn-success accept-university-btn" data-university-id="${uni.id}">Aceptar</button>
-                <button class="btn btn-sm btn-outline-dark reject-university-btn ms-1" data-university-id="${uni.id}">Rechazar</button>
-              ` : `
-                ${computed === 'Aceptada' ? '<span class="badge bg-success">Aceptada</span>' : ''}
-                ${computed === 'Rechazada' ? '<span class="badge bg-dark">Rechazada</span>' : ''}
-              `}
-            </div>
-
           </div>
         </div>
       `;
@@ -1027,52 +1110,279 @@ function openUniTimelineModal(universityId) {
 
   const uni = (userProfileData.universityInterest || []).find(u => u.id === universityId);
   if (!uni) return;
-
   if (!Array.isArray(uni.timeline)) uni.timeline = [];
 
-  const list = modalEl.querySelector('#timeline-list');
-  const addBtn = modalEl.querySelector('#timeline-add-btn');
-  const textEl = modalEl.querySelector('#timeline-new-text');
+  const $ = (sel, root = modalEl) => root.querySelector(sel);
 
-  modalEl.querySelector('.modal-title').innerHTML = `Seguimiento: <span class="fw-normal">${uni.name}</span>`;
-  addBtn.dataset.universityId = universityId;
-  textEl.value = '';
+  const titleEl   = $('.modal-title');
+  const list      = $('#timeline-list');
+  const saveBtn   = $('#timeline-save-action-btn');
+  const typeSel   = $('#timeline-act-type');
+  const dtInput   = $('#timeline-act-datetime');
+  const textInput = $('#timeline-act-text');
+  const textHelp  = $('#timeline-act-text-help');
+  const countEl   = $('#timeline-act-count');
+  const nextStepSlot = $('#university-next-step-slot');
 
-  const fmt = (iso) => {
-    try { return new Date(iso).toLocaleString('es-ES'); }
-    catch { return iso || ''; }
+  titleEl.innerHTML = `Seguimiento: <span class="fw-normal">${uni.name}</span>`;
+
+  // === Helpers de fechas y UI ===
+  const now = new Date();
+  const pad2 = n => String(n).padStart(2, '0');
+  const toLocalInput = (d) => {
+    // YYYY-MM-DDTHH:mm en local
+    return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  };
+  const roundToNextQuarterHour = (d) => {
+    const r = new Date(d);
+    const m = r.getMinutes();
+    const add = (15 - (m % 15)) % 15;
+    r.setMinutes(m + add, 0, 0);
+    return r;
+  };
+  const defaultDTForType = (type) => {
+    if (type === 'Reunión') {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(17, 0, 0, 0);
+      return d;
+    }
+    return roundToNextQuarterHour(new Date());
+  };
+  const fmtDateTime = (iso) => {
+    try { return new Date(iso).toLocaleString('es-ES'); } catch { return iso || ''; }
+  };
+  const nowISO = () => new Date().toISOString();
+  const toISOFromLocal = (localDT) => {
+    if (!localDT) return '';
+    const d = new Date(localDT);
+    if (isNaN(d)) return '';
+    return d.toISOString();
   };
 
-  // Render historial (más recientes arriba)
-  const rows = [...uni.timeline].sort((a,b) => (b.at || '').localeCompare(a.at || ''))
-    .map(item => `
-      <div class="border rounded p-2 mb-2">
-        <div class="small text-muted">${fmt(item.at)}${item.author ? ` • ${item.author}` : ''}</div>
-        <div>${item.text || ''}</div>
-      </div>
-    `).join('');
-  list.innerHTML = rows || `<div class="text-muted">Sin notas todavía.</div>`;
+  const typePlaceholders = {
+    'Llamada': 'Ej: Llamada con Head Coach.',
+    'Email':   'Ej: Email de presentación enviado.',
+    'Reunión': 'Ej: Videollamada con Staff.',
+    'Mensaje': 'Ej: Mensaje por WhatsApp al asistente.',
+    'Otro':    'Describe la acción brevemente.'
+  };
 
-  // Guardar nota
-  addBtn.onclick = async () => {
-    const text = (textEl.value || '').trim();
-    if (!text) return;
-    uni.timeline.unshift({
+  function setSmartDefaults() {
+    const t = typeSel.value || 'Llamada';
+    textInput.placeholder = typePlaceholders[t] || 'Describe la acción brevemente.';
+    dtInput.value = toLocalInput(defaultDTForType(t));
+    validateForm();
+  }
+
+  function validateForm() {
+    const ok = !!(typeSel.value && dtInput.value && textInput.value.trim().length >= 3);
+    saveBtn.disabled = !ok;
+    countEl.textContent = `${textInput.value.length}/200`;
+  }
+
+  // === Render del historial ===
+  function renderTimeline() {
+    const rows = [...uni.timeline]
+      .sort((a,b) => (b.at || '').localeCompare(a.at || ''))
+      .map(item => {
+        const icon = item.type === 'Llamada' ? 'bi-telephone'
+                  : item.type === 'Email'    ? 'bi-envelope'
+                  : item.type === 'Reunión'  ? 'bi-people'
+                  : item.type === 'Mensaje'  ? 'bi-chat'
+                  : item.type === 'Completado' ? 'bi-check2-circle'
+                  : 'bi-sticky';
+        const doneBadge = item.done ? `<span class="badge bg-success ms-2">Hecho</span>` : '';
+        const doneLine  = item.doneAt ? `<div class="small text-muted">Finalizado: ${fmtDateTime(item.doneAt)}</div>` : '';
+        const taskChip  = item.linkedTaskId ? `
+          <button class="btn btn-sm btn-outline-secondary mt-2 view-task-btn" data-task-id="${item.linkedTaskId}">
+            Ver en Tareas
+          </button>` : '';
+        return `
+          <div class="border rounded p-2 mb-2">
+            <div class="small text-muted d-flex align-items-center">
+              <i class="bi ${icon} me-2"></i>
+              ${fmtDateTime(item.at)} • ${item.author || ''}
+              ${doneBadge}
+            </div>
+            <div><strong>${item.type || 'Acción'}:</strong> ${item.text || ''}</div>
+            ${doneLine}
+            ${taskChip}
+          </div>
+        `;
+      }).join('');
+
+    list.innerHTML = rows || `<div class="text-muted">Sin notas todavía.</div>`;
+  }
+
+  // === Próximo paso (tarea pendiente más cercana) ===
+  function renderNextStepSlot() {
+    const tasks = (typeof getTasksData === 'function') ? getTasksData() : [];
+    const pending = tasks
+      .filter(t => t.status !== 'Completado' && t.universityId === uni.id)
+      .sort((a,b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    if (pending.length === 0) {
+      nextStepSlot.innerHTML = `<div class="text-muted">No hay pasos planificados.</div>`;
+      return;
+    }
+    const t = pending[0];
+    nextStepSlot.innerHTML = `
+      <div class="d-flex align-items-center">
+        <div class="me-3">
+          <div class="fw-bold">${t.title || 'Próximo paso'}</div>
+          <div class="small text-muted">${fmtDateTime(t.dueDate || '')}</div>
+          ${t.notes ? `<div class="small mt-1">${t.notes}</div>` : ''}
+        </div>
+        <div class="ms-auto d-flex gap-2">
+          <button class="btn btn-sm btn-outline-secondary" id="view-next-step-btn" data-task-id="${t.id}">Ver en Tareas</button>
+          <button class="btn btn-sm btn-success" id="mark-next-step-done-btn" data-task-id="${t.id}">Marcar como hecho</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // === Completar tarea y volcar al historial ===
+  async function markTaskDone(taskId) {
+    if (!auth.currentUser) return;
+    const result = prompt('Añade un resultado/nota (opcional):', '');
+    try {
+      const completedAt = nowISO();
+      await updateTaskSvc(auth.currentUser.uid, taskId, {
+        status: 'Completado',
+        completedAt,
+        result: result || ''
+      });
+
+      // Intentamos actualizar la ENTRADA ORIGINAL del timeline (la programada) si existe.
+      const original = uni.timeline.find(x => x.linkedTaskId === taskId);
+      if (original) {
+        original.done = true;
+        original.doneAt = completedAt;
+        if (result && result.trim()) {
+          original.text = `${original.text} — ${result.trim()}`;
+        }
+      } else {
+        // Si no existe, añadimos una entrada de "Completado"
+        uni.timeline.unshift({
+          id: 'tl_' + Date.now(),
+          at: completedAt,
+          author: auth.currentUser?.email || '',
+          type: 'Completado',
+          text: result || 'Tarea completada',
+          done: true,
+          doneAt: completedAt,
+          linkedTaskId: taskId
+        });
+      }
+
+      if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+      document.dispatchEvent(new Event('tasks:changed'));
+      renderTimeline();
+      renderNextStepSlot();
+    } catch (err) {
+      console.error('No se pudo completar la tarea:', err);
+      alert('No se pudo completar la tarea.');
+    }
+  }
+
+  // === Guardar acción (crea historial + tarea coherente) ===
+  async function saveAction() {
+    if (!auth.currentUser) { alert('Debes iniciar sesión'); return; }
+    const type = (typeSel.value || 'Otro').trim();
+    const dtLocal = dtInput.value;
+    const text = (textInput.value || '').trim();
+    if (!dtLocal || text.length < 3) { return; }
+
+    const iso = toISOFromLocal(dtLocal);
+    if (!iso) { alert('Fecha inválida'); return; }
+    const isPast = (new Date(iso).getTime() <= Date.now());
+
+    // 1) Creamos SIEMPRE la entrada de historial (programada)
+    const newTimelineItem = {
       id: 'tl_' + Date.now(),
-      at: new Date().toISOString(),
+      at: iso,
       author: auth.currentUser?.email || '',
-      text
-    });
-    textEl.value = '';
-    // Persistimos y refrescamos tabla
-    if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
-    renderUniversityInterest();
-    // Re-render modal rápidamente
-    openUniTimelineModal(universityId);
+      type,
+      text,
+      done: isPast,            // si es pasado, ya la marcamos como hecha
+      doneAt: isPast ? iso : '' // y fijamos la hora real (misma que la programada)
+    };
+
+    // 2) Creamos la TAREA SIEMPRE (coherente con pasado/futuro)
+    let createdTaskId = null;
+    try {
+      const t = {
+        title: `${type} con ${uni.name}`,
+        notes: text,
+        dueDate: iso,
+        status: isPast ? 'Completado' : 'Pendiente',
+        completedAt: isPast ? iso : '',  // si es pasada, ya completa
+        category: 'Universidad',
+        universityId: uni.id,
+        createdAt: nowISO()
+      };
+      const res = await addTaskSvc(auth.currentUser.uid, t);
+      createdTaskId = (res && res.id) ? res.id : (typeof res === 'string' ? res : null);
+      document.dispatchEvent(new Event('tasks:changed'));
+    } catch (err) {
+      console.error('No se pudo crear la tarea:', err);
+      // seguimos sin linkedTaskId
+    }
+    if (createdTaskId) newTimelineItem.linkedTaskId = createdTaskId;
+
+    // 3) Persistimos perfil + refrescamos
+    uni.timeline.unshift(newTimelineItem);
+    await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    renderTimeline();
+    renderNextStepSlot();
+
+    // 4) Reset UI
+    textInput.value = '';
+    validateForm();
+  }
+
+  // === Navegar a la pestaña de Tareas ===
+  function goToTasksTab() {
+    // Intentamos encontrar el tab principal que abre #tareas
+    const tasksTab =
+      document.querySelector('#main-nav [data-bs-toggle="tab"][href="#tareas"]') ||
+      document.querySelector('#main-nav [data-bs-target="#tareas"]');
+    if (tasksTab) {
+      new bootstrap.Tab(tasksTab).show();
+    }
+  }
+
+  // === Estado inicial UI ===
+  setSmartDefaults();
+  renderTimeline();
+  renderNextStepSlot();
+  validateForm();
+
+  // === Eventos de UI ===
+  typeSel.addEventListener('change', setSmartDefaults);
+  dtInput.addEventListener('input', validateForm);
+  textInput.addEventListener('input', validateForm);
+
+  saveBtn.onclick = saveAction;
+
+  // Delegación para botones del slot de próximo paso y del historial
+  nextStepSlot.onclick = async (e) => {
+    const viewBtn = e.target.closest('#view-next-step-btn');
+    if (viewBtn) { goToTasksTab(); return; }
+
+    const doneBtn = e.target.closest('#mark-next-step-done-btn');
+    if (doneBtn) { await markTaskDone(doneBtn.dataset.taskId); return; }
+  };
+
+  list.onclick = (e) => {
+    const viewBtn = e.target.closest('.view-task-btn');
+    if (!viewBtn) return;
+    goToTasksTab();
   };
 
   bootstrap.Modal.getOrCreateInstance(modalEl).show();
 }
+
 
 function renderFinancialChart() {
     const ctx = document.getElementById('financial-chart')?.getContext('2d');
@@ -1890,6 +2200,17 @@ async function initApp(user) {
   // 2) TAREAS: precargar la caché para que Inicio no muestre 0
   await preloadTasks(user.uid);
 
+  try {
+  const existingTasks = getTasksData();
+  existingTasks.forEach(t => {
+    if (isTaskDone(t?.status) && t?.meta?.universityId) {
+      // usa id de tarea si existe; si no, generamos una clave estable
+      const key = t.id || `${t.title}|${t.due}|${t.meta.universityId}`;
+      processedDoneTaskIds.add(key);
+    }
+  });
+} catch (_) {}
+
   // 3) Render inicial
   renderPage('inicio'); // puedes cambiarlo a 'perfil' si prefieres aterrizar ahí
 }
@@ -1940,7 +2261,7 @@ mainContent.addEventListener('click', async e => {
   }  
 });
 
-// ✅ Delegación global para Universidades (añadir/editar/eliminar/timeline/aceptar/rechazar)
+// ✅ Delegación global para Universidades (añadir/editar/eliminar/timeline/aceptar/rechazar + nota + nextStep)
 document.body.addEventListener('click', async (e) => {
   // Añadir universidad
   const addBtn = e.target.closest('#proceso-content .add-university-btn');
@@ -1955,9 +2276,10 @@ document.body.addEventListener('click', async (e) => {
     userProfileData.universityInterest.unshift({
       id: 'uni_' + Date.now(),
       name,
-      status: 'Pendiente',                 // lo mantiene la app
+      status: 'Pendiente',
       offerDetails: { costs: [], scholarships: [], documentUrl: '' },
-      timeline: []                         // historial de notas
+      timeline: [],
+      nextStep: null
     });
 
     renderUniversityInterest();
@@ -1966,7 +2288,7 @@ document.body.addEventListener('click', async (e) => {
     return;
   }
 
-  // Editar nombre (el botón está junto al nombre)
+  // Editar nombre
   const editBtn = e.target.closest('#proceso-content .edit-university-btn');
   if (editBtn) {
     e.preventDefault();
@@ -1983,7 +2305,7 @@ document.body.addEventListener('click', async (e) => {
     return;
   }
 
-  // Eliminar (temporal para pruebas)
+  // Eliminar (papelera a la izquierda del nombre)
   const delBtn = e.target.closest('#proceso-content .delete-university-btn');
   if (delBtn) {
     e.preventDefault();
@@ -2007,6 +2329,32 @@ document.body.addEventListener('click', async (e) => {
     return;
   }
 
+  // Añadir nota rápida (inline)
+  const addNoteBtn = e.target.closest('#proceso-content .timeline-add-inline-btn');
+  if (addNoteBtn) {
+    e.preventDefault();
+    const id = addNoteBtn.dataset.universityId;
+    const uni = (userProfileData.universityInterest || []).find(u => u.id === id);
+    if (!uni) return;
+    if (!Array.isArray(uni.timeline)) uni.timeline = [];
+
+    const input = document.querySelector(`.timeline-inline-text[data-university-id="${id}"]`);
+    const text = (input?.value || '').trim();
+    if (!text) return;
+
+    uni.timeline.unshift({
+      id: 'tl_' + Date.now(),
+      at: new Date().toISOString(),
+      author: auth.currentUser?.email || '',
+      text
+    });
+    if (input) input.value = '';
+
+    if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    renderUniversityInterest();
+    return;
+  }
+
   // Aceptar oferta
   const acceptBtn = e.target.closest('#proceso-content .accept-university-btn');
   if (acceptBtn) {
@@ -2020,6 +2368,10 @@ document.body.addEventListener('click', async (e) => {
     uni.status = 'Aceptada';
     uni.timeline = uni.timeline || [];
     uni.timeline.unshift({ id:'tl_'+Date.now(), at:new Date().toISOString(), author:auth.currentUser?.email||'', text:'Oferta aceptada' });
+
+    // Cerrar próximo paso/tarea si existía
+    await completeNextStepTask(auth.currentUser?.uid, uni);
+    if (uni.nextStep) uni.nextStep.done = true;
 
     renderUniversityInterest();
     if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
@@ -2041,8 +2393,54 @@ document.body.addEventListener('click', async (e) => {
     uni.timeline = uni.timeline || [];
     uni.timeline.unshift({ id:'tl_'+Date.now(), at:new Date().toISOString(), author:auth.currentUser?.email||'', text:'Oferta rechazada' });
 
+    // Cerrar próximo paso/tarea si existía
+    await completeNextStepTask(auth.currentUser?.uid, uni);
+    if (uni.nextStep) uni.nextStep.done = true;
+
     renderUniversityInterest();
     if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    return;
+  }
+
+  // Guardar / programar PRÓXIMO PASO
+  const saveNextBtn = e.target.closest('#proceso-content .nextstep-save-btn');
+  if (saveNextBtn) {
+    e.preventDefault();
+    const id = saveNextBtn.dataset.universityId;
+    const row = saveNextBtn.closest('.row');
+    const typeSel = row?.querySelector(`.nextstep-type[data-university-id="${id}"]`);
+    const dateInp = row?.querySelector(`.nextstep-date[data-university-id="${id}"]`);
+
+    const type = (typeSel?.value || '').trim();
+    const dateStr = (dateInp?.value || '').trim(); // YYYY-MM-DD
+    if (!type || !dateStr) { alert('Selecciona tipo y fecha.'); return; }
+
+    const uni = (userProfileData.universityInterest || []).find(u => u.id === id);
+    if (!uni) return;
+
+    uni.nextStep = { type, dueAt: new Date(`${dateStr}T00:00:00`).toISOString(), done: false, taskId: uni.nextStep?.taskId || null };
+
+    // Sincroniza tarea
+    await ensureNextStepTask(auth.currentUser?.uid, uni);
+
+    if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    renderUniversityInterest();
+    return;
+  }
+
+  // Marcar PRÓXIMO PASO como hecho
+  const doneNextBtn = e.target.closest('#proceso-content .nextstep-done-btn');
+  if (doneNextBtn) {
+    e.preventDefault();
+    const id = doneNextBtn.dataset.universityId;
+    const uni = (userProfileData.universityInterest || []).find(u => u.id === id);
+    if (!uni || !uni.nextStep) return;
+
+    uni.nextStep.done = true;
+    await completeNextStepTask(auth.currentUser?.uid, uni);
+
+    if (auth.currentUser) await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    renderUniversityInterest();
     return;
   }
 });
@@ -2153,11 +2551,52 @@ document.body.addEventListener('click', (e) => {
 });
 
 // Cuando cambian las tareas en cualquier parte, si estamos en INICIO, refrescamos ese bloque
-document.addEventListener('tasks:changed', () => {
+document.addEventListener('tasks:changed', async () => {
+  try {
+    const tasks = getTasksData(); // caché de tasks.js
+    for (const t of tasks) {
+      if (!t || !isTaskDone(t.status) || !t.meta?.universityId) continue;
+
+      // clave para no duplicar entradas en el timeline
+      const key = t.id || `${t.title}|${t.due}|${t.meta.universityId}`;
+      if (processedDoneTaskIds.has(key)) continue;
+
+      const uni = (userProfileData.universityInterest || []).find(u => u.id === t.meta.universityId);
+      if (!uni) { processedDoneTaskIds.add(key); continue; }
+
+      // Fecha: usa completedAt si existe; si no due; y si no, ahora
+      const whenISO = t.completedAt || t.due || new Date().toISOString();
+      const whenTxt = new Date(whenISO).toLocaleString('es-ES');
+      const type = inferActionType(t);
+      const note = (t.notes || '').trim();
+
+      // Añadir al historial de esa universidad (arriba del todo)
+      uni.timeline = uni.timeline || [];
+      uni.timeline.unshift({
+        id: 'tl_' + Date.now(),
+        at: new Date().toISOString(),
+        author: auth.currentUser?.email || '',
+        text: `${type} realizada (${whenTxt})${note ? `. Notas: ${note}` : ''}`
+      });
+
+      // Persistir y refrescar UI
+      if (auth.currentUser) {
+        await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+      }
+      renderUniversityInterest();
+
+      // Marcar esta tarea como procesada para no repetir
+      processedDoneTaskIds.add(key);
+    }
+  } catch (err) {
+    console.error('Error procesando tareas completadas para timeline:', err);
+  }
+
+  // Mantener el snapshot de Inicio al día
   const inicioContent = document.getElementById('inicio-content');
-  if (!inicioContent) return; // no estamos en la pestaña de inicio
-  renderHomeTasksSnapshot(inicioContent);
+  if (inicioContent) renderHomeTasksSnapshot(inicioContent);
 });
+
 // Cuando cambian los documentos en cualquier parte:
 // - Si estamos en PROCESO, refrescamos su UI.
 // - Si estamos en DOCUMENTOS, refrescamos la lista.

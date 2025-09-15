@@ -158,3 +158,97 @@
               </div>
           </div>
       </div>`
+<!-- Modal: Desglose / Oferta de Beca -->
+<div class="modal fade" id="scholarship-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Oferta de Beca</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <!-- El contenido lo pinta openScholarshipModal() -->
+        <div class="text-muted">Cargando…</div>
+      </div>
+      <div class="modal-footer">
+        <!-- También lo rellena openScholarshipModal() -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === MODAL: Historial / Seguimiento de Universidad === -->
+<div class="modal fade" id="university-timeline-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Registrar acción -->
+        <div class="card mb-3">
+            <div class="card-header fw-bold">Registrar acción</div>
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Acción</label>
+                        <select id="timeline-act-type" class="form-select" required>
+                        <option value="Llamada">Llamada</option>
+                        <option value="Email">Email</option>
+                        <option value="Reunión">Reunión</option>
+                        <option value="Mensaje">Mensaje</option>
+                        <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fecha y hora</label>
+                    <input id="timeline-act-datetime" type="datetime-local" class="form-control" required>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Texto</label>
+                    <input id="timeline-act-text" type="text" class="form-control" placeholder="Ej: Videollamada con Head Coach." maxlength="200" required>
+                    <div class="form-text d-flex justify-content-between">
+                    <span id="timeline-act-text-help">Describe en una frase clara.</span>
+                    <span class="small" id="timeline-act-count">0/200</span>
+                    </div>
+                </div>
+                </div>
+                <div class="text-end mt-3">
+                <button id="timeline-save-action-btn" class="btn btn-primary" disabled>Guardar</button>
+                </div>
+                <div class="form-text">
+                • Siempre se registra en el historial. <br>
+                • Si la fecha es futura, también se crea una tarea pendiente. <br>
+                • Si la fecha es pasada, también se crea la tarea pero marcada como completada.
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Próximo paso (tarea pendiente más cercana asociada a esta universidad) -->
+        <div class="card mb-3">
+          <div class="card-header fw-bold">Próximo paso</div>
+          <div class="card-body" id="university-next-step-slot">
+            <div class="text-muted">No hay pasos planificados.</div>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="card">
+          <div class="card-header fw-bold">Historial</div>
+          <div class="card-body" id="timeline-list">
+            <div class="text-muted">Sin notas todavía.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
