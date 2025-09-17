@@ -1,5 +1,5 @@
-# Logs
-logs
+# ───── Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,18 +7,33 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ───── Dependencias
+node_modules/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ───── Build / cache (si llegas a usarlos)
+dist/
+build/
+.cache/
+.tmp/
+
+# ───── Entornos (¡no subas secretos!)
+.env
+.env.local
+.env.*.local
+
+# ───── Firebase / Emuladores
+.firebase/
+.emu/
+data/
+firestore-debug.log
+firebase-debug.log
+firebase-debug.*.log
+firebase-export-*/
+
+# ───── Sistema / editor
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
