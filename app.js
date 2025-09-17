@@ -801,15 +801,24 @@ function renderUniversityInterest() {
   const container = document.getElementById('university-interest-list');
   if (!container) return;
 
-  const list = userProfileData.universityInterest || [];
-  if (!Array.isArray(userProfileData.universityInterest)) {
-    userProfileData.universityInterest = [];
-  }
+  const list = Array.isArray(userProfileData.universityInterest)
+    ? userProfileData.universityInterest
+    : (userProfileData.universityInterest = []);
 
   if (list.length === 0) {
     container.innerHTML = `<div class="alert alert-info mb-0">Aún no hay universidades que hayan mostrado interés.</div>`;
     return;
   }
+
+  const fmtShort = (iso) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      const f = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const t = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      return `${f} • ${t}`;
+    } catch { return iso; }
+  };
 
   container.innerHTML = `
     <div class="d-none d-md-flex row fw-bold text-muted small mb-2 border-bottom pb-2">
@@ -820,98 +829,79 @@ function renderUniversityInterest() {
     </div>
 
     ${list.map(uni => {
-      // % ofrecido
+      // --- oferta / progreso
       let pct = 0, totalCost = 0, totalSch = 0;
       if (uni.offerDetails && Array.isArray(uni.offerDetails.costs) && Array.isArray(uni.offerDetails.scholarships)) {
         totalCost = uni.offerDetails.costs.reduce((s, it) => s + (Number(it.amount) || 0), 0);
         totalSch  = uni.offerDetails.scholarships.reduce((s, it) => s + (Number(it.amount) || 0), 0);
         if (totalCost > 0) pct = Math.round((totalSch / totalCost) * 100);
       }
+      const offerExists = hasOffer(uni);
 
-      const lastNote = (uni.timeline && uni.timeline.length > 0) ? uni.timeline[0].text : 'Sin notas';
-      const hasOfferNow = hasOffer(uni);
-      const isClosed = (String(uni.status||'').toLowerCase() === 'aceptada' || String(uni.status||'').toLowerCase() === 'rechazada');
+      // --- último apunte del historial
+      const last = (uni.timeline && uni.timeline[0]) || null;
+      const lastText = last ? `${last.type || 'Acción'}: ${last.text || ''}` : 'Sin notas';
 
-      // Próximo paso
-      const ns = uni.nextStep || null;
-      const nextLabel = ns && !ns.done ? `Próximo paso: ${nextStepTypeLabel(ns.type)} • ${formatDateShort(ns.dueAt)}` : '';
+      // --- próximo paso (tarea pendiente más cercana)
+      const tasks = (typeof getTasksData === 'function') ? getTasksData() : [];
+      const next = tasks
+        .filter(t => t.universityId === uni.id && t.status !== 'Completado')
+        .sort((a,b) => (a.dueDate||'').localeCompare(b.dueDate||''))[0];
+      const nextHTML = next
+        ? `<div class="small mt-2"><span class="badge bg-warning text-dark">Próximo paso: ${next.title || 'Tarea'} • ${fmtShort(next.dueDate)}</span></div>`
+        : `<div class="small mt-2 text-muted">Sin próximos pasos</div>`;
+
+      // --- estado calculado
+      const computed = computeUniversityStatus(uni);
+      const badgeCol = badgeForComputedStatus(computed);
+      const isClosed = (computed === 'Aceptada' || computed === 'Rechazada');
 
       return `
         <div class="row align-items-center border-bottom py-3">
-          <!-- Universidad (papelera a la izquierda + nombre + editar) -->
-          <div class="col-md-4 mb-2 mb-md-0 d-flex align-items-center">
+          <!-- Universidad: papelera + nombre + editar (compacto) -->
+          <div class="col-md-4 d-flex align-items-center">
             <button class="btn btn-link p-0 me-2 text-danger delete-university-btn" data-university-id="${uni.id}" title="Eliminar">
-              <i class="bi bi-trash"></i>
+              <i class="bi bi-trash3"></i>
             </button>
-            <span class="fw-bold me-2 flex-grow-1 text-truncate">${uni.name}</span>
+            <span class="fw-bold me-2 flex-grow-1">${uni.name}</span>
             <button class="btn btn-sm btn-outline-secondary edit-university-btn" data-university-id="${uni.id}" title="Renombrar">Editar</button>
           </div>
 
-          <!-- Seguimiento (nota rápida + historial + próximo paso) -->
-          <div class="col-md-3 mb-2 mb-md-0">
-            <div class="small text-muted mb-1">Última nota:</div>
-            <div class="d-flex align-items-center">
-              <span class="me-2 text-truncate" style="max-width: 260px;">${lastNote}</span>
-              <button class="btn btn-sm btn-outline-primary ms-auto open-timeline-modal-btn" data-university-id="${uni.id}">Historial</button>
+          <!-- Seguimiento: última nota + botón historial + próximo paso (sin inputs) -->
+          <div class="col-md-3">
+            <div class="small text-muted">Última nota</div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-truncate" style="max-width: 240px;">${lastText}</span>
+              <span class="badge bg-${badgeCol} ms-auto">${computed}</span>
+              <button class="btn btn-sm btn-outline-primary open-timeline-modal-btn" data-university-id="${uni.id}">Historial</button>
             </div>
-
-            <!-- Añadir nota rápida -->
-            <div class="input-group input-group-sm mt-2" style="max-width: 360px;">
-              <input type="text" class="form-control timeline-inline-text" placeholder="Añadir nota rápida…" data-university-id="${uni.id}">
-              <button class="btn btn-outline-secondary timeline-add-inline-btn" data-university-id="${uni.id}">+ Nota</button>
-            </div>
-
-            <!-- Próximo paso -->
-            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-              <select class="form-select form-select-sm nextstep-type" data-university-id="${uni.id}" style="max-width: 150px;">
-                <option value="">Tipo…</option>
-                <option value="llamada" ${ns?.type==='llamada'?'selected':''}>Llamada</option>
-                <option value="email"   ${ns?.type==='email'?'selected':''}>Email</option>
-                <option value="reunion" ${ns?.type==='reunion'?'selected':''}>Reunión</option>
-                <option value="otro"    ${ns?.type==='otro'?'selected':''}>Otro</option>
-              </select>
-              <input type="date" class="form-control form-control-sm nextstep-date" data-university-id="${uni.id}" style="max-width: 160px;"
-                     value="${ns?.dueAt ? ns.dueAt.split('T')[0] : ''}">
-              <button class="btn btn-sm btn-primary nextstep-save-btn" data-university-id="${uni.id}">
-                ${ns ? 'Guardar' : 'Programar'}
-              </button>
-              ${ns && !ns.done ? `
-                <span class="badge bg-warning text-dark">${nextLabel}</span>
-                <button class="btn btn-sm btn-outline-success nextstep-done-btn" data-university-id="${uni.id}">Hecho</button>
-              ` : ''}
-            </div>
+            ${nextHTML}
           </div>
 
           <!-- Oferta -->
-          <div class="col-md-3 mb-3 mb-md-0">
-            ${hasOfferNow ? `
+          <div class="col-md-3">
+            ${offerExists ? `
               <div class="d-flex align-items-center">
-                <div class="progress flex-grow-1" style="height: 25px;">
-                  <div class="progress-bar bg-eture-red fw-bold" role="progressbar" style="width:${pct}%;" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
-                    ${pct}%
-                  </div>
+                <div class="progress flex-grow-1" style="height: 24px;">
+                  <div class="progress-bar bg-eture-red fw-bold" role="progressbar" style="width:${pct}%;" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">${pct}%</div>
                 </div>
-                <button class="btn btn-sm btn-outline-primary open-scholarship-modal-btn ms-3" data-university-id="${uni.id}">
-                  Ver Desglose
-                </button>
+                <button class="btn btn-sm btn-outline-primary open-scholarship-modal-btn ms-2" data-university-id="${uni.id}">Ver Desglose</button>
               </div>
               ${uni.offerDetails?.documentUrl ? `<a class="small d-block mt-1" href="${uni.offerDetails.documentUrl}" target="_blank" rel="noopener">Documento</a>` : ''}
             ` : `
               <p class="mb-2 text-muted small">Sin oferta registrada</p>
-              <button class="btn btn-sm btn-outline-primary open-scholarship-modal-btn" data-university-id="${uni.id}">
-                Añadir oferta
-              </button>
+              <button class="btn btn-sm btn-outline-primary open-scholarship-modal-btn" data-university-id="${uni.id}">Añadir oferta</button>
             `}
           </div>
 
-          <!-- Acciones (aceptar/rechazar si hay oferta y no está cerrado) -->
+          <!-- Acciones -->
           <div class="col-md-2 text-end">
-            ${hasOfferNow && !isClosed ? `
+            ${offerExists && !isClosed ? `
               <button class="btn btn-sm btn-success accept-university-btn" data-university-id="${uni.id}">Aceptar</button>
               <button class="btn btn-sm btn-outline-dark reject-university-btn ms-1" data-university-id="${uni.id}">Rechazar</button>
             ` : `
-              ${String(uni.status||'').toLowerCase() === 'aceptada'  ? '<span class="badge bg-success">Aceptada</span>' : ''}
-              ${String(uni.status||'').toLowerCase() === 'rechazada' ? '<span class="badge bg-dark">Rechazada</span>' : ''}
+              ${computed === 'Aceptada' ? '<span class="badge bg-success">Aceptada</span>' : ''}
+              ${computed === 'Rechazada' ? '<span class="badge bg-dark">Rechazada</span>' : ''}
             `}
           </div>
         </div>
@@ -1168,6 +1158,18 @@ function openUniTimelineModal(universityId) {
     'Otro':    'Describe la acción brevemente.'
   };
 
+  function closeTimelineModal() {
+  const inst = bootstrap.Modal.getInstance(modalEl);
+  if (inst) inst.hide();
+  // por si queda backdrop residual en navegadores lentos
+  setTimeout(() => {
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+  }, 150);
+}
+
   function setSmartDefaults() {
     const t = typeSel.value || 'Llamada';
     textInput.placeholder = typePlaceholders[t] || 'Describe la acción brevemente.';
@@ -1279,6 +1281,7 @@ function openUniTimelineModal(universityId) {
       document.dispatchEvent(new Event('tasks:changed'));
       renderTimeline();
       renderNextStepSlot();
+      renderUniversityInterest();
     } catch (err) {
       console.error('No se pudo completar la tarea:', err);
       alert('No se pudo completar la tarea.');
@@ -1335,6 +1338,7 @@ function openUniTimelineModal(universityId) {
     await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
     renderTimeline();
     renderNextStepSlot();
+    renderUniversityInterest();
 
     // 4) Reset UI
     textInput.value = '';
@@ -1343,13 +1347,11 @@ function openUniTimelineModal(universityId) {
 
   // === Navegar a la pestaña de Tareas ===
   function goToTasksTab() {
-    // Intentamos encontrar el tab principal que abre #tareas
+    closeTimelineModal();
     const tasksTab =
       document.querySelector('#main-nav [data-bs-toggle="tab"][href="#tareas"]') ||
       document.querySelector('#main-nav [data-bs-target="#tareas"]');
-    if (tasksTab) {
-      new bootstrap.Tab(tasksTab).show();
-    }
+    if (tasksTab) new bootstrap.Tab(tasksTab).show();
   }
 
   // === Estado inicial UI ===
