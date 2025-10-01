@@ -30,8 +30,8 @@ function wirePerfilClicks() {
     if (button?.id === "add-study-option-btn") p.addStudyOption();
     if (button?.id === "add-exam-btn") p.addExam();
     if (button?.id === "add-secondary-pos-btn") p.addSecondaryPosition();
-    if (button?.id === "add-highlights-btn") p.openMultimediaModal(null, "highlights", "Nombre del vídeo", "Highlights 2024");
-    if (button?.id === "add-match-btn") p.openMultimediaModal(null, "matches", "Descripción (Rival, color camiseta, dorsal)", "vs Equipo X - Blanco #10");
+    if (button?.id === "add-highlights-btn") p.openMultimediaModal(null, "highlights", "Video name", "Highlights 2024");
+    if (button?.id === "add-match-btn") p.openMultimediaModal(null, "matches", "Description (Opponent, jersey color, jersey number)", "vs Team X - White #10");
 
     if (button?.classList.contains("edit-social-link-btn")) p.openSocialLinkModalForEdit(parseInt(button.dataset.index, 10));
     if (button?.classList.contains("remove-social-link-btn")) p.removeSocialLink(parseInt(button.dataset.index, 10));

@@ -26,7 +26,7 @@ function pctBar(p) {
 function calcTasksProgress() {
   const tasks = getTasksData();
   if (!tasks.length) return 0;
-  const done = tasks.filter(t => t.status === "Completado").length;
+  const done = tasks.filter(t => t.status === "Completed").length;
   return Math.round((done / tasks.length) * 100);
 }
 
@@ -52,16 +52,16 @@ function renderKPIs() {
 
   const tasksPct   = calcTasksProgress();
   const profilePct = calcProfileCompleteness(profileState.data || {});
-  const docsText   = docsCount === 0 ? "Sin documentos" :
-                     docsCount === 1 ? "1 documento" : `${docsCount} documentos`;
+  const docsText   = docsCount === 0 ? "No documents" :
+                     docsCount === 1 ? "1 document" : `${docsCount} documents`;
 
   wrap.innerHTML = `
     <div class="col-md-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
-          <h5 class="fw-bold mb-2">Progreso de Tareas</h5>
+          <h5 class="fw-bold mb-2">Task Progress</h5>
           ${pctBar(tasksPct)}
-          <small class="text-muted d-block mt-2">Basado en tus tareas de "TaskList".</small>
+          <small class="text-muted d-block mt-2">Based on your TaskList tasks.</small>
         </div>
       </div>
     </div>
@@ -69,9 +69,9 @@ function renderKPIs() {
     <div class="col-md-6">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
-          <h5 class="fw-bold mb-2">Completitud de Perfil</h5>
+          <h5 class="fw-bold mb-2">Profile Completion</h5>
           ${pctBar(profilePct)}
-          <small class="text-muted d-block mt-2">${docsText} en "Mis Documentos".</small>
+          <small class="text-muted d-block mt-2">${docsText} in "My Documents".</small>
         </div>
       </div>
     </div>
@@ -87,29 +87,29 @@ function renderSteps() {
 
   const steps = [
     {
-      title: "1) Completar Mi Perfil",
-      desc:  "Rellena datos personales, académicos y deportivos, y añade al menos 1 highlight.",
-      status: profilePct >= 80 ? "Completado" : (profilePct >= 30 ? "En curso" : "Pendiente")
+      title: "1) Complete My Profile",
+      desc:  "Fill out personal, academic, and athletic information, and add at least one highlight.",
+      status: profilePct >= 80 ? "Completed" : (profilePct >= 30 ? "In progress" : "Pending")
     },
     {
-      title: "2) Subir Documentos Clave",
-      desc:  "Expedientes, notas oficiales y cualquier material que apoye tu candidatura.",
-      status: docsCount > 0 ? "En curso" : "Pendiente"
+      title: "2) Upload Key Documents",
+      desc:  "Transcripts, official grades, and any materials that support your candidacy.",
+      status: docsCount > 0 ? "In progress" : "Pending"
     },
     {
-      title: "3) Preparar Promoción",
-      desc:  "Define prioridades (tipo de uni, ubicación, presupuesto) en la pestaña “Mi Promoción”.",
-      status: "Pendiente"
+      title: "3) Prepare Promotion",
+      desc:  'Define priorities (university type, location, budget) in the "My Promotion" tab.',
+      status: "Pending"
     },
     {
-      title: "4) Avance de Tareas",
-      desc:  "Usa TaskList para seguir cada paso y marcar progreso.",
-      status: tasksPct >= 80 ? "En curso" : (tasksPct > 0 ? "En curso" : "Pendiente")
+      title: "4) Task Progress",
+      desc:  "Use TaskList to track each step and mark progress.",
+      status: tasksPct >= 80 ? "In progress" : (tasksPct > 0 ? "In progress" : "Pending")
     }
   ];
 
-  const color = s => s === "Completado" ? "success" :
-                      s === "En curso"  ? "warning" : "secondary";
+  const color = s => s === "Completed" ? "success" :
+                      s === "In progress"  ? "warning" : "secondary";
 
   list.innerHTML = steps.map(s => `
     <div class="list-group-item d-flex justify-content-between align-items-start">

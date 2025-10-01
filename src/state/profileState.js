@@ -12,8 +12,8 @@ export const emptyProfileData = {
   teamHistory: []
 };
 
-// Estado global sencillo (única fuente de verdad en memoria)
+// Simple global state (single source of truth in memory)
 export const profileState = {
-  // clon para no mutar la constante por accidente
+  // clone to avoid mutating the constant by accident
   data: JSON.parse(JSON.stringify(emptyProfileData)),
 };

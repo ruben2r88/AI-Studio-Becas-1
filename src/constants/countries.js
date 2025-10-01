@@ -30,7 +30,7 @@ export const countries = [
   { name: 'Qatar', code: '+974', emoji: '🇶🇦' }, { name: 'Romania', code: '+40', emoji: '🇷🇴' }, { name: 'Russia', code: '+7', emoji: '🇷🇺' },
   { name: 'Saudi Arabia', code: '+966', emoji: '🇸🇦' }, { name: 'Senegal', code: '+221', emoji: '🇸🇳' }, { name: 'Serbia', code: '+381', emoji: '🇷🇸' },
   { name: 'Singapore', code: '+65', emoji: '🇸🇬' }, { name: 'Slovakia', code: '+421', emoji: '🇸🇰' }, { name: 'Slovenia', code: '+386', emoji: '🇸🇮' },
-  { name: 'South Africa', code: '+27', emoji: '🇿🇦' }, { name: 'South Korea', code: '+82', emoji: '🇰🇷' }, { name: 'España', code: '+34', emoji: '🇪🇸' },
+  { name: 'South Africa', code: '+27', emoji: '🇿🇦' }, { name: 'South Korea', code: '+82', emoji: '🇰🇷' }, { name: 'Spain', code: '+34', emoji: '🇪🇸' },
   { name: 'Sweden', code: '+46', emoji: '🇸🇪' }, { name: 'Switzerland', code: '+41', emoji: '🇨🇭' }, { name: 'Syria', code: '+963', emoji: '🇸🇾' },
   { name: 'Taiwan', code: '+886', emoji: '🇹🇼' }, { name: 'Thailand', code: '+66', emoji: '🇹🇭' }, { name: 'Trinidad and Tobago', code: '+1-868', emoji: '🇹🇹' },
   { name: 'Tunisia', code: '+216', emoji: '🇹🇳' }, { name: 'Turkey', code: '+90', emoji: '🇹🇷' }, { name: 'Ukraine', code: '+380', emoji: '🇺🇦' },

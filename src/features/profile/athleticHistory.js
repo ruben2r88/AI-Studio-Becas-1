@@ -7,7 +7,7 @@ export function renderTeamHistory(userProfileData) {
 
   const birthDateStr = userProfileData?.personal?.birthDate;
   if (!birthDateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateStr)) {
-    container.innerHTML = `<div class="alert alert-warning">Introduce una fecha de nacimiento válida en "Datos Personales" para generar tu historial de equipos.</div>`;
+    container.innerHTML = `<div class="alert alert-warning">Enter a valid date of birth in "Personal Information" to generate your team history.</div>`;
     return;
   }
 
@@ -19,7 +19,7 @@ export function renderTeamHistory(userProfileData) {
   if (mm < 0 || (mm === 0 && today.getDate() < birthDate.getDate())) age--;
 
   if (age < 14) {
-    container.innerHTML = `<div class="alert alert-info">El historial de equipos se genera a partir de los 14 años.</div>`;
+    container.innerHTML = `<div class="alert alert-info">Team history is generated starting at age 14.</div>`;
     return;
   }
 
@@ -32,23 +32,23 @@ export function renderTeamHistory(userProfileData) {
 
   container.innerHTML = `
     <div class="row g-3 fw-bold text-muted d-none d-md-flex mb-2">
-      <div class="col-md-3">Temporadas</div>
-      <div class="col-md-5">Nombre del Club</div>
-      <div class="col-md-4">División Categoría</div>
+      <div class="col-md-3">Seasons</div>
+      <div class="col-md-5">Club name</div>
+      <div class="col-md-4">Division/Category</div>
     </div>
     ${seasons.map(({season, age}) => `
       <div class="row g-2 mb-2 align-items-center" data-season="${season}">
         <div class="col-md-3">
-          <label class="form-label d-md-none">Temporada (Edad)</label>
-          <input type="text" class="form-control" value="${season} (${age} años)" readonly>
+          <label class="form-label d-md-none">Season (Age)</label>
+          <input type="text" class="form-control" value="${season} (${age} years old)" readonly>
         </div>
         <div class="col-md-5">
           <label class="form-label d-md-none">Club</label>
-          <input type="text" class="form-control" placeholder="Nombre del club">
+          <input type="text" class="form-control" placeholder="Club name">
         </div>
         <div class="col-md-4">
-          <label class="form-label d-md-none">División</label>
-          <input type="text" class="form-control" placeholder="Categoría">
+          <label class="form-label d-md-none">Division</label>
+          <input type="text" class="form-control" placeholder="Category">
         </div>
       </div>
     `).join('')}

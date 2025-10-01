@@ -14,14 +14,14 @@ export function renderAcademicHistory(userProfileData, userId) {
   // Validación básica de fecha de nacimiento
   const birthDateStr = userProfileData?.personal?.birthDate;
   if (!birthDateStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(birthDateStr)) {
-    container.innerHTML = `<div class="alert alert-info">Por favor, introduce tu fecha de nacimiento en "Datos Personales" para generar tu historial académico.</div>`;
+    container.innerHTML = `<div class="alert alert-info">Please enter your date of birth in "Personal Information" to generate your academic history.</div>`;
     return;
   }
 
   const birthYear = parseInt(birthDateStr.split('/')[2], 10);
   const currentYear = new Date().getFullYear();
   if ((currentYear - birthYear) < 14) {
-    container.innerHTML = `<div class="alert alert-warning">El historial académico se genera para mayores de 14 años.</div>`;
+    container.innerHTML = `<div class="alert alert-warning">Academic history is generated for students aged 14 or older.</div>`;
     return;
   }
 
@@ -44,7 +44,7 @@ export function renderAcademicHistory(userProfileData, userId) {
     const season = `${yearStart}-${yearEnd}`;
     const currentDefault = defaults[academicYearIndex] || null;
 
-    const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const monthOptions = months.map(m => `<option>${m}</option>`).join('');
 
     container.insertAdjacentHTML('beforeend', `
@@ -53,20 +53,20 @@ export function renderAcademicHistory(userProfileData, userId) {
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label">Nivel Educativo</label>
+              <label class="form-label">Education Level</label>
               <select class="form-select academic-level-select">
-                <option ${!currentDefault ? 'selected' : ''} disabled>Selecciona...</option>
-                <option ${currentDefault?.level === 'ESO' ? 'selected' : ''}>ESO</option>
-                <option ${currentDefault?.level === 'Bachillerato' ? 'selected' : ''}>Bachillerato</option>
-                <option>Grado Medio</option>
-                <option>Grado Superior</option>
-                <option>Universidad</option>
-                <option>No estudié/Otro</option>
+                <option ${!currentDefault ? 'selected' : ''} disabled>Select...</option>
+                <option value="ESO" ${currentDefault?.level === 'ESO' ? 'selected' : ''}>ESO (Lower Secondary)</option>
+                <option value="Bachillerato" ${currentDefault?.level === 'Bachillerato' ? 'selected' : ''}>Bachillerato (Upper Secondary)</option>
+                <option value="Grado Medio">Intermediate Vocational</option>
+                <option value="Grado Superior">Advanced Vocational</option>
+                <option value="Universidad">University</option>
+                <option value="No estudié/Otro">Did not study/Other</option>
               </select>
             </div>
 
             <div class="col-md-3 course-details">
-              <label class="form-label">Curso</label>
+              <label class="form-label">Year</label>
               <select class="form-select academic-course-select">
                 <option ${currentDefault?.course === '1' ? 'selected' : ''}>1</option>
                 <option ${currentDefault?.course === '2' ? 'selected' : ''}>2</option>
@@ -76,21 +76,21 @@ export function renderAcademicHistory(userProfileData, userId) {
             </div>
 
             <div class="col-md-3 university-details d-none">
-              <label class="form-label">Créditos aprobados/matriculados</label>
-              <input type="number" class="form-control" placeholder="Ej: 60">
+              <label class="form-label">Credits earned/enrolled</label>
+              <input type="number" class="form-control" placeholder="E.g.: 60">
             </div>
 
             <div class="col-md-2 gpa-details">
-              <label class="form-label">Nota Media</label>
-              <input type="number" step="0.01" class="form-control" placeholder="Ej: 3.8">
+              <label class="form-label">Grade point average</label>
+              <input type="number" step="0.01" class="form-control" placeholder="E.g.: 3.8">
             </div>
 
             <div class="col-md-3 file-details">
-              <label class="form-label">Adjuntar Notas</label>
+              <label class="form-label">Attach transcripts</label>
               <input type="file" class="form-control ah-file-input">
               <div class="small mt-1 d-flex align-items-center gap-2">
-                <a class="ah-file-link d-none" target="_blank" rel="noopener">Ver archivo</a>
-                <button type="button" class="btn btn-sm btn-outline-danger d-none ah-file-remove">Quitar</button>
+                <a class="ah-file-link d-none" target="_blank" rel="noopener">View file</a>
+                <button type="button" class="btn btn-sm btn-outline-danger d-none ah-file-remove">Remove</button>
                 <span class="text-muted ah-file-status"></span>
               </div>
             </div>
@@ -98,7 +98,7 @@ export function renderAcademicHistory(userProfileData, userId) {
 
           <div class="row g-3 mt-1">
             <div class="col-12 other-details d-none">
-              <label class="form-label">¿Qué hiciste ese curso académico?</label>
+              <label class="form-label">What did you do during that academic year?</label>
               <textarea class="form-control" rows="2"></textarea>
             </div>
           </div>
@@ -106,15 +106,15 @@ export function renderAcademicHistory(userProfileData, userId) {
           <div class="graduation-wrapper mt-3">
             <div class="form-check">
               <input class="form-check-input graduation-check" type="checkbox" id="graduated-check-${yearEnd}">
-              <label class="form-check-label" for="graduated-check-${yearEnd}">Marcar si te graduaste este año</label>
+              <label class="form-check-label" for="graduated-check-${yearEnd}">Check if you graduated this year</label>
             </div>
             <div class="row g-2 mt-2 d-none graduation-details" id="graduation-details-${yearEnd}">
               <div class="col-md-6">
-                <label class="form-label small">Mes de Graduación</label>
+                <label class="form-label small">Graduation month</label>
                 <select class="form-select form-select-sm">${monthOptions}</select>
               </div>
               <div class="col-md-6">
-                <label class="form-label small">Año de Graduación</label>
+                <label class="form-label small">Graduation year</label>
                 <input type="number" class="form-control form-select-sm" value="${yearEnd}">
               </div>
             </div>
@@ -186,7 +186,7 @@ export function renderAcademicHistory(userProfileData, userId) {
         const url = await getFileURLByPath(h.notesFilePath);
         if (link) {
           link.href = url;
-          link.textContent = h.notesFileName || 'Ver archivo';
+          link.textContent = h.notesFileName || 'View file';
           link.classList.remove('d-none');
         }
         if (rmBtn) rmBtn.classList.remove('d-none');
@@ -213,7 +213,7 @@ export function renderAcademicHistory(userProfileData, userId) {
       if (!file || !userId) return;
 
       try {
-        setStatus('Subiendo...');
+        setStatus('Uploading...');
         // Si ya hay uno, lo borramos (evita huérfanos)
         const previousPath = card.dataset.notesFilePath;
         if (previousPath) {
@@ -231,14 +231,14 @@ export function renderAcademicHistory(userProfileData, userId) {
           link.classList.remove('d-none');
         }
         if (rmBtn) rmBtn.classList.remove('d-none');
-        setStatus('Listo ✓');
+        setStatus('Done ✓');
 
         // Permite volver a elegir el mismo nombre de archivo después
         e.target.value = '';
       } catch (err) {
-        console.error('Error subiendo notas:', err);
-        setStatus('Error al subir');
-        alert('No se pudo subir el archivo de notas.');
+        console.error('Error uploading transcripts:', err);
+        setStatus('Upload error');
+        alert('Could not upload the transcript file.');
       }
     }
 
@@ -248,7 +248,7 @@ export function renderAcademicHistory(userProfileData, userId) {
     rmBtn?.addEventListener('click', async () => {
       const path = card.dataset.notesFilePath;
       if (!path) return;
-      if (!confirm('¿Quitar el archivo adjunto de este curso?')) return;
+      if (!confirm('Remove the attached file for this year?')) return;
       try { await deleteUserFile(path); } catch (_) {}
 
       // Limpia estado visual y datasets

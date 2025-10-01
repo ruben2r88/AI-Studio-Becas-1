@@ -8,7 +8,7 @@ function renderDocsList(files = []) {
   if (!list) return;
 
   if (!files.length) {
-    list.innerHTML = `<div class="alert alert-info mb-0">Aún no has subido documentos.</div>`;
+    list.innerHTML = `<div class="alert alert-info mb-0">You haven't uploaded any documents yet.</div>`;
     return;
   }
 
@@ -19,7 +19,7 @@ function renderDocsList(files = []) {
           const when = f?.updatedAt
             ? new Date(f.updatedAt)
             : (f?.timeCreated ? new Date(f.timeCreated) : new Date());
-          const dateText = when.toLocaleString("es-ES");
+          const dateText = when.toLocaleString("en-US");
           return `
             <div class="list-group-item d-flex align-items-center justify-content-between">
               <div class="me-3 text-truncate" style="max-width: 60%;">
@@ -31,7 +31,7 @@ function renderDocsList(files = []) {
               </div>
               <div class="small text-muted d-none d-md-block me-3">${dateText}</div>
               <button class="btn btn-sm btn-outline-danger doc-delete-btn" data-path="${f.fullPath}">
-                Eliminar
+                Delete
               </button>
             </div>
           `;
@@ -55,14 +55,14 @@ async function refreshDocsList() {
 /** Sube el archivo seleccionado mostrando la barra de progreso */
 async function handleUpload() {
   const user = auth.currentUser;
-  if (!user) return alert("Debes estar autenticado.");
+  if (!user) return alert("You must be signed in.");
   const fileInput = document.getElementById("doc-file-input");
   const uploadBtn = document.getElementById("doc-upload-btn");
   const progressWrap = document.getElementById("doc-progress-wrap");
   const progressBar = document.getElementById("doc-upload-progress");
 
   const file = fileInput?.files?.[0];
-  if (!file) return alert("Selecciona un archivo primero.");
+  if (!file) return alert("Select a file first.");
 
   uploadBtn.disabled = true;
   fileInput.disabled = true;
@@ -79,7 +79,7 @@ async function handleUpload() {
     await refreshDocsList();
   } catch (e) {
     console.error(e);
-    alert("No se pudo subir el archivo.");
+    alert("Could not upload the file.");
   } finally {
     uploadBtn.disabled = false;
     fileInput.disabled = false;
@@ -112,14 +112,14 @@ export async function initDocsFeature() {
       const path = btn.dataset.path;
       if (!path) return;
 
-      if (!confirm("¿Eliminar este archivo?")) return;
+      if (!confirm("Delete this file?")) return;
 
       try {
         await deleteUserFile(path);
         await refreshDocsList();
       } catch (err) {
         console.error(err);
-        alert("No se pudo eliminar el archivo.");
+        alert("Could not delete the file.");
       }
     });
   }

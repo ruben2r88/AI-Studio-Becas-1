@@ -47,7 +47,9 @@ function calcProgress(tasks = []) {
 function taskItemHTML(task) {
   const isCompleted = task.status === "Completado";
   const statusColors = { "Completado": "success", "En Progreso": "warning", "Pendiente": "secondary" };
+  const statusLabels = { "Completado": "Completed", "En Progreso": "In Progress", "Pendiente": "Pending" };
   const statusColor = statusColors[task.status] || "secondary";
+  const statusLabel = statusLabels[task.status] || task.status;
 
   return `
     <div class="accordion-item task-item" id="task-item-${task.id}">
@@ -59,7 +61,7 @@ function taskItemHTML(task) {
           <span class="fw-bold flex-grow-1 ${isCompleted ? "text-decoration-line-through text-muted" : ""}">
             ${task.title}
           </span>
-          <span class="badge bg-${statusColor}">${task.status}</span>
+          <span class="badge bg-${statusColor}">${statusLabel}</span>
         </button>
       </h2>
       <div id="task-collapse-${task.id}" class="accordion-collapse collapse" data-bs-parent="#task-list-accordion">
@@ -67,26 +69,26 @@ function taskItemHTML(task) {
           ${task.description ? `<p>${task.description}</p>` : ""}
           <hr>
           <div class="mb-2">
-            <label class="form-label small fw-bold">Notas</label>
+            <label class="form-label small fw-bold">Notes</label>
             <textarea class="form-control form-control-sm task-notes" rows="2"
-                      data-task-id="${task.id}" placeholder="Añade tus notas aquí...">${task.notes || ""}</textarea>
+                      data-task-id="${task.id}" placeholder="Add your notes here...">${task.notes || ""}</textarea>
           </div>
 
           <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2">
-              <label class="form-label small fw-bold mb-0">Estado:</label>
+              <label class="form-label small fw-bold mb-0">Status:</label>
               <select class="form-select form-select-sm d-inline-block task-status-select"
                       data-task-id="${task.id}">
-                <option value="Pendiente" ${task.status === "Pendiente" ? "selected" : ""}>Pendiente</option>
-                <option value="En Progreso" ${task.status === "En Progreso" ? "selected" : ""}>En Progreso</option>
-                <option value="Completado" ${task.status === "Completado" ? "selected" : ""}>Completado</option>
+                <option value="Pendiente" ${task.status === "Pendiente" ? "selected" : ""}>Pending</option>
+                <option value="En Progreso" ${task.status === "En Progreso" ? "selected" : ""}>In Progress</option>
+                <option value="Completado" ${task.status === "Completado" ? "selected" : ""}>Completed</option>
               </select>
             </div>
 
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-primary save-task-btn" data-task-id="${task.id}">Aceptar</button>
-              <button class="btn btn-sm btn-outline-secondary edit-task-btn" data-task-id="${task.id}">Editar</button>
-              <button class="btn btn-sm btn-outline-danger delete-task-btn" data-task-id="${task.id}">Eliminar</button>
+              <button class="btn btn-sm btn-primary save-task-btn" data-task-id="${task.id}">Save</button>
+              <button class="btn btn-sm btn-outline-secondary edit-task-btn" data-task-id="${task.id}">Edit</button>
+              <button class="btn btn-sm btn-outline-danger delete-task-btn" data-task-id="${task.id}">Delete</button>
             </div>
           </div>
         </div>
@@ -116,7 +118,7 @@ function renderList() {
   const filtered = applyFilters(state.tasks);
 
   if (filtered.length === 0) {
-    cont.innerHTML = `<div class="alert alert-info">No hay tareas que coincidan con los filtros.</div>`;
+    cont.innerHTML = `<div class="alert alert-info">No tasks match the filters.</div>`;
   } else {
     cont.innerHTML = filtered.map(taskItemHTML).join("");
   }
@@ -177,7 +179,7 @@ function wireListDelegation() {
     const del = e.target.closest(".delete-task-btn");
     if (del) {
       const id = del.dataset.taskId;
-      if (confirm("¿Seguro que quieres eliminar esta tarea?")) {
+      if (confirm("Are you sure you want to delete this task?")) {
         await deleteTaskSvc(uid, id);
         state.tasks = state.tasks.filter(t => String(t.id) !== String(id));
         setTasksCache(state.tasks);
@@ -261,7 +263,7 @@ function openCreateModal() {
   if (notesInput) notesInput.value = "";
   if (statusInput) statusInput.value = "Pendiente";
   const titleEl = form.querySelector(".modal-title");
-  if (titleEl) titleEl.textContent = "Nueva tarea";
+  if (titleEl) titleEl.textContent = "New Task";
   bs.show();
 }
 
@@ -276,7 +278,7 @@ function openEditModal(taskId) {
   if (notesInput) notesInput.value = t.notes || "";
   if (statusInput) statusInput.value = t.status || "Pendiente";
   const titleEl = form.querySelector(".modal-title");
-  if (titleEl) titleEl.textContent = "Editar tarea";
+  if (titleEl) titleEl.textContent = "Edit Task";
   bs.show();
 }
 
@@ -287,7 +289,7 @@ function wireModal() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const uid = auth.currentUser?.uid;
-    if (!uid) return alert("Debes iniciar sesión.");
+    if (!uid) return alert("You must sign in.");
 
     const payload = {
       title: (titleInput?.value || "").trim(),
@@ -295,7 +297,7 @@ function wireModal() {
       notes: (notesInput?.value || "").trim(),
       status: statusInput?.value || "Pendiente",
     };
-    if (!payload.title) return alert("El título es obligatorio.");
+    if (!payload.title) return alert("Title is required.");
 
     try {
       if (form.dataset.mode === "edit" && form.dataset.taskId) {
@@ -313,7 +315,7 @@ function wireModal() {
       renderList();
     } catch (err) {
       console.error(err);
-      alert("No se pudo guardar la tarea.");
+      alert("Could not save the task.");
     }
   });
 }

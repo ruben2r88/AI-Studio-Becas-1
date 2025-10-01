@@ -132,28 +132,31 @@
 
           <ul class="nav nav-pills flex-column mb-auto gap-2" id="main-nav" role="tablist">
             <li class="nav-item">
-              <a href="#inicio" class="nav-link d-flex align-items-center active" data-bs-toggle="tab" data-bs-target="#inicio-content">🏠<span class="ms-3">Inicio</span></a>
+              <a href="#inicio" class="nav-link d-flex align-items-center active" data-bs-toggle="tab" data-bs-target="#inicio-content">🏠<span class="ms-3">Home</span></a>
             </li>
             <li class="nav-item">
-              <a href="#perfil" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#perfil-content">👤<span class="ms-3">Mi Perfil</span></a>
+              <a href="#perfil" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#perfil-content">👤<span class="ms-3">My Profile</span></a>
             </li>
             <li class="nav-item">
-              <a href="#proceso" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#proceso-content">🚀<span class="ms-3">Mi Proceso</span></a>
+              <a href="#proceso" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#proceso-content">🚀<span class="ms-3">My Process</span></a>
+            </li>
+            <li class="nav-item">
+              <a href="#visa" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#visa-content">🛂<span class="ms-3">My Visa</span></a>
             </li>
             <li class="nav-item">
               <a href="#tareas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#tareas-content">✔️<span class="ms-3">Task List</span></a>
             </li>
             <li class="nav-item">
-              <a href="#documentos" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#documentos-content">📄<span class="ms-3">Mis Documentos</span></a>
+              <a href="#documentos" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#documentos-content">📄<span class="ms-3">My Documents</span></a>
             </li>
             <li class="nav-item">
-              <a href="#finanzas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#finanzas-content">💰<span class="ms-3">Estado Financiero</span></a>
+              <a href="#finanzas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#finanzas-content">💰<span class="ms-3">Financial Status</span></a>
             </li>
             <li class="nav-item">
               <a href="#chat" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#chat-content">💬<span class="ms-3">Chat</span></a>
             </li>
             <li class="nav-item">
-              <a href="#ayuda" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#ayuda-content">❓<span class="ms-3">Ayuda</span></a>
+              <a href="#ayuda" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#ayuda-content">❓<span class="ms-3">Help</span></a>
             </li>
           </ul>
         </div>
@@ -161,7 +164,7 @@
         <!-- Cerrar sesión -->
         <div>
           <button id="logout-btn" data-action="logout" class="btn nav-link d-flex align-items-center w-100 text-start">
-            🚪<span class="ms-3">Cerrar Sesión</span>
+            🚪<span class="ms-3">Log Out</span>
           </button>
         </div>
       </aside>
@@ -171,13 +174,14 @@
         <!-- Barra superior con Cerrar sesión -->
         <div class="container my-2 d-flex justify-content-end">
           <button data-action="logout" type="button" class="btn btn-outline-danger btn-sm">
-            Cerrar sesión
+            Log out
           </button>
         </div>
         <div class="tab-content" id="main-content">
           <div class="tab-pane fade show active" id="inicio-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="perfil-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="proceso-content" role="tabpanel"></div>
+          <div class="tab-pane fade" id="visa-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="tareas-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="documentos-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="finanzas-content" role="tabpanel"></div>
@@ -193,12 +197,12 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Añadir Red Social</h5>
+          <h5 class="modal-title">Add Social Profile</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="social-type" class="form-label">Tipo de red</label>
+            <label for="social-type" class="form-label">Network type</label>
             <select class="form-select" id="social-type">
               <option>Instagram</option>
               <option>Twitter</option>
@@ -207,13 +211,13 @@
             </select>
           </div>
           <div>
-            <label for="social-url" class="form-label">URL del perfil</label>
+            <label for="social-url" class="form-label">Profile URL</label>
             <input type="url" class="form-control" id="social-url" placeholder="https://..." />
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="save-social-link">Aceptar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="save-social-link">Save</button>
         </div>
       </div>
     </div>
@@ -222,15 +226,15 @@
   <div class="modal fade" id="multimedia-modal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">Añadir Multimedia</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header"><h5 class="modal-title">Add Media</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <input type="hidden" id="multimedia-type" />
           <div class="mb-3"><label for="multimedia-name" class="form-label"></label><input type="text" class="form-control" id="multimedia-name" /></div>
-          <div><label for="multimedia-url" class="form-label">Enlace (URL)</label><input type="url" class="form-control" id="multimedia-url" placeholder="https://..." /></div>
+          <div><label for="multimedia-url" class="form-label">Link (URL)</label><input type="url" class="form-control" id="multimedia-url" placeholder="https://..." /></div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="save-multimedia-link">Aceptar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="save-multimedia-link">Save</button>
         </div>
       </div>
     </div>
@@ -241,14 +245,14 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="scholarship-modal-title">Desglose de Beca</h5>
+          <h5 class="modal-title" id="scholarship-modal-title">Scholarship Breakdown</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="scholarship-modal-body">
-          <p class="text-center">Cargando detalles...</p>
+          <p class="text-center">Loading details...</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -259,30 +263,30 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Añadir Universidad</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          <h5 class="modal-title">Add University</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="university-form">
             <div class="mb-3">
-              <label class="form-label">Nombre de la Universidad</label>
-              <input type="text" class="form-control" id="university-name-input" placeholder="Ej: University of Florida" required>
+              <label class="form-label">University Name</label>
+              <input type="text" class="form-control" id="university-name-input" placeholder="E.g.: University of Florida" required>
             </div>
             <div class="mb-2">
-              <label class="form-label">Estado</label>
+              <label class="form-label">Status</label>
               <select class="form-select" id="university-status-select" required>
-                <option>Pendiente</option>
-                <option>En Contacto</option>
-                <option>Oferta Recibida</option>
-                <option>Sin Interés</option>
+                <option>Pending</option>
+                <option>In Contact</option>
+                <option>Offer Received</option>
+                <option>Not Interested</option>
               </select>
             </div>
-            <div class="form-text">Podrás editar o añadir el desglose de beca más adelante.</div>
+            <div class="form-text">You can edit or add the scholarship breakdown later.</div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn btn-primary" id="save-university-btn">Guardar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="save-university-btn">Save</button>
         </div>
       </div>
     </div>
@@ -293,8 +297,8 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Seguimiento de Universidad</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        <h5 class="modal-title">University Timeline</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body">
@@ -304,17 +308,17 @@
 
         <div class="card">
           <div class="card-body">
-            <label class="form-label fw-bold">Añadir nota</label>
-            <textarea id="timeline-new-text" class="form-control" rows="3" placeholder="Ej.: Llamada agendada para el martes a las 17:00"></textarea>
+            <label class="form-label fw-bold">Add note</label>
+            <textarea id="timeline-new-text" class="form-control" rows="3" placeholder="E.g.: Call scheduled for Tuesday at 5:00 p.m."></textarea>
           </div>
           <div class="card-footer text-end">
-            <button type="button" id="timeline-add-btn" class="btn btn-primary" data-university-id="">Guardar nota</button>
+            <button type="button" id="timeline-add-btn" class="btn btn-primary" data-university-id="">Save note</button>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await signInWithEmailAndPassword(auth, email, password);
         window.location.href = 'index.html';
       } catch (error) {
-        alert("Error al iniciar sesión: " + (error?.message || error));
+        alert("Error signing in: " + (error?.message || error));
         console.error(error);
       }
     });
@@ -50,10 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = document.getElementById('register-password').value;
       try {
         await createUserWithEmailAndPassword(auth, email, password);
-        alert("¡Registro exitoso! Inicia sesión.");
+        alert("Registration successful! Please sign in.");
         if (showLoginBtn) showLoginBtn.click();
       } catch (error) {
-        alert("Error al registrarse: " + (error?.message || error));
+        alert("Error signing up: " + (error?.message || error));
         console.error(error);
       }
     });
@@ -76,10 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-/* Notas de integración:
+/* Integration notes:
 1) Este archivo ya NO hace initializeApp: evita el error "Firebase App named '[DEFAULT]' already exists".
 2) La ruta de import es relativa al proyecto actual: './services/auth.js'.
-3) login.html ya carga <script type="module" src="login.js">, así que los imports funcionan.
-4) Si cambiamos a backend REST, solo tocaríamos services/auth.js y esto seguiría igual.
-5) Si ves errores de CORS o de reglas, revisa Firestore Rules y el dominio local.
+3) login.html already loads <script type="module" src="login.js">, so imports work.
+4) If we switch to a REST backend, only services/auth.js needs updating; this stays the same.
+5) If you see CORS or rules errors, review Firestore Rules and the local domain.
 */
