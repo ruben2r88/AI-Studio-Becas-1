@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es" data-page="visa">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eture | My Visa</title>
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+    crossorigin="anonymous"
+  />
+  <link rel="preload" href="../assets/fonts/poppins/Poppins-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/neue-power/NeuePower-Bold.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../assets/brand/brand.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <link rel="stylesheet" href="../assets/styles/app.css">
+</head>
+<body>
+  <div id="app-container">
+    <div class="d-flex">
+      <aside class="sidebar d-flex flex-column justify-content-between p-3 vh-100 position-sticky top-0 flex-shrink-0">
+        <div>
+          <div class="px-3 py-3 d-flex align-items-center">
+            <img src="../assets/brand/eture-logo-white.png" alt="Eture" class="sidebar-logo">
+          </div>
+          <ul class="nav nav-pills flex-column mb-auto gap-2" id="static-nav" role="tablist">
+            <li class="nav-item">
+              <a href="inicio.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-speedometer2 me-3"></i><span>Home</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="perfil.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-person-circle me-3"></i><span>My Profile</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="proceso.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-diagram-3 me-3"></i><span>My Process</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="visa.html" class="nav-link d-flex align-items-center active" aria-current="page">
+                <i class="bi bi-passport me-3"></i><span>My Visa</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="tareas.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-check2-square me-3"></i><span>Task List</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="documentos.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-folder2 me-3"></i><span>My Documents</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="finanzas.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-piggy-bank me-3"></i><span>Financial Status</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="chat.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-chat-dots me-3"></i><span>Chat</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="ayuda.html" class="nav-link d-flex align-items-center">
+                <i class="bi bi-life-preserver me-3"></i><span>Help</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <button type="button" class="btn nav-link d-flex align-items-center w-100 text-start">
+            <i class="bi bi-box-arrow-right me-3"></i>
+            <span>Log Out</span>
+          </button>
+        </div>
+      </aside>
+      <main class="flex-grow-1 p-4" style="overflow-y:auto; min-height:100vh;">
+        <div class="container my-2 d-flex justify-content-end">
+          <button type="button" class="btn btn-outline-danger btn-sm">
+            Log out
+          </button>
+        </div>
+        <div id="view-root" class="tab-pane fade show active">
+          <div class="card">
+  <div class="card-header">
+    <ul class="nav nav-tabs card-header-tabs" id="visa-tabs" role="tablist">
+      <li class="nav-item" role="presentation"><button class="nav-link active" id="visa-overview-tab" data-bs-toggle="tab" data-bs-target="#visa-overview" type="button" role="tab" aria-controls="visa-overview" aria-selected="true">Overview</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="visa-checklist-tab" data-bs-toggle="tab" data-bs-target="#visa-checklist" type="button" role="tab" aria-controls="visa-checklist" aria-selected="false">Checklist</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="visa-submission-tab" data-bs-toggle="tab" data-bs-target="#visa-submission" type="button" role="tab" aria-controls="visa-submission" aria-selected="false">Submission</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="visa-appointment-tab" data-bs-toggle="tab" data-bs-target="#visa-appointment" type="button" role="tab" aria-controls="visa-appointment" aria-selected="false">Appointment</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="visa-approval-tab" data-bs-toggle="tab" data-bs-target="#visa-approval" type="button" role="tab" aria-controls="visa-approval" aria-selected="false">Visa Approval</button></li>
+      <li class="nav-item" role="presentation"><button class="nav-link" id="visa-tie-tab" data-bs-toggle="tab" data-bs-target="#visa-tie" type="button" role="tab" aria-controls="visa-tie" aria-selected="false">TIE</button></li>
+    </ul>
+  </div>
+
+  <div class="card-body tab-content">
+    <!-- === OVERVIEW === -->
+    <div class="tab-pane fade show active" id="visa-overview" role="tabpanel" aria-labelledby="visa-overview-tab">
+        <h5 class="fw-bold mb-2">MyVisa — Overview</h5>
+        <div class="mb-3">
+            <p class="text-muted">
+                Processing your student visa is a crucial first step in your journey to Spain. 
+                <button class="btn btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#visaOverviewModal">View more</button>
+            </p>
+            </div>
+
+            <!-- Modal -->
+            <div class="modal fade" id="visaOverviewModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title fw-bold">Visa Overview — Full Info</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p>
+                        Processing your student visa is a crucial first step in your journey to Spain and is essential
+                        for ensuring your timely arrival for your program. Staying focused and attentive to every detail
+                        will help ensure a smooth, hassle-free experience. This section, <strong>MyVisa</strong>, will
+                        guide you through the requirements and provide a clear visual organization of the steps necessary
+                        to successfully obtain your visa.
+                        </p>
+
+                        <h6 class="fw-bold mt-3">We have broken this process down into six sections:</h6>
+                        <ol>
+                        <li><strong>Overview</strong>: Introduction to visa processing and MyVisa.</li>
+                        <li><strong>Checklist</strong>: Upload all required documents for your visa application.</li>
+                        <li><strong>Submission</strong>: Choose your visa submission location — either in the U.S. or Spain (restrictions apply).</li>
+                        <li><strong>Appointment</strong>: Learn how to book your consulate appointment through BLS and confirm with ETURE staff.</li>
+                        <li><strong>Visa Approval</strong>: Upload a photo of your visa once approved.</li>
+                        <li><strong>TIE</strong>: Manage your appointment and obtain your Student Card in Spain.</li>
+                        </ol>
+
+                        <h6 class="fw-bold mt-4">Important</h6>
+                        <p>
+                        Unless otherwise instructed by ETURE staff, you will need to submit your visa application
+                        at the Spanish consulate in the U.S., depending on your state of residence. Spanish consulates
+                        collaborate with <strong>BLS</strong>, an external organization, to handle visa processing.
+                        For appointments and updates, frequently visit the BLS Spain Visa Service.
+                        </p>
+
+                        <h6 class="fw-bold mt-4">The Role of GM Football Academy SL</h6>
+                        <p>
+                        The ETURE student visa is processed through our academic partner,
+                        <strong>GM Football Academy</strong>, accredited by the Ministry of Education (Authorization Code: 46036402).
+                        They manage academic workload, Spanish classes, and football coaching lessons throughout the year.
+                        If asked during your consulate appointment, explain you will be studying at GM Football Academy.
+                        </p>
+
+                        <h6 class="fw-bold mt-4">Documents You Must Prepare</h6>
+                        <ul>
+                        <li>Visa Application Form</li>
+                        <li>Original Passport (valid for program duration + 3 months)</li>
+                        <li>ID – Proof of Jurisdiction</li>
+                        <li>U.S. Immigration Status</li>
+                        <li>Disclaimer Form</li>
+                        <li>Two Passport Photos</li>
+                        <li>Visa Consulate Fee & BLS Fee</li>
+                        <li>Medical Certificate</li>
+                        <li>FBI Criminal Record Report + Apostille</li>
+                        <li>Proof of Financial Means</li>
+                        <li>Notarized Copy of Birth Certificate + Apostille</li>
+                        <li>Translations (FBI Report, Apostille, Birth Certificate)</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-4">Additional for Minors</h6>
+                        <ul>
+                        <li>Notarized Parental Authorization</li>
+                        <li>Registry of Crimes of Sexual Nature authorization</li>
+                        <li>Notarized copy of both parents' passports</li>
+                        <li>ETURE Letter of Acceptance of Minor Responsibility</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-4">Documents Provided by ETURE / GM Academy</h6>
+                        <ul>
+                        <li>ETURE Official Invitation Letter</li>
+                        <li>GM Football Academy Acceptance Letter & Certificate</li>
+                        <li>Student Residence Letter</li>
+                        <li>Letter of Financial Responsibility</li>
+                        <li>Health Insurance Certificates (from DKV Insurance)</li>
+                        </ul>
+
+                        <h6 class="fw-bold mt-4">Tips & Next Steps</h6>
+                        <ul>
+                        <li>Start FBI checks early (valid for 180 days only).</li>
+                        <li>Don’t book flights until your visa is approved.</li>
+                        <li>Submit documents in person at the BLS center.</li>
+                        <li>Upload all docs in <strong>Checklist</strong> for review by ETURE Admissions.</li>
+                        <li>Schedule your consulate appointment via BLS website.</li>
+                        </ul>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="visa-overview-summary">
+            <!-- Paso actual + Progreso -->
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                <span class="me-2">Current step:</span>
+                <span id="visa-ov-step" class="badge bg-primary">—</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                <div class="progress" style="width:200px;height:10px;">
+                    <div id="visa-ov-progress" class="progress-bar bg-eture-red" style="width:0%"></div>
+                </div>
+                <small id="visa-ov-progress-text" class="text-muted">0% complete</small>
+                </div>
+            </div>
+
+            <!-- Tarjetas por sección -->
+            <div class="row g-3">
+                <!-- Checklist -->
+                <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="fw-bold mb-0">Checklist</h6>
+                        <span id="visa-ov-checklist-status" class="badge bg-secondary">—</span>
+                    </div>
+                    <p class="small text-muted mb-3">Upload all required documents for your visa application.</p>
+                    <button class="btn btn-link p-0 visa-tab-shortcut" type="button" data-visa-tab-target="#visa-checklist">Go to Checklist →</button>
+                    </div>
+                </div>
+                </div>
+
+                <!-- Submission -->
+                <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="fw-bold mb-0">Submission</h6>
+                        <span id="visa-ov-submission-status" class="badge bg-secondary">—</span>
+                    </div>
+                    <p class="small text-muted mb-3">Choose your BLS center and confirm submission.</p>
+                    <button class="btn btn-link p-0 visa-tab-shortcut" type="button" data-visa-tab-target="#visa-submission">Go to Submission →</button>
+                    </div>
+                </div>
+                </div>
+
+                <!-- Appointment -->
+                <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="fw-bold mb-0">Appointment</h6>
+                        <span id="visa-ov-appointment-status" class="badge bg-secondary">—</span>
+                    </div>
+                    <p class="small text-muted mb-3">Book your consulate appointment via BLS.</p>
+                    <button class="btn btn-link p-0 visa-tab-shortcut" type="button" data-visa-tab-target="#visa-appointment">Go to Appointment →</button>
+                    </div>
+                </div>
+                </div>
+
+                <!-- Visa Approval -->
+                <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="fw-bold mb-0">Visa Approval</h6>
+                        <span id="visa-ov-approval-status" class="badge bg-secondary">—</span>
+                    </div>
+                    <p class="small text-muted mb-3">Upload a photo of the visa page once approved.</p>
+                    <button class="btn btn-link p-0 visa-tab-shortcut" type="button" data-visa-tab-target="#visa-approval">Go to Visa Approval →</button>
+                    </div>
+                </div>
+                </div>
+
+                <!-- TIE -->
+                <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="fw-bold mb-0">TIE</h6>
+                        <span id="visa-ov-tie-status" class="badge bg-secondary">—</span>
+                    </div>
+                    <p class="small text-muted mb-3">Manage your TIE appointment and upload the card.</p>
+                    <button class="btn btn-link p-0 visa-tab-shortcut" type="button" data-visa-tab-target="#visa-tie">Go to TIE →</button>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <small id="visa-ov-last-update" class="text-muted">Last update —</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2) Checklist -->
+    <div class="tab-pane fade" id="visa-checklist" role="tabpanel" aria-labelledby="visa-checklist-tab">
+        <div class="row g-3">
+            <div class="col-lg-4 col-xl-3">
+                <div class="card h-100">
+                    <div class="card-body p-0">
+                        <div class="d-flex align-items-start justify-content-between p-3 border-bottom">
+                            <div>
+                                <h6 class="fw-bold mb-1">Checklist</h6>
+                                <small id="visa-demo-mode-note" class="text-muted d-none">Demo mode: review controls always visible</small>
+                            </div>
+                            <button id="visa-checklist-toggle" class="btn btn-sm btn-outline-secondary d-lg-none" type="button" aria-expanded="false" aria-controls="visa-checklist-list">Documents</button>
+                        </div>
+                        <div id="visa-checklist-list" class="list-group list-group-flush" role="tablist"><!-- items injected --></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-8 col-xl-9">
+                <div class="card" id="visa-doc-detail" tabindex="-1">
+                    <div class="card-body d-flex flex-column gap-3">
+                        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+                            <div>
+                                <h5 id="visa-doc-title" class="fw-bold mb-1">Select a document</h5>
+                                <span class="visa-doc-status badge bg-secondary">Pending</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3 ms-auto">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" id="visa-checklist-minor-toggle">
+                                    <label class="form-check-label" for="visa-checklist-minor-toggle">I’m under 18</label>
+                                </div>
+                                <div style="min-width: 200px;">
+                                    <div class="progress" style="height: 6px;">
+                                        <div id="visa-checklist-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small id="visa-verified-progress" class="text-muted">0/0 verified</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="visa-checklist-toast" class="alert alert-success py-2 px-3 small d-none" role="status"></div>
+
+                        <div id="doc-instructions" class="bg-light rounded p-3 small text-muted">
+                            Select a document on the left to view instructions.
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button id="doc-sample-btn" type="button" class="btn btn-sm btn-outline-primary" disabled aria-label="View sample document">Show Sample</button>
+                        </div>
+
+                        <div id="visa-doc-upload">
+                            <label class="form-label" for="doc-file-input">Upload file</label>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <input id="doc-file-input" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                                <button id="doc-replace-btn" type="button" class="btn btn-sm btn-outline-secondary d-none" aria-label="Replace uploaded file">Replace</button>
+                                <button id="doc-view-btn" type="button" class="btn btn-sm btn-outline-secondary" disabled aria-label="View uploaded file">View</button>
+                            </div>
+                            <div class="form-text">Only PDF, JPG or PNG files.</div>
+                            <div id="doc-upload-progress" class="small text-muted"></div>
+                        </div>
+
+                        <div id="doc-verified-message" class="alert alert-success small d-none" role="status"></div>
+
+                        <div id="doc-denial-alert" class="alert alert-danger small d-none" role="alert">
+                            <span id="doc-denial-reason"></span>
+                        </div>
+
+                        <div id="visa-doc-review-actions" class="d-flex flex-wrap align-items-center gap-2 d-none">
+                            <button id="btn-verify" type="button" class="btn btn-success btn-sm">Verify</button>
+                            <button id="btn-deny" type="button" class="btn btn-danger btn-sm">Deny</button>
+                        </div>
+
+                        <div>
+                            <label class="form-label" for="doc-notes">Notes</label>
+                            <textarea id="doc-notes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <small id="visa-checklist-updated" class="text-muted">Last update —</small>
+                            <div class="d-flex gap-2">
+                                <button id="doc-prev-btn" type="button" class="btn btn-sm btn-outline-secondary" disabled>Previous</button>
+                                <button id="doc-next-btn" type="button" class="btn btn-sm btn-outline-secondary" disabled>Next</button>
+                            </div>
+                        </div>
+                        <div id="visa-checklist-live-region" class="visually-hidden" aria-live="polite"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal fade" id="denyModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Deny submission</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="denyReason" class="form-label">Reason for denial (shown to the student)</label>
+                            <textarea id="denyReason" class="form-control" rows="3" placeholder="Add your reason..." minlength="5" required></textarea>
+                        </div>
+                        <div class="text-muted small">Students will see this reason and can re-upload a new file.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="denySubmit" class="btn btn-danger">Deny</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3) Submission -->
+    <div class="tab-pane fade" id="visa-submission" role="tabpanel" aria-labelledby="visa-submission-tab" hidden>
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <label class="form-label mb-0" for="submission-choice">Where will you submit your visa application?</label>
+          <select id="submission-choice" class="form-select mt-1" aria-describedby="submission-choice-live">
+            <option value="usa">USA</option>
+            <option value="spain">Spain (last-minute)</option>
+          </select>
+        </div>
+        <div id="submission-progress" class="ms-auto" style="min-width: 200px;">
+          <div class="progress" style="height: 6px;">
+            <div id="submission-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <small id="submission-progress-text" class="text-muted">0/0 verified</small>
+        </div>
+      </div>
+      <div id="submission-choice-live" class="visually-hidden" aria-live="polite"></div>
+
+      <div id="submission-usa-section">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+          <div>
+            <h5 class="fw-bold mb-1">Submit in USA</h5>
+            <p class="mb-0 text-muted">Select the U.S. state where you live or where you are currently staying to get the correct submission location.</p>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="submission-us-state">State or territory</label>
+          <select id="submission-us-state" class="form-select">
+          <option value="">Select a state…</option>
+          <option value="AL">Alabama</option>
+          <option value="AK">Alaska</option>
+          <option value="AZ">Arizona</option>
+          <option value="AR">Arkansas</option>
+          <option value="CA">California</option>
+          <option value="CO">Colorado</option>
+          <option value="CT">Connecticut</option>
+          <option value="DC">District of Columbia</option>
+          <option value="DE">Delaware</option>
+          <option value="FL">Florida</option>
+          <option value="GA">Georgia</option>
+          <option value="HI">Hawaii</option>
+          <option value="ID">Idaho</option>
+          <option value="IL">Illinois</option>
+          <option value="IN">Indiana</option>
+          <option value="IA">Iowa</option>
+          <option value="KS">Kansas</option>
+          <option value="KY">Kentucky</option>
+          <option value="LA">Louisiana</option>
+          <option value="ME">Maine</option>
+          <option value="MD">Maryland</option>
+          <option value="MA">Massachusetts</option>
+          <option value="MI">Michigan</option>
+          <option value="MN">Minnesota</option>
+          <option value="MS">Mississippi</option>
+          <option value="MO">Missouri</option>
+          <option value="MT">Montana</option>
+          <option value="NE">Nebraska</option>
+          <option value="NV">Nevada</option>
+          <option value="NH">New Hampshire</option>
+          <option value="NJ">New Jersey</option>
+          <option value="NM">New Mexico</option>
+          <option value="NY">New York</option>
+          <option value="NC">North Carolina</option>
+          <option value="ND">North Dakota</option>
+          <option value="OH">Ohio</option>
+          <option value="OK">Oklahoma</option>
+          <option value="OR">Oregon</option>
+          <option value="PA">Pennsylvania</option>
+          <option value="PR">Puerto Rico</option>
+          <option value="RI">Rhode Island</option>
+          <option value="SC">South Carolina</option>
+          <option value="SD">South Dakota</option>
+          <option value="TN">Tennessee</option>
+          <option value="TX">Texas</option>
+          <option value="UT">Utah</option>
+          <option value="VT">Vermont</option>
+          <option value="VA">Virginia</option>
+          <option value="VI">U.S. Virgin Islands</option>
+          <option value="WA">Washington</option>
+          <option value="WV">West Virginia</option>
+          <option value="WI">Wisconsin</option>
+          <option value="WY">Wyoming</option>
+        </select>
+        </div>
+
+        <div id="submission-ca-region-field" class="mb-3 d-none">
+          <label class="form-label" for="submission-ca-region">California region</label>
+          <select id="submission-ca-region" class="form-select">
+            <option value="">Select a region…</option>
+            <option value="north">Northern California (San Francisco)</option>
+            <option value="south">Southern California (Los Angeles)</option>
+          </select>
+          <div class="form-text">Choose the region to match your BLS center.</div>
+        </div>
+
+        <div id="submission-consulate-card" class="mb-4">
+          <div class="border rounded p-4 bg-light text-muted">Select a state to view your BLS submission location.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-3 align-items-start">
+              <div class="col-md-4 col-lg-3">
+                <span class="text-muted small d-block">Status</span>
+                <span id="submission-status" class="badge bg-secondary">Pending</span>
+              </div>
+              <div class="col-md-4 col-lg-3">
+                <label class="form-label" for="visa-submission-date">Submission date</label>
+                <input id="visa-submission-date" class="form-control" type="date">
+              </div>
+              <div class="col-md-8 col-lg-6">
+                <label class="form-label" for="visa-submission-proof">Proof of submission</label>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <input id="visa-submission-proof" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                  <button id="submission-proof-replace" type="button" class="btn btn-sm btn-outline-secondary d-none">Replace</button>
+                  <button id="submission-proof-view" type="button" class="btn btn-sm btn-outline-secondary d-none">View</button>
+                </div>
+                <div id="submission-proof-helper" class="form-text">Only PDF, JPG or PNG files.</div>
+                <div id="submission-deny-alert" class="alert alert-danger small mt-2 d-none" role="alert"></div>
+                <div id="submission-proof-meta" class="small text-muted mt-2"></div>
+              </div>
+            </div>
+
+            <div id="submission-demo-actions" class="d-flex flex-wrap gap-2 mt-3 d-none">
+              <button id="submission-verify-btn" type="button" class="btn btn-success btn-sm">Verify</button>
+              <button id="submission-deny-btn" type="button" class="btn btn-danger btn-sm">Deny</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+          <small id="visa-submission-updated" class="text-muted">Last update —</small>
+          <div id="submission-last-action" class="small text-muted"></div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="submission-deny-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Add denial reason</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label" for="submission-deny-reason">Reason shown to the student</label>
+                <textarea id="submission-deny-reason" class="form-control" rows="3" placeholder="Provide a short reason" minlength="5" required></textarea>
+              </div>
+              <div class="small text-muted">Students will see this reason and can re-upload a new file.</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" id="submission-deny-confirm" class="btn btn-danger">Deny</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="submission-spain-section" class="mt-5 d-none">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+          <div>
+            <h5 class="fw-bold mb-1">Submit in Spain (read-only mirror of Checklist)</h5>
+            <p class="mb-0 text-muted">Review your checklist progress below. Uploads must be completed from the Checklist tab.</p>
+          </div>
+        </div>
+
+        <div class="alert alert-warning alert-dismissible fade show" role="alert" tabindex="0">
+          <div class="d-flex flex-column">
+            <span class="fw-semibold">Last-minute option — This path is only for last-minute cases. An additional €4200 fee will be added to your balance and must be paid before the next deadline.</span>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div class="form-check mb-4">
+          <input class="form-check-input" type="checkbox" id="spain-acknowledge-fee">
+          <label class="form-check-label" for="spain-acknowledge-fee">I understand the additional €4200 fee</label>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <fieldset id="submission-spain-europe-fieldset" class="mb-3">
+              <legend class="form-label fs-6">Have you been in Europe in the last 6 months?</legend>
+              <div class="d-flex flex-wrap gap-3" role="radiogroup">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="submission-spain-europe" id="submission-spain-europe-yes" value="yes">
+                  <label class="form-check-label" for="submission-spain-europe-yes">Yes</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="submission-spain-europe" id="submission-spain-europe-no" value="no">
+                  <label class="form-check-label" for="submission-spain-europe-no">No</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <div id="submission-spain-stays" class="d-none" aria-live="polite">
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-2" id="submission-spain-stays-table">
+                  <thead>
+                    <tr class="text-muted">
+                      <th scope="col">Country / Place</th>
+                      <th scope="col">Date of Entry</th>
+                      <th scope="col">Date of Exit</th>
+                      <th scope="col" class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="submission-spain-stays-list"></tbody>
+                </table>
+              </div>
+              <button type="button" id="submission-spain-add-stay" class="btn btn-outline-primary btn-sm">+ Add another stay</button>
+              <div id="submission-spain-stays-live" class="visually-hidden" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3">
+              <h6 class="fw-bold mb-0">Documents to submit (read-only)</h6>
+            </div>
+            <div id="submission-spain-doc-list" class="list-group list-group-flush"></div>
+            <div id="submission-spain-minor-group" class="mt-4 d-none">
+              <h6 class="fw-semibold mb-2">If you are a minor</h6>
+              <div id="submission-spain-doc-list-minor" class="list-group list-group-flush"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) Appointment -->
+    <div class="tab-pane fade" id="visa-appointment" role="tabpanel" aria-labelledby="visa-appointment-tab" hidden>
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0">Appointment</h5>
+        <div id="visa-appointment-progress" class="ms-auto" style="min-width: 200px;">
+          <div class="progress" style="height: 6px;">
+            <div id="visa-appointment-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <small id="visa-appointment-progress-text" class="text-muted">0/0 verified</small>
+        </div>
+      </div>
+      <div id="visa-appointment-warning" class="alert alert-warning d-none" role="alert"></div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="visa-appointment-dt">Appointment Date &amp; Time</label>
+          <input id="visa-appointment-dt" type="datetime-local" class="form-control" aria-describedby="visa-appointment-helper">
+          <div id="visa-appointment-helper" class="form-text d-none">For Spain flow this is usually handled by ETURE staff. You may leave this blank.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="visa-appointment-center">BLS Center</label>
+          <input id="visa-appointment-center" class="form-control" placeholder="City / Address">
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="visa-appointment-proof">Appointment Confirmation</label>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <input id="visa-appointment-proof" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+            <button id="visa-appointment-view" type="button" class="btn btn-sm btn-outline-secondary d-none">View file</button>
+          </div>
+          <div id="visa-appointment-file-meta" class="small text-muted mt-2 d-none"></div>
+        </div>
+      </div>
+      <div class="text-end mt-3">
+        <button id="visa-appointment-save-btn" class="btn btn-eture-red fw-bold">Save Appointment</button>
+      </div>
+    </div>
+
+    <!-- 5) Visa Approval -->
+    <div class="tab-pane fade" id="visa-approval" role="tabpanel" aria-labelledby="visa-approval-tab" hidden>
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0">Visa Approval</h5>
+        <div id="visa-approval-progress" class="ms-auto" style="min-width: 200px;">
+          <div class="progress" style="height: 6px;">
+            <div id="visa-approval-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <small id="visa-approval-progress-text" class="text-muted">0/0 verified</small>
+        </div>
+      </div>
+      <div class="alert alert-info text-muted" role="alert">
+        Your initial visa is typically valid for 90 days—that’s normal. Once you obtain your TIE student card in Spain, it will cover the full duration of your program.
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="visa-approval-date">Approval Date</label>
+          <input id="visa-approval-date" type="date" class="form-control">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label" for="visa-approval-scan">Upload Visa Page (Photo/Scan)</label>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <input id="visa-approval-scan" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+            <button id="visa-approval-view" type="button" class="btn btn-sm btn-outline-secondary d-none">View file</button>
+          </div>
+          <div class="form-text">Once your visa page is uploaded here, ETURE will proceed with booking your TIE appointment.</div>
+          <div id="visa-approval-file-meta" class="small text-muted mt-2 d-none"></div>
+        </div>
+      </div>
+      <div class="text-end mt-3">
+        <button id="visa-approval-save-btn" class="btn btn-eture-red fw-bold">Save Approval</button>
+      </div>
+    </div>
+
+    <!-- 6) TIE -->
+    <div class="tab-pane fade" id="visa-tie" role="tabpanel" aria-labelledby="visa-tie-tab" hidden>
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+          <h5 class="fw-bold mb-1">TIE (Spain, Valencia)</h5>
+          <p class="text-muted small mb-0">ETURE staff normally book this appointment. This form is editable here for testing. In production it will be read-only for students.</p>
+        </div>
+        <div id="visa-tie-progress" class="ms-auto" style="min-width: 200px;">
+          <div class="progress" style="height: 6px;">
+            <div id="visa-tie-progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+          <small id="visa-tie-progress-text" class="text-muted">0/0 verified</small>
+        </div>
+      </div>
+      <div id="visa-tie-visa-indicator" class="text-success small mb-2 d-none">Visa uploaded ✓</div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="tie-appointment-date">Appointment Date</label>
+          <input id="tie-appointment-date" type="date" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="tie-office">Police Station / Office</label>
+          <input id="tie-office" class="form-control" placeholder="Comisaría / Oficina">
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="tie-proof">Upload TIE / Resguardo</label>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <input id="tie-proof" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+            <button id="tie-proof-view" type="button" class="btn btn-sm btn-outline-secondary d-none">View file</button>
+          </div>
+          <div id="tie-proof-meta" class="small text-muted mt-2 d-none"></div>
+        </div>
+      </div>
+      <div class="text-end mt-3">
+        <button id="visa-tie-save-btn" class="btn btn-eture-red fw-bold">Save TIE</button>
+      </div>
+    </div>
+  </div>
+</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+    crossorigin="anonymous"
+  ></script>
+</body>
+</html>

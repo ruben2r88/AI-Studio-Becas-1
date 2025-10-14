@@ -24,99 +24,7 @@
   <!-- Chart.js for Finanzas -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    :root {
-      --brand-white: #F3F4F5;
-      --brand-red:   #9C231F;
-      --brand-gray:  #BFBFC0;
-      --brand-black: #2D2A29;
-
-      --eture-red: var(--brand-red);
-      --sidebar-bg: var(--brand-red);
-      --sidebar-tint: linear-gradient(180deg, #9C231F 0%, #7b1a17 100%);
-      --muted: #6c757d;
-      --bg-body: var(--brand-white);
-      --card-bg: #ffffff;
-    }
-
-    body { font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    .bg-eture-red { background-color: var(--eture-red) !important; }
-    .text-eture-red { color: var(--eture-red) !important; }
-    .btn-eture-red { background-color: var(--eture-red); border-color: var(--eture-red); color:#fff; }
-    .btn-eture-red:hover { background-color:#85241F; border-color:#85241F; color:#fff; }
-
-    /* Degradado sutil dentro del rojo corporativo */
-    .sidebar{
-      background: var(--sidebar-tint); /* usa el gradiente definido en :root */
-      min-height:100vh;
-      width:280px;
-    }
-    .sidebar .nav-link { color:rgba(255,255,255,0.8); transition:all .2s; padding:.75rem 1rem; border-radius:.5rem; }
-    .sidebar .nav-link:hover { color:#fff; background-color:rgba(255,255,255,0.1); }
-    .sidebar .nav-link.active { color:#fff; background-color:rgba(255,255,255,0.2); font-weight:600; }
-    .form-control:focus, .form-select:focus{
-      border-color: var(--brand-red);                    /* #9C231F */
-      box-shadow: 0 0 0 .25rem rgba(156,35,31,.25);      /* halo acorde a la marca */
-    }
-    .fade-in { animation: fadeIn .5s ease-in-out; }
-    @keyframes fadeIn { from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);} }
-    .nav-tabs .nav-link.active{
-      color: var(--brand-red);
-      border-color:#dee2e6 #dee2e6 #fff;
-      font-weight:600;
-    }
-    .nav-pills .nav-link { color: var(--bs-body-color); }
-    .nav-pills .nav-link.active{
-      background-color: var(--brand-red);
-      color:#fff;
-    }
-    /* Football pitch */
-    .football-pitch { width:100%; max-width:350px; margin:0 auto; aspect-ratio:7/10; background:#28a745; border:4px solid rgba(0,0,0,.1); border-radius:.5rem; position:relative;
-      background-image:linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
-      background-size:20px 20px;
-    }
-    .pitch-marking { border:2px solid rgba(255,255,255,.7); position:absolute; box-sizing:border-box; }
-    .center-circle { top:50%; left:50%; transform:translate(-50%,-50%); width:25%; height:17%; border-radius:50%; }
-    .center-line { top:50%; left:5%; right:5%; height:2px; background:rgba(255,255,255,.7); }
-    .penalty-area-top { top:0; left:50%; transform:translateX(-50%); width:80%; height:20%; border-top:0; }
-    .penalty-area-bottom { bottom:0; left:50%; transform:translateX(-50%); width:80%; height:20%; border-bottom:0; }
-    .goal-area-top { top:0; left:50%; transform:translateX(-50%); width:40%; height:8%; border-top:0; }
-    .goal-area-bottom { bottom:0; left:50%; transform:translateX(-50%); width:40%; height:8%; border-bottom:0; }
-    .position-marker { position:absolute; width:38px; height:38px; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:.65rem; color:#3a3a3a; border:4px solid #3a3a3a; transform:translate(-50%,-50%); transition:all .3s ease; cursor:default; }
-    .position-marker.main { background:#0d6efd; color:#fff; border-color:#fff; transform:translate(-50%,-50%) scale(1.1); }
-    .position-marker.secondary { background:#ffc107; color:#3a3a3a; border-color:#3a3a3a; }
-
-    /* Logos */
-    #auth-container .logo-container { width:80%; max-width:300px; margin:0 auto 1rem; }
-    .sidebar .logo-container { width:90%; max-width:200px; margin:0 auto; }
-    /* === Tamaño del logo del sidebar (grande) === */
-    .sidebar .sidebar-logo{
-      display: block;
-      width: 88%;        /* ocupa casi todo el ancho del panel rojo */
-      max-width: 240px;  /* tope para pantallas grandes */
-      height: auto;
-      margin-left: 4px;  /* ajuste visual opcional */
-      filter: none;      /* el PNG ya es blanco; no necesitamos invertir colores */
-    }
-
-
-    /* Task list */
-    .task-item .accordion-button:not(.collapsed){ background:rgba(158,43,37,.05); color:var(--bs-body-color); }
-    .task-item .task-title.completed { text-decoration:line-through; color:#6c757d; }
-    .task-status-select { width:150px; font-size:.8rem; }
-    .accordion-button::after { margin-left:1rem; }
-    #task-status-filter .btn { font-size:.9rem; }
-
-    /* Promotional card */
-    .profile-promocional .profile-header-banner { height:200px; background-size:cover; background-position:center; }
-    .profile-promocional .profile-main-info { margin-top:-80px; }
-    .profile-promocional .profile-picture { width:150px; height:150px; border-radius:50%; overflow:hidden; border:5px solid #fff; box-shadow:0 4px 15px rgba(0,0,0,.1); background:#eee; flex-shrink:0; }
-    .profile-promocional .profile-picture img { width:100%; height:100%; object-fit:cover; }
-    .profile-promocional .stat-card { background:#f8f9fa; border:1px solid #dee2e6; }
-    .profile-promocional .video-placeholder { position:relative; width:100%; aspect-ratio:16/9; background:#3a3a3a; background-size:cover; background-position:center; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform .2s ease; }
-    .profile-promocional .video-placeholder:hover { transform:scale(1.03); }
-    .profile-promocional .play-icon { font-size:3rem; color:#fff; background:rgba(0,0,0,.5); width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; line-height:80px; padding-left:5px; box-sizing:border-box; }
-  </style>
+  <link rel="stylesheet" href="assets/styles/app.css">
 </head>
 <body>
   <!-- App Container -->
@@ -132,39 +40,67 @@
 
           <ul class="nav nav-pills flex-column mb-auto gap-2" id="main-nav" role="tablist">
             <li class="nav-item">
-              <a href="#inicio" class="nav-link d-flex align-items-center active" data-bs-toggle="tab" data-bs-target="#inicio-content">🏠<span class="ms-3">Home</span></a>
+              <a href="#inicio" class="nav-link d-flex align-items-center active" data-bs-toggle="tab" data-bs-target="#inicio-content">
+                <i class="bi bi-speedometer2 me-3"></i>
+                <span>Home</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#perfil" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#perfil-content">👤<span class="ms-3">My Profile</span></a>
+              <a href="#perfil" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#perfil-content">
+                <i class="bi bi-person-circle me-3"></i>
+                <span>My Profile</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#proceso" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#proceso-content">🚀<span class="ms-3">My Process</span></a>
+              <a href="#proceso" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#proceso-content">
+                <i class="bi bi-diagram-3 me-3"></i>
+                <span>My Process</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#visa" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#visa-content">🛂<span class="ms-3">My Visa</span></a>
+              <a href="#visa" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#visa-content">
+                <i class="bi bi-passport me-3"></i>
+                <span>My Visa</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#tareas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#tareas-content">✔️<span class="ms-3">Task List</span></a>
+              <a href="#tareas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#tareas-content">
+                <i class="bi bi-check2-square me-3"></i>
+                <span>Task List</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#documentos" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#documentos-content">📄<span class="ms-3">My Documents</span></a>
+              <a href="#documentos" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#documentos-content">
+                <i class="bi bi-folder2 me-3"></i>
+                <span>My Documents</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#finanzas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#finanzas-content">💰<span class="ms-3">Financial Status</span></a>
+              <a href="#finanzas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#finanzas-content">
+                <i class="bi bi-piggy-bank me-3"></i>
+                <span>Financial Status</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#chat" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#chat-content">💬<span class="ms-3">Chat</span></a>
+              <a href="#chat" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#chat-content">
+                <i class="bi bi-chat-dots me-3"></i>
+                <span>Chat</span>
+              </a>
             </li>
             <li class="nav-item">
-              <a href="#ayuda" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#ayuda-content">❓<span class="ms-3">Help</span></a>
+              <a href="#ayuda" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#ayuda-content">
+                <i class="bi bi-life-preserver me-3"></i>
+                <span>Help</span>
+              </a>
             </li>
           </ul>
         </div>
 
-        <!-- Cerrar sesión -->
+        <!-- Log out -->
         <div>
           <button id="logout-btn" data-action="logout" class="btn nav-link d-flex align-items-center w-100 text-start">
-            🚪<span class="ms-3">Log Out</span>
+            <i class="bi bi-box-arrow-right me-3"></i>
+            <span>Log Out</span>
           </button>
         </div>
       </aside>
@@ -335,3 +271,8 @@
   <script type="module" src="app.js"></script>
 </body>
 </html>
+
+
+
+
+

@@ -41,6 +41,11 @@ export function handleAuthState(onUserLoggedIn) {
       console.log("Auth Service: Usuario autenticado.", user.uid);
       onUserLoggedIn(user);
     } else {
+      if (USE_EMULATORS) {
+        console.warn("Auth Service: Dev bypass activado, simulando usuario autenticado.");
+        onUserLoggedIn({ uid: "dev-user", email: "dev@example.com" });
+        return;
+      }
       console.log("Auth Service: Usuario no autenticado, redirigiendo al login.");
       if (!window.location.pathname.includes("login.html")) {
         window.location.href = "login.html";
