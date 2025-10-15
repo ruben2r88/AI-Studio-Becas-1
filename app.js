@@ -21,7 +21,7 @@ import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/fir
 
 import { countries } from './src/constants/countries.js';
 import { footballPositions } from './src/constants/footballPositions.js';
-import { profileState, emptyProfileData } from './src/state/profileState.js';
+import { profileState, emptyProfileData, getTrip, setTrip } from './src/state/profileState.js';
 import { uploadUserFile, listUserFiles, deleteUserFile } from './services/storage.js';
 import { renderAcademicHistory, readAcademicHistoryFromUI } from './src/features/profile/academicHistory.js';
 import { renderTeamHistory, readTeamHistoryFromUI } from './src/features/profile/athleticHistory.js';
@@ -29,12 +29,38 @@ import { initTasksFeature, getTasksData, preloadTasks } from "./src/features/tas
 import { initProcessFeature } from "./src/features/process/process.js";
 import { initDocsFeature } from "./src/features/docs/docs.js";
 import { initProfileFeature } from "./src/features/profile/profile.js";
+import { HELP_MAP, resolveHelpKey } from "./src/features/checklist/help.js";
 
 
 /* ===== FIN IMPORTS ===== */
       
 let editingMultimediaElement = null;
 let editingSocialLinkIndex = null;
+let tripSaveStatusTimer = null;
+
+function updateTripStatus(message, { isError = false, autoClearMs = 0 } = {}) {
+  const statusEl = document.getElementById('trip-save-status');
+  if (!statusEl) return;
+
+  if (tripSaveStatusTimer) {
+    window.clearTimeout(tripSaveStatusTimer);
+    tripSaveStatusTimer = null;
+  }
+
+  statusEl.textContent = message || '';
+  statusEl.classList.toggle('text-danger', isError && Boolean(message));
+
+  if (message && autoClearMs > 0) {
+    tripSaveStatusTimer = window.setTimeout(() => {
+      const el = document.getElementById('trip-save-status');
+      if (el) {
+        el.textContent = '';
+        el.classList.remove('text-danger');
+      }
+      tripSaveStatusTimer = null;
+    }, autoClearMs);
+  }
+}
 
 const DEFAULT_DEMO_MODE = true;
 const SUBMISSION_DEMO_MODE = true;
@@ -53,7 +79,8 @@ const MINOR_CHECKLIST_KEYS = [
   'parental-authorization',
   'parental-authorization-notarized',
   'sex-crimes-registry',
-  'sex-crimes-registry-authorization'
+  'sex-crimes-registry-authorization',
+  'financial-means-translation'
 ];
 const CHECKLIST_KEY_ALIASES = {
   'parents-passports-notarized': 'parents-passports',
@@ -69,14 +96,539 @@ const SPAIN_SUBMISSION_DEFAULTS = Object.freeze({
 });
 
 const MY_VISA_STATE_STORAGE_KEY = 'myVisaState';
+const visaUiState = {
+  checklistProgress: {
+    items: [],
+    verified: 0,
+    total: 0,
+    uploaded: 0
+  }
+};
+
+function cleanupModalArtifacts() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('.modal-backdrop').forEach((el) => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('paddingRight');
+  const root = document.getElementById('visa-section-root') || document.querySelector('[data-visa-root]') || document.body;
+  if (root) root.removeAttribute('aria-hidden');
+}
+
+function safeGet(value, fallback) {
+  return value == null ? fallback : value;
+}
+
+function paintSectionError(sectionId) {
+  if (typeof document === 'undefined') return;
+  if (!sectionId) return;
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+  section.innerHTML = '<p class="text-danger">There was an error loading this section.</p>';
+}
+
+function getChecklistItemsForMode(mode) {
+  try {
+    return Array.isArray(mode)
+      ? mode
+      : (typeof getChecklistDefinitionForMode === 'function'
+        ? getChecklistDefinitionForMode(mode)
+        : []);
+  } catch (error) {
+    console.error('Unable to resolve checklist items for mode', error);
+    return [];
+  }
+}
+
+function getChecklistState() {
+  ensureVisaDefaults();
+  if (!userProfileData.visa.checklist) {
+    userProfileData.visa.checklist = { items: [], total: 0, uploaded: 0, _updatedAt: '' };
+  }
+
+  const cl = userProfileData.visa.checklist;
+  cl.isMinor = getIsMinor();
+  const existingArray = Array.isArray(cl.items) ? cl.items : [];
+  const fromArray = new Map(existingArray.map(item => [item.key, item]));
+
+  const keyed = {};
+  Object.keys(cl).forEach((key) => {
+    if (['items', 'total', 'uploaded', '_updatedAt'].includes(key)) return;
+    const value = cl[key];
+    if (value && typeof value === 'object') keyed[key] = value;
+  });
+
+  cl.items = VISA_CHECKLIST_CATALOG.map((catalogItem) => {
+    const aliases = [catalogItem.key, ...(catalogItem.legacyKeys || [])];
+    let stored = null;
+    for (const alias of aliases) {
+      if (fromArray.has(alias)) {
+        stored = fromArray.get(alias);
+        break;
+      }
+      if (keyed[alias]) {
+        stored = keyed[alias];
+        break;
+      }
+    }
+
+    aliases.forEach(alias => {
+      if (alias !== catalogItem.key) delete cl[alias];
+    });
+
+    const status = normalizeChecklistStatus(stored?.status);
+    const fileUrl = stored?.fileUrl || stored?.file_url || '';
+    const fileName = stored?.fileName || stored?.file_name || '';
+    const fileSize = stored?.fileSize ?? stored?.file_size ?? null;
+    const fileMime = stored?.fileMime || stored?.file_mime || '';
+    const notes = stored?.notes || '';
+    const updatedAt = stored?.updatedAt || stored?.updated_at || stored?._updatedAt || '';
+
+    let reviewRaw = stored?.review;
+    if (!reviewRaw && stored) {
+      const fallbackReviewedAt = stored?.reviewedAt || stored?.reviewed_at || '';
+      const fallbackReviewerName = stored?.reviewerName || stored?.reviewer_name || '';
+      const fallbackReviewerId = stored?.reviewerId || stored?.reviewer_id || '';
+      const verifiedAt = stored?.verifiedAt || stored?.verified_at || '';
+      const verifiedBy = stored?.verifiedBy || stored?.verified_by || '';
+      const verifiedByName = stored?.verifiedByName || stored?.verified_by_name || '';
+      const deniedAt = stored?.deniedAt || stored?.denied_at || '';
+      const deniedBy = stored?.deniedBy || stored?.denied_by || '';
+      const deniedByName = stored?.deniedByName || stored?.denied_by_name || '';
+      const denialReasonLegacy = stored?.denialReason || stored?.denial_reason || '';
+
+      if (status === 'verified') {
+        reviewRaw = {
+          reviewerId: verifiedBy || fallbackReviewerId || '',
+          reviewerName: verifiedByName || fallbackReviewerName || '',
+          reviewedAt: verifiedAt || fallbackReviewedAt || '',
+          decision: 'verified',
+          reason: ''
+        };
+      } else if (status === 'denied') {
+        reviewRaw = {
+          reviewerId: deniedBy || fallbackReviewerId || '',
+          reviewerName: deniedByName || fallbackReviewerName || '',
+          reviewedAt: deniedAt || fallbackReviewedAt || '',
+          decision: 'denied',
+          reason: denialReasonLegacy || ''
+        };
+      }
+    }
+
+    let review = null;
+    if (reviewRaw && typeof reviewRaw === 'object') {
+      review = {
+        reviewerId: reviewRaw.reviewerId || reviewRaw.reviewedBy || '',
+        reviewerName: reviewRaw.reviewerName || '',
+        reviewedAt: reviewRaw.reviewedAt || reviewRaw.reviewed_at || '',
+        decision: reviewRaw.decision || '',
+        reason: reviewRaw.reason || ''
+      };
+    }
+
+    if (review) {
+      review.decision = review.decision || (status === 'verified' ? 'verified' : status === 'denied' ? 'denied' : '');
+      if (review.decision === 'denied') {
+        review.reason = (review.reason || stored?.denialReason || stored?.denial_reason || '').trim();
+      } else {
+        review.reason = '';
+      }
+      if (!review.reviewedAt) review.reviewedAt = updatedAt;
+    }
+
+    if (!review || !review.decision) {
+      review = null;
+    }
+
+    return {
+      key: catalogItem.key,
+      title: catalogItem.title,
+      minor: Boolean(catalogItem.minor),
+      status,
+      fileUrl,
+      fileName,
+      fileSize,
+      fileMime,
+      notes,
+      updatedAt,
+      review,
+      sampleUrl: catalogItem.sampleUrl || ''
+    };
+  });
+
+  recalcVisaChecklistProgress(cl);
+  syncChecklistKeyedState(cl);
+  return cl;
+}
+
+function isChecklistItemVerified(key, stateOverride = null) {
+  try {
+    const normalizedKey = normalizeChecklistKeyInput(key);
+    if (!normalizedKey) return false;
+    const state = stateOverride || getChecklistState();
+    const entry = safeGet(state.items?.[normalizedKey], null);
+    return normalizeChecklistStatus(entry?.status) === 'verified';
+  } catch (_) {
+    return false;
+  }
+}
+
+function getProgressCountsForModeSafe(items) {
+  try {
+    const list = Array.isArray(items) ? items : [];
+    const state = getChecklistState();
+    const verified = list.filter((item) => isChecklistItemVerified(item?.key, state)).length;
+    return { verified, total: list.length };
+  } catch (_) {
+    const total = Array.isArray(items) ? items.length : 0;
+    return { verified: 0, total };
+  }
+}
+
+function showTabPane(id) {
+  if (typeof document === 'undefined') return;
+  const root = document.querySelector('[data-visa-root]') || document;
+  root.querySelectorAll('.tab-pane').forEach((pane) => {
+    pane.classList.remove('show','active');
+    pane.setAttribute('aria-hidden','true');
+    pane.hidden = true;
+  });
+  if (!id) return;
+  let pane =
+    root.querySelector(`#${id}`) ||
+    document.getElementById(id) ||
+    root.querySelector(`#${id}-pane`) ||
+    document.getElementById(`${id}-pane`);
+  if (pane) {
+    pane.classList.add('show','active');
+    pane.removeAttribute('aria-hidden');
+    pane.hidden = false;
+  }
+}
+
+function renderVisaSubmission() {
+  try {
+    initVisaSubmissionUI?.();
+    renderSubmissionProgress();
+  } catch (err) {
+    console.error('Submission render failed', err);
+    paintSectionError('visa-submission');
+  }
+}
+
+function renderVisaChecklist() {
+  try {
+    const mode = typeof getSubmissionMode === 'function' ? getSubmissionMode() : 'usa';
+    const definition = typeof getChecklistDefinitionForMode === 'function' ? getChecklistDefinitionForMode(mode) : [];
+    const items = Array.isArray(definition) ? definition : [];
+    const root = document.getElementById('visa-checklist');
+    if (!root) return;
+
+    if (!root.dataset.originalTemplate) {
+      root.dataset.originalTemplate = root.innerHTML; // Preserve initial checklist markup.
+    }
+
+    if (items.length === 0) {
+      visaChecklistEventsBound = false;
+      root.innerHTML = '<div class="text-muted">No checklist items to show for this mode.</div>';
+      root.dataset.checklistEmpty = '1';
+      return;
+    }
+
+    if (root.dataset.checklistEmpty === '1' && root.dataset.originalTemplate) {
+      root.innerHTML = root.dataset.originalTemplate; // Restore original template when items return.
+      delete root.dataset.checklistEmpty;
+      visaChecklistEventsBound = false;
+    }
+
+    initVisaChecklistUI?.();
+    console.debug('renderVisaChecklist ok');
+  } catch (err) {
+    console.error('Checklist render failed', err);
+    paintSectionError('visa-checklist');
+  }
+}
+
+function renderVisaAppointment() {
+  try {
+    initVisaAppointmentUI?.();
+    console.debug('renderVisaAppointment ok');
+  } catch (err) {
+    console.error('Appointment render failed', err);
+    paintSectionError('visa-appointment');
+  }
+}
+
+async function handleTripSave(event) {
+  event?.preventDefault?.();
+  updateTripStatus('');
+
+  const saveButton = document.getElementById('trip-save-btn');
+  const departureInput = document.getElementById('trip-departure-date');
+  const arrivalInput = document.getElementById('trip-arrival-date');
+  const arrivalTimeInput = document.getElementById('trip-arrival-time');
+  const placeInput = document.getElementById('trip-arrival-place');
+  const confirmInput = document.getElementById('trip-read-confirm');
+
+  if (saveButton) saveButton.disabled = true;
+
+  const currentTrip = getTrip();
+  const rawDeparture = departureInput?.value || '';
+  const rawArrival = arrivalInput?.value || '';
+  const rawArrivalTime = arrivalTimeInput?.value || '';
+  const departureDate = rawDeparture || null;
+  const arrivalDate = rawArrival || null;
+  const arrivalTime = rawArrivalTime || '';
+
+  if (departureDate && arrivalDate && arrivalDate < departureDate) {
+    updateTripStatus('Arrival date must be on or after departure date.', { isError: true });
+    if (saveButton) saveButton.disabled = false;
+    return;
+  }
+
+  const nextTrip = {
+    departureDate,
+    arrivalDate,
+    arrivalTime,
+    arrivalPlace: (placeInput?.value || '').trim(),
+    itineraryFileUrl: currentTrip.itineraryFileUrl || '',
+    confirmed: confirmInput?.checked === true
+  };
+
+  setTrip(nextTrip);
+
+  try {
+    if (auth.currentUser) {
+      await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    }
+    emitAppStateUpdated();
+    renderVisaTrip();
+    updateTripStatus('Saved ✓', { autoClearMs: 2500 });
+  } catch (error) {
+    console.error('Unable to save trip details', error);
+    updateTripStatus('Save failed', { isError: true, autoClearMs: 4000 });
+  } finally {
+    if (saveButton) saveButton.disabled = false;
+  }
+}
+
+async function handleTripFileChange(event) {
+  const input = event?.target;
+  if (!input || !input.files || input.files.length === 0) return;
+
+  const file = input.files[0];
+  if (!file) return;
+
+  updateTripStatus('Uploading…');
+  input.disabled = true;
+
+  try {
+    const uid = auth?.currentUser?.uid
+      || window.profileState?.data?.uid
+      || window.profileState?.data?.id
+      || 'anonymous';
+
+    const uploadResult = await uploadUserFile(uid, file, { folder: 'trips' });
+    const fileUrl = uploadResult?.url || uploadResult?.downloadURL || '';
+    if (!fileUrl) {
+      throw new Error('Upload did not return a file URL.');
+    }
+
+    setTrip({ itineraryFileUrl: fileUrl });
+
+    if (auth.currentUser) {
+      await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    }
+
+    emitAppStateUpdated();
+    renderVisaTrip();
+    updateTripStatus('Uploaded ✓', { autoClearMs: 2500 });
+  } catch (error) {
+    console.error('Unable to upload itinerary', error);
+    updateTripStatus('Upload failed', { isError: true, autoClearMs: 4000 });
+  } finally {
+    input.disabled = false;
+    input.value = '';
+  }
+}
+
+function renderVisaTrip() {
+  try {
+    const trip = getTrip();
+    const departureInput = document.getElementById('trip-departure-date');
+    const arrivalInput = document.getElementById('trip-arrival-date');
+    const arrivalTimeInput = document.getElementById('trip-arrival-time');
+    const placeInput = document.getElementById('trip-arrival-place');
+    const confirmInput = document.getElementById('trip-read-confirm');
+    const itineraryLink = document.getElementById('trip-itinerary-link');
+
+    if (departureInput) departureInput.value = trip.departureDate || '';
+    if (arrivalInput) arrivalInput.value = trip.arrivalDate || '';
+    if (arrivalTimeInput) arrivalTimeInput.value = trip.arrivalTime || '';
+    if (placeInput) placeInput.value = trip.arrivalPlace || '';
+    if (confirmInput) confirmInput.checked = trip.confirmed === true;
+
+    if (itineraryLink) {
+      const url = trip.itineraryFileUrl || '';
+      if (url) {
+        itineraryLink.href = url;
+        itineraryLink.classList.remove('d-none');
+      } else {
+        itineraryLink.removeAttribute('href');
+        itineraryLink.classList.add('d-none');
+      }
+    }
+
+    if (!renderVisaTrip._bound) {
+      document.getElementById('trip-save-btn')?.addEventListener('click', handleTripSave);
+      document.getElementById('trip-itinerary-file')?.addEventListener('change', handleTripFileChange);
+      renderVisaTrip._bound = true;
+    }
+  } catch (error) {
+    console.error('Trip render failed', error);
+  }
+}
+
+function renderVisaApproval() {
+  try {
+    initVisaApprovalUI?.();
+  } catch (err) {
+    console.error('VisaApproval render failed', err);
+    paintSectionError('visa-approval');
+  }
+}
+
+function renderVisaTIE() {
+  try {
+    initVisaTieUI?.();
+  } catch (err) {
+    console.error('TIE render failed', err);
+    paintSectionError('visa-tie');
+  }
+}
+
+function renderVisaTab(tabName) {
+  const paneIdMap = {
+    overview: 'visa-overview',
+    submission: 'visa-submission',
+    checklist: 'visa-checklist',
+    appointment: 'visa-appointment',
+    trip: 'visa-trip',
+    'visa-approval': 'visa-approval',
+    tie: 'visa-tie'
+  };
+  showTabPane(paneIdMap[tabName] || null);
+
+  if (tabName === 'overview') {
+    renderVisaOverview?.();
+  } else if (tabName === 'submission') {
+    renderVisaSubmission();
+  } else if (tabName === 'checklist') {
+    renderVisaChecklist();
+    renderVisaChecklistProgress();
+  } else if (tabName === 'appointment') {
+    renderVisaAppointment();
+  } else if (tabName === 'trip') {
+    renderVisaTrip();
+  } else if (tabName === 'visa-approval') {
+    renderVisaApproval();
+  } else if (tabName === 'tie') {
+    renderVisaTIE();
+  }
+}
+
+function rerenderActiveVisaTab() {
+  if (typeof document === 'undefined') return;
+  const activeBtn = document.querySelector('#visa-tabs .nav-link.active');
+  if (!activeBtn) return;
+  const tab = activeBtn.getAttribute('data-tab');
+  if (!tab) return;
+  renderVisaTab(tab);
+}
+
+function onVisaTabClick(event) {
+  const btn = event.currentTarget;
+  const tab = btn?.getAttribute('data-tab') || btn?.getAttribute('data-visa-tab');
+  if (!tab) return;
+  event?.preventDefault?.();
+  try {
+    const instance = typeof bootstrap !== 'undefined'
+      ? bootstrap.Tab.getOrCreateInstance(btn)
+      : null;
+    instance?.show();
+  } catch (_) {}
+  renderVisaTab(tab);
+}
+
+function bindVisaTabClicks() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll('#visa-tabs [data-tab], #visa-tabs [data-visa-tab]').forEach((btn) => {
+    btn.removeEventListener('click', onVisaTabClick);
+    btn.addEventListener('click', onVisaTabClick);
+  });
+}
+
+
+function initVisaTabsOnReady() {
+  if (typeof document === 'undefined') return;
+  // QUITA la búsqueda del root para no abortar si no existe
+  // const root = document.querySelector('[data-visa-root]');
+  const tabs = document.getElementById('visa-tabs');
+  // if (!root || !tabs) return;
+  if (!tabs) return;
+  bindVisaTabClicks();
+  const activeBtn = tabs.querySelector('.nav-link.active[data-tab], .nav-link.active[data-visa-tab]');
+  const tab = activeBtn?.getAttribute('data-tab') || activeBtn?.getAttribute('data-visa-tab') || 'overview';
+  renderVisaTab(tab);
+}
+
+if (typeof document !== 'undefined') {
+  const ensureVisaTabsReady = () => initVisaTabsOnReady();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureVisaTabsReady, { once: true });
+  } else {
+    ensureVisaTabsReady();
+  }
+  document.addEventListener('visa:tabs-ready', initVisaTabsOnReady);
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('readystatechange', evaluateTripUnlockFromState);
+  if (document.readyState !== 'loading') {
+    window.setTimeout(() => evaluateTripUnlockFromState(), 0);
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('app:state-updated', evaluateTripUnlockFromState);
+}
 
 function getDefaultMyVisaState() {
   return {
-    submissionLocation: 'USA',
+    submission: {
+      method: 'usa',
+      spainRequest: {
+        status: 'none',
+        requestReason: '',
+        decisionReason: '',
+        requestTimestamp: '',
+        decisionTimestamp: ''
+      },
+      expectedArrival: '',
+      spainEuropeVisit: '',
+      spainTravel: [],
+      spain: {
+        termsAccepted: false
+      }
+    },
+    docStatuses: {},
+    etureDocs: [],
+    isMinor: false,
     appointment: {
-      dateTime: '',
-      blsCenter: '',
-      proofFile: null
+      datetime: '',
+      center: '',
+      proofFile: null,
+      readAcknowledged: false
     },
     visaApproval: {
       date: '',
@@ -91,6 +643,146 @@ function getDefaultMyVisaState() {
 }
 
 let cachedMyVisaState = null;
+
+function buildTripDocStatusMap(myVisaState, checklistState, profile = null) {
+  const map = {};
+
+  const applyStatus = (key, status) => {
+    if (!key) return;
+    const normalizedKey = normalizeChecklistKeyInput(key);
+    if (!normalizedKey) return;
+    const normalizedStatus = normalizeChecklistStatus(status);
+    const rawStatus = (status || '').toString().toLowerCase();
+    const canonicalKey = normalizedKey.replace(/_/g, '-');
+    const altKey = canonicalKey.includes('-')
+      ? canonicalKey.replace(/-/g, '_')
+      : normalizedKey.includes('_')
+        ? normalizedKey.replace(/_/g, '-')
+        : '';
+    const value = { normalized: normalizedStatus, raw: rawStatus };
+    map[normalizedKey] = value;
+    map[canonicalKey] = value;
+    if (altKey && altKey !== normalizedKey && altKey !== canonicalKey) {
+      map[altKey] = value;
+    }
+  };
+
+  if (myVisaState && typeof myVisaState.docStatuses === 'object') {
+    Object.keys(myVisaState.docStatuses).forEach((key) => {
+      applyStatus(key, myVisaState.docStatuses[key]);
+    });
+  }
+
+  const applyFromItems = (items) => {
+    items.forEach((item) => applyStatus(item?.key, item?.status));
+  };
+
+  if (checklistState && Array.isArray(checklistState.items)) {
+    applyFromItems(checklistState.items);
+  }
+
+  let profileSource = profile;
+  if (!profileSource) {
+    try {
+      profileSource = userProfileData;
+    } catch (_) {
+      profileSource = null;
+    }
+  }
+
+  const profileItems = profileSource?.visa?.checklist?.items;
+  if (Array.isArray(profileItems)) {
+    applyFromItems(profileItems);
+  }
+
+  return map;
+}
+
+function getDocStatusEntry(docStatuses, keys) {
+  if (!docStatuses) return null;
+  for (const key of keys) {
+    if (!key) continue;
+    const normalizedKey = normalizeChecklistKeyInput(key);
+    if (normalizedKey && docStatuses[normalizedKey]) return docStatuses[normalizedKey];
+    const hyphenKey = normalizedKey.replace(/_/g, '-');
+    if (hyphenKey && docStatuses[hyphenKey]) return docStatuses[hyphenKey];
+    const underscoreKey = hyphenKey.replace(/-/g, '_');
+    if (underscoreKey && docStatuses[underscoreKey]) return docStatuses[underscoreKey];
+  }
+  return null;
+}
+
+function isDocStatusComplete(entry) {
+  if (!entry) return false;
+  const normalized = (entry.normalized || '').toString().toLowerCase();
+  const raw = (entry.raw || '').toString().toLowerCase();
+  if (normalized === 'uploaded' || normalized === 'verified' || normalized === 'approved') return true;
+  if (raw === 'uploaded' || raw === 'verified' || raw === 'approved') return true;
+  return false;
+}
+
+function isSpainRoute(profile = {}, myVisaState = null) {
+  const candidates = [];
+  const pushSubmission = (submission) => {
+    if (!submission || typeof submission !== 'object') return;
+    ['country', 'mode', 'selected', 'submitChoice', 'method', 'location'].forEach((field) => {
+      const value = submission[field];
+      if (typeof value === 'string' && value.trim()) {
+        candidates.push(value.trim().toLowerCase());
+      }
+    });
+  };
+
+  if (profile?.visa?.submission) pushSubmission(profile.visa.submission);
+  if (profile?.submission) pushSubmission(profile.submission);
+  if (myVisaState?.submission) pushSubmission(myVisaState.submission);
+
+  const profileChoice = (profile?.visa?.submissionChoice || '').toString().trim().toLowerCase();
+  if (profileChoice) candidates.push(profileChoice);
+
+  return candidates.some((value) => value === 'spain' || value === 'es' || value.includes('spain'));
+}
+
+function hasFbiAndApostille(docStatuses) {
+  const fbiEntry = getDocStatusEntry(docStatuses, ['fbi-report', 'fbi_report', 'fbiReport']);
+  const apostilleEntry = getDocStatusEntry(docStatuses, ['fbi-apostille', 'fbi_apostille', 'apostille_fbi', 'fbiApostille']);
+  return isDocStatusComplete(fbiEntry) && isDocStatusComplete(apostilleEntry);
+}
+
+function hasVisaApproval(myVisaState, docStatuses) {
+  const entry = getDocStatusEntry(docStatuses, ['visa-approval', 'visa_approval', 'visaApproval']);
+  if (isDocStatusComplete(entry)) return true;
+  const fileMeta = normalizeFileMeta(myVisaState?.visaApproval?.file);
+  return Boolean(fileMeta?.dataUrl);
+}
+
+function canUnlockTrip(docStatuses, profile, myVisaState) {
+  if (isSpainRoute(profile, myVisaState)) {
+    return hasFbiAndApostille(docStatuses);
+  }
+  return hasVisaApproval(myVisaState, docStatuses);
+}
+
+function emitAppStateUpdated() {
+  if (typeof window === 'undefined') return;
+  try {
+    let profile = null;
+    try {
+      profile = userProfileData;
+    } catch (_) {
+      profile = profileState?.data || null;
+    }
+
+    const myVisa = getMyVisaState();
+    const checklistState = getChecklistState();
+    const docs = buildTripDocStatusMap(myVisa, checklistState, profile);
+    const detail = { profile, myVisa, docs };
+    window.__APP_STATE__ = detail;
+    window.dispatchEvent(new CustomEvent('app:state-updated', { detail }));
+  } catch (error) {
+    console.warn('Unable to emit app state update', error);
+  }
+}
 
 function normalizeFileMeta(meta) {
   if (!meta || typeof meta !== 'object') return null;
@@ -109,27 +801,232 @@ function normalizeFileMeta(meta) {
   };
 }
 
+const SPAIN_REQUEST_STATUSES = ['none', 'pending', 'approved', 'denied'];
+const SPAIN_REQUEST_LEGACY_STATUS_MAP = {
+  pending: 'pending',
+  requested: 'pending'
+};
+const SPAIN_STUDENT_DOC_KEYS = [
+  'fbi-report',
+  'fbi-apostille',
+  'fbi-report-translation',
+  'fbi-apostille-translation'
+];
+const SPAIN_DOC_LABELS = {
+  'fbi-report': 'FBI Background Check',
+  'fbi-apostille': 'Apostille of The Hague (FBI record)',
+  'fbi-report-translation': 'Translation of FBI Background Check',
+  'fbi-apostille-translation': 'Translation of Apostille'
+};
+function getCurrentSubmissionMethod() {
+  const state = getMyVisaState();
+  return state.submission?.method === 'spain' ? 'spain' : 'usa';
+}
+
+function getSubmissionMode() {
+  return getCurrentSubmissionMethod();
+}
+
+function getUsaChecklistDefinition() {
+  return VISA_CHECKLIST_CATALOG.map((item) => ({
+    key: item.key,
+    label: item.title,
+    minor: item.minor === true
+  }));
+}
+
+function getChecklistDefinitionForMode(mode) {
+  if (mode === 'spain') {
+    return [
+      { key: 'fbi-report', label: 'FBI Background Check' },
+      { key: 'fbi-apostille', label: 'Apostille of FBI' },
+      { key: 'fbi-report-translation', label: 'Translation of FBI' },
+      { key: 'fbi-apostille-translation', label: 'Translation of Apostille' }
+    ];
+  }
+  return getUsaChecklistDefinition();
+}
+
+function getChecklistAllowedKeys(mode = getSubmissionMode()) {
+  const definition = getChecklistDefinitionForMode(mode);
+  return definition.map((entry) => entry.key);
+}
+const SPAIN_REQUIRED_DOCS = [
+  { key: 'fbi-report', title: 'FBI Background Check' },
+  { key: 'fbi-apostille', title: 'Apostille of FBI' },
+  { key: 'fbi-report-translation', title: 'Translation of FBI' },
+  { key: 'fbi-apostille-translation', title: 'Translation of Apostille' }
+];
+
+let spainRequestModal = null;
+const TAB_DISABLE_HANDLERS = new Map();
+
+function normalizeEtureDoc(doc, fallbackIndex = 0) {
+  if (!doc || typeof doc !== 'object') {
+    return null;
+  }
+  const rawId = doc.id || doc.key || doc.slug || doc.uuid || `eture-${fallbackIndex}`;
+  const id = (rawId || `eture-${fallbackIndex}`).toString();
+  const name = (doc.name || doc.title || 'ETURE document').toString();
+  const fileSource = doc.fileMeta || doc.file || null;
+  const fileMeta = normalizeFileMeta(fileSource);
+  const fileUrl = (doc.fileUrl || fileMeta?.dataUrl || '').toString();
+  const uploadedAt = (doc.uploadedAt || doc.updatedAt || fileMeta?.uploadedAt || '').toString();
+  const status = normalizeChecklistStatus(doc.status || 'uploaded');
+  const fileName = (doc.fileName || fileMeta?.name || '').toString();
+  const fileMime = (doc.fileMime || fileMeta?.type || '').toString();
+  return {
+    id,
+    name,
+    status,
+    fileMeta,
+    fileUrl,
+    fileName,
+    fileMime,
+    uploadedAt
+  };
+}
+
+function sanitizeSpainTravelEntries(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.map((entry) => {
+    const safe = entry && typeof entry === 'object' ? entry : {};
+    const place = (safe.place || safe.country || safe.location || '').toString();
+    const entryDate = (safe.entry || safe.entryDate || '').toString();
+    const exitDate = (safe.exit || safe.exitDate || '').toString();
+    return {
+      place,
+      entry: entryDate,
+      exit: exitDate
+    };
+  });
+}
+
+function getEtureDocs() {
+  return getNormalizedEtureDocs();
+}
+
+function getSpainTravelEntries() {
+  ensureVisaDefaults();
+  userProfileData.visa.spainTravel = sanitizeSpainTravelEntries(userProfileData.visa.spainTravel);
+  return userProfileData.visa.spainTravel.map((entry) => ({ ...entry }));
+}
+
+function setSpainTravelEntries(entries) {
+  ensureVisaDefaults();
+  const sanitized = sanitizeSpainTravelEntries(entries);
+  userProfileData.visa.spainTravel = sanitized.map((entry) => ({ ...entry }));
+  return userProfileData.visa.spainTravel;
+}
+
+function getSpainEuropeVisitFlag() {
+  ensureVisaDefaults();
+  const flag = (userProfileData.visa.spainEuropeVisit || '').toString().toLowerCase();
+  if (flag === 'yes' || flag === 'no') return flag;
+  return userProfileData.visa.spainTravel.length ? 'yes' : 'no';
+}
+
+function setSpainEuropeVisitFlag(value) {
+  ensureVisaDefaults();
+  const normalized = value === 'yes' ? 'yes' : value === 'no' ? 'no' : '';
+  userProfileData.visa.spainEuropeVisit = normalized;
+  return normalized;
+}
+
 function normalizeMyVisaState(state) {
   const defaults = getDefaultMyVisaState();
   const raw = state && typeof state === 'object' ? state : {};
 
-  const submissionRaw = (raw.submissionLocation || '').toString().trim().toLowerCase();
-  const normalizedLocation = submissionRaw === 'spain'
-    ? 'Spain'
-    : submissionRaw === 'usa'
-      ? 'USA'
-      : defaults.submissionLocation;
+  const submissionRaw = raw.submission && typeof raw.submission === 'object' ? raw.submission : {};
+  const legacySubmissionLocation = (raw.submissionLocation || '').toString().trim().toLowerCase();
+  const methodRaw = (submissionRaw.method || legacySubmissionLocation || defaults.submission.method).toString().trim().toLowerCase();
+  const normalizedMethod = methodRaw === 'spain' ? 'spain' : 'usa';
+
+  const spainRequestRaw = submissionRaw.spainRequest && typeof submissionRaw.spainRequest === 'object'
+    ? submissionRaw.spainRequest
+    : {};
+  let spainStatusRaw = (spainRequestRaw.status || '').toString().trim().toLowerCase();
+  if (SPAIN_REQUEST_LEGACY_STATUS_MAP[spainStatusRaw]) {
+    spainStatusRaw = SPAIN_REQUEST_LEGACY_STATUS_MAP[spainStatusRaw];
+  }
+  const spainStatus = SPAIN_REQUEST_STATUSES.includes(spainStatusRaw) ? spainStatusRaw : 'none';
+  let requestReason = (spainRequestRaw.requestReason || '').toString();
+  let decisionReason = (spainRequestRaw.decisionReason || '').toString();
+  const legacyReason = (spainRequestRaw.reason || '').toString();
+  if (!requestReason && spainStatus === 'pending') {
+    requestReason = legacyReason;
+  }
+  if (!decisionReason && spainStatus === 'denied') {
+    decisionReason = legacyReason;
+  }
+  const requestTimestamp = (spainRequestRaw.requestTimestamp || spainRequestRaw.timestamp || '').toString();
+  const decisionTimestamp = (spainRequestRaw.decisionTimestamp || '').toString();
 
   const appointmentRaw = raw.appointment && typeof raw.appointment === 'object' ? raw.appointment : {};
   const visaApprovalRaw = raw.visaApproval && typeof raw.visaApproval === 'object' ? raw.visaApproval : {};
   const tieRaw = raw.tie && typeof raw.tie === 'object' ? raw.tie : {};
 
+  const docStatusesRaw = raw.docStatuses && typeof raw.docStatuses === 'object' ? raw.docStatuses : {};
+  const docStatuses = {};
+  Object.keys(docStatusesRaw).forEach((key) => {
+    if (!key) return;
+    docStatuses[normalizeChecklistKeyInput(key)] = normalizeChecklistStatus(docStatusesRaw[key]);
+  });
+
+  const etureRaw = Array.isArray(raw.etureDocs) ? raw.etureDocs : [];
+  const etureDocs = etureRaw
+    .map((doc, index) => normalizeEtureDoc(doc, index))
+    .filter(Boolean);
+
+  const profileTravel = getSpainTravelEntries();
+  const profileVisitFlag = getSpainEuropeVisitFlag();
+  const spainTravelRaw = Array.isArray(submissionRaw.spainTravel)
+    ? submissionRaw.spainTravel
+    : Array.isArray(raw.spainTravel)
+      ? raw.spainTravel
+      : profileTravel;
+  const spainTravel = sanitizeSpainTravelEntries(spainTravelRaw);
+  const spainVisitRaw = (submissionRaw.spainEuropeVisit || raw.spainEuropeVisit || profileVisitFlag || '').toString().toLowerCase();
+  const spainEuropeVisit = spainVisitRaw === 'yes' ? 'yes' : spainVisitRaw === 'no' ? 'no' : (spainTravel.length ? 'yes' : '');
+
+  const spainSettingsRaw = submissionRaw.spain && typeof submissionRaw.spain === 'object'
+    ? submissionRaw.spain
+    : raw.spain && typeof raw.spain === 'object'
+      ? raw.spain
+      : {};
+  const spainTermsAccepted = typeof spainSettingsRaw.termsAccepted === 'boolean'
+    ? spainSettingsRaw.termsAccepted
+    : typeof submissionRaw.spainTermsAccepted === 'boolean'
+      ? submissionRaw.spainTermsAccepted
+      : typeof raw.spainTermsAccepted === 'boolean'
+        ? raw.spainTermsAccepted
+        : getLegacySpainTermsAccepted();
+
   return {
-    submissionLocation: normalizedLocation,
+    submission: {
+      method: normalizedMethod,
+      spainRequest: {
+        status: spainStatus,
+        requestReason,
+        decisionReason,
+        requestTimestamp,
+        decisionTimestamp
+      },
+      expectedArrival: (submissionRaw.expectedArrival || submissionRaw.expectedArrivalDate || '').toString(),
+      spainEuropeVisit,
+      spainTravel,
+      spain: {
+        termsAccepted: spainTermsAccepted === true
+      }
+    },
+    docStatuses,
+    etureDocs,
+    isMinor: raw.isMinor === true ? true : raw.isMinor === false ? false : defaults.isMinor,
     appointment: {
-      dateTime: (appointmentRaw.dateTime || '').toString(),
-      blsCenter: (appointmentRaw.blsCenter || '').toString(),
-      proofFile: normalizeFileMeta(appointmentRaw.proofFile)
+      datetime: (appointmentRaw.datetime || appointmentRaw.dateTime || '').toString(),
+      center: (appointmentRaw.center || appointmentRaw.blsCenter || '').toString(),
+      proofFile: normalizeFileMeta(appointmentRaw.proofFile),
+      readAcknowledged: appointmentRaw.readAcknowledged === true
     },
     visaApproval: {
       date: (visaApprovalRaw.date || '').toString(),
@@ -161,9 +1058,59 @@ function getMyVisaState() {
   }
 
   let normalized = normalizeMyVisaState(parsed);
-  if (!normalized.submissionLocation) {
-    const submission = getVisaSubmissionState();
-    normalized.submissionLocation = submission.submitChoice === 'spain' ? 'Spain' : 'USA';
+  const defaults = getDefaultMyVisaState();
+  const submission = getVisaSubmissionState();
+  const derivedMethod = submission.submitChoice === 'spain' ? 'spain' : 'usa';
+
+  if (!normalized.submission || typeof normalized.submission !== 'object') {
+    normalized.submission = { ...defaults.submission };
+  }
+
+  if (!normalized.submission.method) {
+    normalized.submission.method = derivedMethod;
+  }
+
+  if (normalized.submission.method !== derivedMethod) {
+    normalized.submission.method = derivedMethod;
+  }
+
+  const normalizedSubmission = { ...normalized.submission };
+  const normalizedSpain = normalizedSubmission.spain && typeof normalizedSubmission.spain === 'object'
+    ? { ...normalizedSubmission.spain }
+    : {};
+
+  normalized.submission = {
+    ...defaults.submission,
+    ...normalizedSubmission,
+    spainRequest: {
+      ...defaults.submission.spainRequest,
+      ...(normalizedSubmission.spainRequest || {})
+    },
+    spain: {
+      ...defaults.submission.spain,
+      ...normalizedSpain,
+      termsAccepted: normalizedSpain.termsAccepted === true
+    }
+  };
+
+  const minorFlag = getIsMinor();
+  normalized.isMinor = minorFlag;
+
+  const profileAppointment = userProfileData?.visa?.appointment;
+  if (profileAppointment && typeof profileAppointment === 'object') {
+    normalized.appointment = normalized.appointment || { ...getDefaultMyVisaState().appointment };
+    if (!normalized.appointment.datetime) {
+      normalized.appointment.datetime = (profileAppointment.datetime || profileAppointment.dateTime || '').toString();
+    }
+    if (!normalized.appointment.center) {
+      normalized.appointment.center = (profileAppointment.center || profileAppointment.blsCenter || '').toString();
+    }
+    if (!normalized.appointment.proofFile && profileAppointment.proofFile) {
+      normalized.appointment.proofFile = normalizeFileMeta(profileAppointment.proofFile);
+    }
+    if (profileAppointment.readAcknowledged === true) {
+      normalized.appointment.readAcknowledged = true;
+    }
   }
 
   cachedMyVisaState = normalized;
@@ -176,6 +1123,32 @@ function saveMyVisaState(updater) {
     ? normalizeMyVisaState(updater({ ...current }))
     : normalizeMyVisaState({ ...current, ...updater });
 
+  if (candidate.isMinor !== current.isMinor) {
+    setIsMinor(candidate.isMinor === true);
+  }
+
+  const defaults = getDefaultMyVisaState();
+  const submissionInput = candidate.submission && typeof candidate.submission === 'object'
+    ? { ...candidate.submission }
+    : {};
+  const spainInput = submissionInput.spain && typeof submissionInput.spain === 'object'
+    ? { ...submissionInput.spain }
+    : {};
+
+  candidate.submission = {
+    ...defaults.submission,
+    ...submissionInput,
+    spainRequest: {
+      ...defaults.submission.spainRequest,
+      ...(submissionInput.spainRequest || {})
+    },
+    spain: {
+      ...defaults.submission.spain,
+      ...spainInput,
+      termsAccepted: spainInput.termsAccepted === true
+    }
+  };
+
   cachedMyVisaState = candidate;
 
   if (typeof window !== 'undefined') {
@@ -186,12 +1159,45 @@ function saveMyVisaState(updater) {
     }
   }
 
+  emitAppStateUpdated();
+
   return JSON.parse(JSON.stringify(candidate));
 }
 
-function getSubmissionLocationLabel(myState = null) {
-  const state = myState || getMyVisaState();
-  return state.submissionLocation === 'Spain' ? 'Spain' : 'USA';
+function getNormalizedEtureDocs() {
+  const seen = new Map();
+
+  const addDoc = (doc, index = 0) => {
+    const normalized = normalizeEtureDoc(doc, index);
+    if (!normalized) return;
+    const existing = seen.get(normalized.id);
+    if (!existing) {
+      seen.set(normalized.id, normalized);
+      return;
+    }
+    const hasExistingFile = Boolean(existing.fileMeta?.dataUrl || existing.fileUrl);
+    const hasNewFile = Boolean(normalized.fileMeta?.dataUrl || normalized.fileUrl);
+    if (!hasExistingFile && hasNewFile) {
+      seen.set(normalized.id, normalized);
+      return;
+    }
+    if (hasExistingFile && hasNewFile && !existing.fileMeta?.dataUrl && normalized.fileMeta?.dataUrl) {
+      seen.set(normalized.id, normalized);
+    }
+  };
+
+  const profileDocs = userProfileData?.visa?.etureDocs;
+  if (Array.isArray(profileDocs)) {
+    profileDocs.forEach((doc, index) => addDoc(doc, index));
+  }
+
+  const stateDocs = getMyVisaState().etureDocs;
+  if (Array.isArray(stateDocs)) {
+    const offset = Array.isArray(profileDocs) ? profileDocs.length : 0;
+    stateDocs.forEach((doc, index) => addDoc(doc, offset + index));
+  }
+
+  return Array.from(seen.values());
 }
 
 const BLS_CENTER_DETAILS = {
@@ -322,6 +1328,7 @@ const BLS_CENTER_DETAILS_BY_SLUG = Object.entries(BLS_CENTER_DETAILS).reduce((ac
 }, {});
 
 const CHECKLIST_DOM_ID_MAP = {
+  'eture-docs': 'CHK_ETURE_DOCS',
   passport: 'CHK_PASSPORT',
   'fbi-report': 'CHK_FBI_REPORT',
   'fbi-apostille': 'CHK_FBI_APOSTILLE',
@@ -397,7 +1404,6 @@ const CA_REGION_TO_CITY = {
 };
 
 let cachedIsMinor = null;
-let cachedSpainFeeAck = null;
 
 function normalizeChecklistKeyInput(key) {
   const raw = (key || '').toString().trim();
@@ -462,56 +1468,197 @@ function setIsMinor(value) {
   return next;
 }
 
-function getSpainFeeAck(state = null) {
-  if (state && typeof state.spain?.feeAcknowledged === 'boolean') {
-    cachedSpainFeeAck = state.spain.feeAcknowledged;
-    return cachedSpainFeeAck;
-  }
-
-  if (typeof cachedSpainFeeAck === 'boolean') {
-    return cachedSpainFeeAck;
-  }
-
-  const submission = userProfileData?.visa?.submission;
-  if (submission && typeof submission?.spain?.feeAcknowledged === 'boolean') {
-    cachedSpainFeeAck = submission.spain.feeAcknowledged === true;
-    return cachedSpainFeeAck;
-  }
-
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = window.localStorage?.getItem(SPAIN_FEE_ACK_STORAGE_KEY);
-      if (stored !== null) {
-        cachedSpainFeeAck = stored === 'true';
-        return cachedSpainFeeAck;
-      }
-    } catch (error) {
-      console.warn('Unable to read Spain fee acknowledgement', error);
-    }
-  }
-
-  cachedSpainFeeAck = false;
-  return cachedSpainFeeAck;
+function getLegacySpainTermsAccepted() {
+  return !!(userProfileData?.visa?.spainTermsAccepted);
 }
 
-function setSpainFeeAck(value) {
-  const next = value === true;
-  if (cachedSpainFeeAck === next) {
-    return next;
+function getSpainTermsAccepted() {
+  const state = cachedMyVisaState || getMyVisaState();
+  return !!(state?.submission?.spain?.termsAccepted);
+}
+
+function setSpainTermsAccepted(value) {
+  userProfileData.visa = userProfileData.visa || {};
+  userProfileData.visa.spainTermsAccepted = value === true;
+  saveUserProfile();
+  return userProfileData.visa.spainTermsAccepted;
+}
+
+function setSpainInfoAccepted(val) {
+  const next = getVisaSubmissionState();
+  next.spainInfoAccepted = !!val;
+  setVisaSubmissionState(next);
+  saveUserProfile();
+  renderVisaSubmissionSpain(next);
+  renderVisaChecklistProgress();
+  renderVisaOverview();
+}
+
+if (typeof window !== 'undefined') {
+  window.setSpainInfoAccepted = setSpainInfoAccepted;
+}
+
+function openSpainRequestModal(mode = 'request') {
+  const modalEl = document.getElementById('spain-request-modal');
+  const reasonInput = document.getElementById('spain-request-reason');
+  const ackCheckbox = document.getElementById('spain-terms-check');
+  const submitBtn = document.getElementById('spain-request-submit');
+  if (!modalEl || !reasonInput || !ackCheckbox || !submitBtn) return;
+
+  const submissionState = getVisaSubmissionState();
+  const canonicalStatus = normalizeSpainRequestStatus(submissionState.spainRequestStatus);
+  if (mode === 'request' && canonicalStatus === 'approved') {
+    return;
   }
-  cachedSpainFeeAck = next;
-  persistVisaSubmissionState((state) => {
-    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
-    state.spain.feeAcknowledged = next;
-    return state;
-  });
-  return next;
+  const readOnly = mode === 'view' || canonicalStatus === 'approved';
+  const storedReason = (submissionState.spainRequestReason || '').toString();
+
+  const formCheck = ackCheckbox.closest('.form-check');
+
+  reasonInput.disabled = readOnly;
+  reasonInput.value = readOnly ? storedReason : '';
+
+  if (formCheck) {
+    formCheck.hidden = readOnly;
+  }
+  ackCheckbox.checked = false;
+  ackCheckbox.disabled = readOnly;
+
+  submitBtn.hidden = readOnly;
+  submitBtn.disabled = true;
+
+  spainRequestModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  spainRequestModal.show();
+
+  if (!readOnly) {
+    setTimeout(() => {
+      try {
+        reasonInput.focus();
+      } catch (_) {
+        /* ignore */
+      }
+    }, 100);
+  }
+
+  validateSpainRequestModal();
+}
+
+function validateSpainRequestModal() {
+  const submitBtn = document.getElementById('spain-request-submit');
+  if (!submitBtn || submitBtn.hidden) return;
+  const reason = (document.getElementById('spain-request-reason')?.value || '').trim();
+  const ack = document.getElementById('spain-terms-check')?.checked === true;
+  submitBtn.disabled = !(ack && reason.length >= 10);
+}
+
+function handleSpainRequestSubmit(event) {
+  event?.preventDefault?.();
+  const reasonInput = document.getElementById('spain-request-reason');
+  const ackCheckbox = document.getElementById('spain-terms-check');
+  const submitBtn = document.getElementById('spain-request-submit');
+  const modalEl = document.getElementById('spain-request-modal');
+
+  const reason = (reasonInput?.value || '').trim();
+  if (!ackCheckbox?.checked) {
+    alert('Please accept the terms.');
+    return;
+  }
+  if (reason.length < 10) {
+    alert('Please explain your reason (at least 10 characters).');
+    reasonInput?.focus();
+    return;
+  }
+
+  setSpainStatus('pending', reason);
+  applySpainUiVisibility('pending');
+  renderVisaChecklistProgress(getChecklistState());
+
+  if (submitBtn) submitBtn.disabled = true;
+  if (modalEl) {
+    const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalInstance?.hide();
+  }
+  cleanupModalArtifacts();
+}
+
+function handleSubmissionSpainRequestConfirm(event) {
+  handleSpainRequestSubmit(event);
+}
+
+function handleSpainRequestCancel(event) {
+  event?.preventDefault?.();
+  const modalEl = document.getElementById('spain-request-modal');
+  if (modalEl) {
+    const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalInstance?.hide();
+  }
+  window.setTimeout(cleanupModalArtifacts, 0);
+}
+
+function handleSpainRequestClose(event) {
+  event?.preventDefault?.();
+  window.setTimeout(cleanupModalArtifacts, 0);
+}
+
+function saveUserProfile() {
+  ensureVisaDefaults();
+  if (auth.currentUser) {
+    saveProfileToFirestore(auth.currentUser.uid, userProfileData).catch((error) => {
+      console.error('Unable to save user profile', error);
+    });
+  }
+}
+
+function setTripTabEnabled(enabled) {
+  if (typeof document === 'undefined') return;
+  const tabId = 'visa-trip-tab';
+  setTabDisabled(tabId, !enabled);
+  const tab = document.getElementById(tabId);
+  if (tab) {
+    tab.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    if (enabled) {
+      tab.removeAttribute('tabindex');
+    }
+  }
+  const pane = document.getElementById('visa-trip');
+  if (pane) {
+    pane.setAttribute('aria-hidden', enabled ? 'false' : 'true');
+  }
+  if (!enabled && tab?.classList.contains('active')) {
+    const fallback = document.getElementById('visa-overview-tab');
+    try {
+      if (fallback && typeof bootstrap !== 'undefined') {
+        bootstrap.Tab.getOrCreateInstance(fallback).show();
+      }
+    } catch (_) {}
+  }
+}
+
+function evaluateTripUnlockFromState() {
+  try {
+    let profile = null;
+    try {
+      profile = userProfileData;
+    } catch (_) {
+      profile = profileState?.data || null;
+    }
+    const myVisaState = getMyVisaState();
+    const checklistState = getChecklistState();
+    const docStatuses = buildTripDocStatusMap(myVisaState, checklistState, profile);
+    const enabled = canUnlockTrip(docStatuses, profile, myVisaState);
+    setTripTabEnabled(enabled);
+  } catch (error) {
+    console.warn('Trip unlock evaluation failed', error);
+  }
 }
 
 function recalcVisaProgressAndRender() {
   const cl = getChecklistState();
   renderVisaChecklistProgress(cl);
   renderVisaOverview();
+  renderSubmissionProgress();
+  rerenderActiveVisaTab();
+  evaluateTripUnlockFromState();
 }
 
 function showChecklistRow(docKey, visible) {
@@ -583,7 +1730,7 @@ const SUBMISSION_STATUS_META = {
   submitted: {
     key: 'submitted',
     label: 'Submitted',
-    chipClass: 'badge text-primary border border-primary bg-light',
+    chipClass: 'badge bg-primary text-white',
     overviewClass: 'badge bg-primary',
     progress: 100
   },
@@ -618,7 +1765,9 @@ function getDefaultVisaSubmissionState() {
     denyReason: '',
     lastUpdateISO: '',
     submitChoice: 'usa',
-    spain: { ...SPAIN_SUBMISSION_DEFAULTS }
+    spain: { ...SPAIN_SUBMISSION_DEFAULTS },
+    spainRequestStatus: 'none',
+    spainRequestReason: ''
   };
 }
 
@@ -729,6 +1878,7 @@ function applyCenterResolution(state) {
   if (!state) return state;
   const center = resolveCenterForState(state.stateCode, state.caRegion);
   if (!center || center.missing || center.requiresRegion) {
+    state.blsSelection = null;
     state.consulateKey = '';
     state.consulateCity = '';
     state.consulateUrl = '';
@@ -738,12 +1888,24 @@ function applyCenterResolution(state) {
     return state;
   }
 
+  const details = center.details || getCityDetails(center.city) || {};
+  const bookingUrl = details.site || center.url || '';
   state.consulateKey = center.slug || toCitySlug(center.city);
   state.consulateCity = center.city;
-  state.consulateUrl = center.url || '';
+  state.consulateUrl = bookingUrl;
   if (state.stateCode !== 'CA') {
     state.caRegion = '';
   }
+  state.blsSelection = {
+    key: state.consulateKey,
+    city: center.city,
+    addressLines: Array.isArray(details.addressLines) ? details.addressLines.slice() : [],
+    notes: Array.isArray(details.notes) ? details.notes.slice() : [],
+    phone: details.phone || '',
+    email: details.email || '',
+    mapsUrl: details.mapsQuery || '',
+    bookingUrl
+  };
   return state;
 }
 
@@ -776,6 +1938,18 @@ function normalizeVisaSubmissionState(data = {}) {
   });
   normalizedSpain.feeAcknowledged = normalizedSpain.feeAcknowledged === true || normalizedSpain.feeAcknowledged === 'true';
   merged.spain = normalizedSpain;
+
+  const rawSpainStatus = merged.spainRequestStatus
+    || normalizedSpain.status
+    || (normalizedSpain.requestStatus || '')
+    || '';
+  merged.spainRequestStatus = normalizeSpainRequestStatus(rawSpainStatus);
+  merged.spainRequestReason = (merged.spainRequestReason
+    || normalizedSpain.requestReason
+    || '').toString();
+  if (merged.spainRequestStatus === 'none') {
+    merged.spainRequestReason = '';
+  }
 
   const rawChoice = (merged.submitChoice || '').toString().toLowerCase();
   merged.submitChoice = rawChoice === 'spain' ? 'spain' : 'usa';
@@ -855,21 +2029,6 @@ function getVisaSubmissionState() {
         }
       }
 
-      let storedAck = window.localStorage?.getItem(SPAIN_FEE_ACK_STORAGE_KEY);
-      if (storedAck === null) {
-        for (const legacyKey of LEGACY_SPAIN_FEE_ACK_KEYS) {
-          const legacyValue = window.localStorage?.getItem(legacyKey);
-          if (legacyValue !== null) {
-            storedAck = legacyValue;
-            break;
-          }
-        }
-      }
-      if (storedAck !== null) {
-        source = source || {};
-        source.spain = source.spain || {};
-        source.spain.feeAcknowledged = storedAck === 'true';
-      }
     } catch (error) {
       console.warn('Unable to parse stored submission helper values', error);
     }
@@ -888,8 +2047,8 @@ function persistVisaSubmissionState(updater) {
 
   const now = new Date().toISOString();
   candidate.lastUpdateISO = now;
+  candidate.spain = candidate.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
   cachedVisaSubmissionState = candidate;
-  cachedSpainFeeAck = Boolean(candidate.spain?.feeAcknowledged);
 
   if (typeof window !== 'undefined') {
     try {
@@ -919,21 +2078,6 @@ function persistVisaSubmissionState(updater) {
         window.localStorage?.removeItem(SPAIN_STAYS_STORAGE_KEY);
       }
 
-      try {
-        window.localStorage?.setItem(
-          SPAIN_FEE_ACK_STORAGE_KEY,
-          candidate.spain?.feeAcknowledged ? 'true' : 'false'
-        );
-        LEGACY_SPAIN_FEE_ACK_KEYS.forEach((legacyKey) => {
-          try {
-            window.localStorage?.removeItem(legacyKey);
-          } catch (_) {
-            /* noop */
-          }
-        });
-      } catch (error) {
-        console.warn('Unable to persist Spain acknowledgement state', error);
-      }
     } catch (error) {
       console.warn('Unable to persist submission helper state', error);
     }
@@ -948,7 +2092,16 @@ function persistVisaSubmissionState(updater) {
 
   updateVisaSubmissionUI(candidate);
   renderVisaOverview();
+  emitAppStateUpdated();
+  evaluateTripUnlockFromState();
   return candidate;
+}
+
+function setVisaSubmissionState(nextStateOrUpdater) {
+  if (typeof nextStateOrUpdater === 'function') {
+    return persistVisaSubmissionState(nextStateOrUpdater);
+  }
+  return persistVisaSubmissionState(() => nextStateOrUpdater);
 }
 
 function renderVisaSubmissionConsulate(state, centerOverride = null) {
@@ -1079,154 +2232,650 @@ function isStudentMinor() {
   return age < 18;
 }
 
-function getSpainStatusMeta(status) {
-  const normalized = normalizeChecklistStatus(status);
-  const visual = (VISA_CHECKLIST_VISUAL_STATES && VISA_CHECKLIST_VISUAL_STATES[normalized])
-    || VISA_CHECKLIST_VISUAL_STATES.pending;
-  const className = visual.listClass || visual.chipClass || 'badge bg-secondary';
-  return {
-    key: normalized,
-    label: visual.label || 'Pending',
-    className
-  };
+function getSpainRequiredDocs() {
+  return SPAIN_REQUIRED_DOCS.map((config) => {
+    const item = getChecklistItem(config.key);
+    const status = normalizeChecklistStatus(item?.status);
+    return {
+      key: config.key,
+      title: config.title,
+      status,
+      fileUrl: item?.fileUrl || '',
+      fileName: item?.fileName || '',
+      review: item?.review || null,
+      checklistDomId: getChecklistDomIdForKey(config.key)
+    };
+  });
 }
 
-function renderSubmissionSpainDocuments(container, items, options = {}) {
-  if (!container) return;
-  const disableInteractions = options.disableInteractions === true;
+function computeSpainSubmissionProgress() {
+  const docs = getSpainRequiredDocs();
+  const total = docs.length;
+  const verified = docs.filter((doc) => normalizeChecklistStatus(doc.status) === 'verified').length;
+  const percent = total ? Math.round((verified / total) * 100) : 0;
+  return { docs, total, verified, percent };
+}
 
-  if (!Array.isArray(items) || !items.length) {
-    container.innerHTML = '<div class="list-group-item small text-muted">No checklist documents available.</div>';
+function renderSubmissionDocList(containerId, emptyId, docs = []) {
+  const listEl = document.getElementById(containerId);
+  const emptyEl = emptyId ? document.getElementById(emptyId) : null;
+  if (!listEl) return;
+
+  if (!Array.isArray(docs) || !docs.length) {
+    listEl.innerHTML = '';
+    if (emptyEl) emptyEl.classList.remove('d-none');
     return;
   }
 
-  container.innerHTML = items.map((item) => {
-    const normalizedKey = normalizeChecklistKeyInput(item.key);
-    const statusMeta = getSpainStatusMeta(item.status);
-    const statusKey = statusMeta.key;
-    const reason = (statusKey === 'denied' && item.review?.reason) ? item.review.reason : '';
-    const reasonAttr = reason ? ` title="${escapeHtml(reason)}"` : '';
+  if (emptyEl) emptyEl.classList.add('d-none');
 
-    const showFixButton = statusKey !== 'verified';
-    const fixButtonDisabled = disableInteractions;
-    const fixButtonHtml = showFixButton
-      ? `<button type="button" class="btn btn-sm btn-outline-primary submission-spain-fix-btn" data-doc-key="${normalizedKey}"${fixButtonDisabled ? ' disabled aria-disabled="true"' : ''}>Upload / Fix in Checklist →</button>`
+  listEl.innerHTML = docs.map((doc) => {
+    const statusMeta = getChecklistVisualState({ status: doc.status });
+    const iconHtml = statusMeta.icon ? `<span aria-hidden="true" class="me-1">${statusMeta.icon}</span>` : '';
+    const denialReason = normalizeChecklistStatus(doc.status) === 'denied'
+      ? (doc.review?.reason || '')
       : '';
-
-    const normalizedStatus = normalizeChecklistStatus(item.status);
-    const sanitizedFileUrl = item.fileUrl ? escapeHtml(item.fileUrl) : '';
-    const hasFileLink = ['uploaded', 'verified'].includes(normalizedStatus) && sanitizedFileUrl;
-    let fileLinkHtml = '';
-    if (hasFileLink) {
-      if (disableInteractions) {
-        fileLinkHtml = '<span class="small text-muted" aria-disabled="true">View file</span>';
-      } else {
-        fileLinkHtml = `<a href="${sanitizedFileUrl}" target="_blank" rel="noopener" class="link-secondary link-underline-opacity-0 link-underline-opacity-100-hover">View file</a>`;
-      }
-    }
-
-    const sampleLink = item.sampleUrl
-      ? `<a href="${escapeHtml(item.sampleUrl)}" target="_blank" rel="noopener" class="link-secondary link-underline-opacity-0 link-underline-opacity-100-hover">View sample</a>`
+    const denialHtml = denialReason
+      ? `<div class="small text-danger mt-1">${escapeHtml(denialReason)}</div>`
       : '';
-    const linkFragments = [];
-    if (sampleLink) linkFragments.push(sampleLink);
-    if (fileLinkHtml) linkFragments.push(fileLinkHtml);
-    const linksHtml = linkFragments.length
-      ? `<div class="d-flex flex-wrap align-items-center gap-2 small mt-2">${linkFragments.join('<span class="text-muted">·</span>')}</div>`
-      : '';
-
-    const targetDomId = getChecklistDomIdForKey(normalizedKey);
+    const viewControl = doc.fileUrl
+      ? `<a class="btn btn-sm btn-outline-secondary" href="${escapeHtml(doc.fileUrl)}" target="_blank" rel="noopener">View file</a>`
+      : '<span class="text-muted small">No file</span>';
 
     return `
-      <div class="list-group-item d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3" data-doc-key="${normalizedKey}"${targetDomId ? ` data-checklist-target="${targetDomId}"` : ''}>
+      <div class="list-group-item d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3" data-doc-key="${escapeHtml(doc.key)}">
         <div class="flex-grow-1">
-          <div class="d-flex align-items-center gap-2">
-            <span class="fw-semibold">${escapeHtml(item.title)}</span>
-            <span class="${statusMeta.className}"${reasonAttr}>${statusMeta.label}</span>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="fw-semibold">${escapeHtml(doc.title)}</span>
+            <span class="visa-doc-status ${statusMeta.listClass}" data-state="${statusMeta.key}">${iconHtml}${statusMeta.label}</span>
           </div>
-          ${linksHtml}
+          ${denialHtml}
         </div>
-        <div class="text-md-end">
-          ${fixButtonHtml}
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          ${viewControl}
         </div>
       </div>
     `;
   }).join('');
 }
 
-function renderVisaSubmissionSpain(resolvedState) {
+function getChecklistMirrorDocs() {
+  const cl = getChecklistState();
+  const includeMinor = getIsMinor();
+  if (!Array.isArray(cl.items)) return [];
+  return cl.items
+    .filter(item => isChecklistItemVisible(item, includeMinor))
+    .map((item) => ({
+      key: item.key,
+      title: item.title,
+      status: normalizeChecklistStatus(item.status),
+      fileUrl: item.fileUrl || '',
+      fileName: item.fileName || '',
+      review: item.review || null
+    }));
+}
+
+function applySpainUiVisibility(status) {
+  const normalized = normalizeSpainRequestStatus(status || 'none');
+  const effective = normalized === 'pending' ? 'requested' : normalized;
+  const banner = document.getElementById('spain-restrictions-banner');
+  const requestBtn = document.getElementById('spain-request-btn');
+  const blueLink = document.getElementById('spain-view-restrictions-link');
+  const show = (el, visible) => {
+    if (!el) return;
+    el.classList.toggle('d-none', !visible);
+    if ('hidden' in el) {
+      el.hidden = !visible;
+    }
+    if (el.hasAttribute('aria-hidden')) {
+      el.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+  };
+
+  const bannerVisible = effective === 'requested' || effective === 'approved';
+  show(banner, bannerVisible);
+
+  const requestVisible = effective === 'none' || effective === 'denied';
+  show(requestBtn, requestVisible);
+  if (requestBtn) {
+    requestBtn.disabled = !requestVisible;
+  }
+
+  if (blueLink) {
+    blueLink.classList.add('d-none');
+    blueLink.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function renderVisaSubmissionSpain(resolvedState = null, myStateOverride = null) {
   const spainSection = document.getElementById('submission-spain-section');
   if (!spainSection) return;
 
-  const spainState = resolvedState?.spain && typeof resolvedState.spain === 'object'
-    ? { ...SPAIN_SUBMISSION_DEFAULTS, ...resolvedState.spain }
-    : { ...SPAIN_SUBMISSION_DEFAULTS };
-  const isAcknowledged = getSpainFeeAck(resolvedState);
+  try {
+    const submissionState = resolvedState || getVisaSubmissionState();
+    const myState = myStateOverride || getMyVisaState();
+    const spainRequest = myState.submission?.spainRequest || { status: 'none', reason: '' };
+    const status = getSpainRequestStatus(myState);
+    const approved = isSpainApproved(myState);
 
-  const europeYes = document.getElementById('submission-spain-europe-yes');
-  const europeNo = document.getElementById('submission-spain-europe-no');
-  if (europeYes) europeYes.checked = spainState.europeVisit === 'yes';
-  if (europeNo) europeNo.checked = spainState.europeVisit === 'no';
+    const minorHint = document.getElementById('submission-spain-minor-hint');
+    if (minorHint) {
+      minorHint.classList.toggle('d-none', !getIsMinor());
+    }
 
-  const europeFieldset = document.getElementById('submission-spain-europe-fieldset');
-  toggleSpainControlsDisabled(!isAcknowledged, { fieldset: europeFieldset });
+    applySpainUiVisibility(submissionState.spainRequestStatus || status);
 
-  const ackCheckbox = document.getElementById('spain-acknowledge-fee');
-  if (ackCheckbox) ackCheckbox.checked = isAcknowledged;
+    const content = document.getElementById('submission-spain-content');
+    if (content) {
+      content.classList.remove('d-none');
+    }
 
-  const staysWrapper = document.getElementById('submission-spain-stays');
-  const staysList = document.getElementById('submission-spain-stays-list');
-  const addStayBtn = document.getElementById('submission-spain-add-stay');
-  const showStays = spainState.europeVisit === 'yes';
-  if (staysWrapper) staysWrapper.classList.toggle('d-none', !showStays);
-  if (staysWrapper) {
-    staysWrapper.classList.toggle('opacity-50', !isAcknowledged);
-    if (!isAcknowledged) {
-      staysWrapper.setAttribute('aria-disabled', 'true');
-      staysWrapper.style.pointerEvents = 'none';
-    } else {
-      staysWrapper.removeAttribute('aria-disabled');
-      staysWrapper.style.pointerEvents = '';
+    const requestRow = document.getElementById('spain-approval-card');
+    const approvedRow = document.getElementById('submission-spain-approved-row');
+
+    if (requestRow) {
+      requestRow.classList.remove('d-none');
+    }
+
+    const euBlock = document.getElementById('spain-eu-stays-block');
+    if (euBlock) {
+      euBlock.hidden = !approved;
+    }
+
+    const allowEuEntries = approved;
+    const euEntriesCard = document.getElementById('submission-spain-eu-entries');
+    if (euEntriesCard) {
+      euEntriesCard.classList.toggle('d-none', !allowEuEntries);
+      euEntriesCard.setAttribute('aria-hidden', allowEuEntries ? 'false' : 'true');
+    }
+
+    const requestBtn = document.getElementById('spain-request-btn');
+    const requestStatus = document.getElementById('submission-spain-request-status');
+    const requestAlert = document.getElementById('submission-spain-request-alert');
+    const requestReasonEl = document.getElementById('submission-spain-request-reason');
+    const actionsContainer = document.getElementById('submission-spain-request-actions');
+    const liveRegion = document.getElementById('submission-spain-request-live');
+    const statusPill = document.getElementById('spain-request-status-pill');
+
+    if (requestAlert) {
+      requestAlert.classList.add('d-none');
+      requestAlert.textContent = '';
+    }
+    if (requestStatus) {
+      requestStatus.classList.add('d-none');
+      requestStatus.textContent = '';
+    }
+    if (actionsContainer) {
+      actionsContainer.innerHTML = '';
+    }
+
+    if (requestStatus) {
+      if (status === 'pending') {
+        requestStatus.textContent = 'Pending review by ETURE staff...';
+        requestStatus.classList.remove('d-none');
+      } else if (status === 'approved') {
+        requestStatus.textContent = 'Approved by ETURE staff';
+        requestStatus.classList.remove('d-none');
+      } else if (status === 'denied') {
+        requestStatus.textContent = 'Request denied';
+        requestStatus.classList.remove('d-none');
+      } else {
+        requestStatus.classList.add('d-none');
+        requestStatus.textContent = '';
+      }
+    }
+
+    if (requestReasonEl) {
+      const reasonValue = (spainRequest.requestReason
+        || submissionState.spainRequestReason
+        || '').toString();
+      const reasonText = reasonValue ? `Reason provided: ${escapeHtml(reasonValue)}` : '';
+      requestReasonEl.textContent = reasonText;
+      requestReasonEl.classList.toggle('d-none', !reasonText);
+    }
+
+    if (statusPill) {
+      let pillHtml = '<span class="badge bg-secondary">No request</span>';
+      if (status === 'pending') {
+        pillHtml = '<span class="badge bg-warning text-dark">Pending</span>';
+      } else if (status === 'approved') {
+        pillHtml = '<span class="badge bg-success">Approved</span>';
+      } else if (status === 'denied') {
+        pillHtml = '<span class="badge bg-danger">Denied</span>';
+      }
+      statusPill.innerHTML = pillHtml;
+    }
+
+    if (status === 'denied' && requestAlert) {
+      const denialReason = spainRequest.decisionReason || 'Request denied. Please contact ETURE staff or request again.';
+      requestAlert.textContent = denialReason;
+      requestAlert.classList.remove('d-none');
+    } else if (requestAlert) {
+      requestAlert.classList.add('d-none');
+      requestAlert.textContent = '';
+    }
+
+    if (actionsContainer) {
+      actionsContainer.innerHTML = '';
+      const allowStaffActions = (SUBMISSION_DEMO_MODE === true || isCurrentUserStaff());
+      if (allowStaffActions && status === 'pending') {
+        const approveBtn = document.createElement('button');
+        approveBtn.id = 'submission-spain-approve-btn';
+        approveBtn.type = 'button';
+        approveBtn.className = 'btn btn-success btn-sm';
+        approveBtn.textContent = 'Approve';
+        actionsContainer.appendChild(approveBtn);
+
+        const denyBtn = document.createElement('button');
+        denyBtn.id = 'submission-spain-deny-btn';
+        denyBtn.type = 'button';
+        denyBtn.className = 'btn btn-danger btn-sm';
+        denyBtn.textContent = 'Deny';
+        actionsContainer.appendChild(denyBtn);
+      }
+      if (allowStaffActions && status !== 'none') {
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'submission-spain-reset-btn';
+        resetBtn.type = 'button';
+        resetBtn.className = 'btn btn-outline-secondary btn-sm';
+        resetBtn.textContent = 'Reset';
+        resetBtn.addEventListener('click', (event) => {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          handleSpainReset();
+        });
+        actionsContainer.appendChild(resetBtn);
+      }
+    }
+
+    if (liveRegion) {
+      let announcement = '';
+      if (status === 'pending') announcement = 'Spain submission request sent. Awaiting staff approval.';
+      else if (status === 'approved') announcement = 'Spain submission request approved. Spain submission unlocked.';
+      else if (status === 'denied') announcement = 'Spain submission request denied.';
+      liveRegion.textContent = announcement;
+    }
+
+    const showApproved = approved;
+    if (approvedRow) {
+      approvedRow.classList.toggle('d-none', !showApproved);
+    }
+
+    const arrivalInput = document.getElementById('submission-spain-arrival-date');
+    if (arrivalInput) {
+      if (showApproved) {
+        arrivalInput.value = myState.submission?.expectedArrival || '';
+      } else {
+        arrivalInput.value = '';
+      }
+      arrivalInput.disabled = !showApproved;
+      arrivalInput.setAttribute('aria-disabled', showApproved ? 'false' : 'true');
+    }
+
+    const europeVisitRadios = document.querySelectorAll('input[name="submission-spain-eu-visit"]');
+    const staysSection = document.getElementById('submission-spain-stays-section');
+    const addStayBtn = document.getElementById('spain-add-stay-btn');
+    const staysBody = document.getElementById('submission-spain-stays-body');
+
+    const profileTravel = getSpainTravelEntries();
+    const myTravel = sanitizeSpainTravelEntries(myState.submission?.spainTravel || []);
+    const submissionTravel = Array.isArray(submissionState.spain?.stays)
+      ? sanitizeSpainTravelEntries(
+          submissionState.spain.stays.map((stay) => ({
+            place: stay?.place || '',
+            entry: stay?.entryDate || '',
+            exit: stay?.exitDate || ''
+          }))
+        )
+      : [];
+    const travelEntries = myTravel.length ? myTravel : (profileTravel.length ? profileTravel : submissionTravel);
+    const submissionVisit = (submissionState.spain?.europeVisit || '').toString().toLowerCase();
+    const myVisit = (myState.submission?.spainEuropeVisit || '').toString().toLowerCase();
+    const profileVisit = getSpainEuropeVisitFlag();
+    let europeVisit = myVisit === 'yes' || myVisit === 'no'
+      ? myVisit
+      : submissionVisit === 'yes' || submissionVisit === 'no'
+        ? submissionVisit
+        : profileVisit;
+    if (europeVisit !== 'yes' && europeVisit !== 'no') {
+      europeVisit = travelEntries.length ? 'yes' : 'no';
+    }
+
+    europeVisitRadios.forEach((radio) => {
+      if (!radio) return;
+      if (!allowEuEntries) {
+        radio.checked = false;
+        radio.disabled = true;
+        return;
+      }
+      radio.checked = radio.value === europeVisit;
+      radio.disabled = false;
+    });
+
+    const shouldShowStays = allowEuEntries && europeVisit === 'yes';
+    if (staysSection) {
+      staysSection.classList.toggle('d-none', !shouldShowStays);
+    }
+    if (addStayBtn) {
+      const canAdd = allowEuEntries;
+      addStayBtn.classList.toggle('d-none', !canAdd);
+      addStayBtn.disabled = !canAdd;
+    }
+
+    if (staysBody) {
+      const displayRows = shouldShowStays
+        ? (travelEntries.length ? travelEntries : [{ place: '', entry: '', exit: '' }])
+        : [];
+      staysBody.innerHTML = displayRows.map((stay, index) => {
+        const placeValue = escapeHtml(stay.place || '');
+        const entryValue = escapeHtml(stay.entry || '');
+        const exitValue = escapeHtml(stay.exit || '');
+        return `
+          <tr class="submission-spain-stay-row" data-index="${index}">
+            <td><input type="text" class="form-control form-control-sm" placeholder="Country / Place" value="${placeValue}" data-field="place"></td>
+            <td><input type="date" class="form-control form-control-sm" id="spain-stay-entry-${index}" placeholder="dd/mm/aaaa" value="${entryValue}" data-field="entry"></td>
+            <td><input type="date" class="form-control form-control-sm" id="spain-stay-exit-${index}" placeholder="dd/mm/aaaa" value="${exitValue}" data-field="exit"></td>
+            <td class="text-end"><button type="button" class="btn btn-link btn-sm text-danger submission-spain-remove-stay">Remove</button></td>
+          </tr>
+        `;
+      }).join('');
+      if (!shouldShowStays) {
+        staysBody.innerHTML = '';
+      }
+    }
+
+    const docs = getSpainRequiredDocs();
+    renderSubmissionDocList('submission-spain-doc-list', 'submission-spain-doc-empty', docs);
+  } catch (error) {
+    console.error('[Spain intro render]', error);
+  }
+}
+
+function normalizeSpainRequestStatus(status) {
+  const normalized = (status || '').toString().trim().toLowerCase();
+  if (SPAIN_REQUEST_LEGACY_STATUS_MAP[normalized]) {
+    return SPAIN_REQUEST_LEGACY_STATUS_MAP[normalized];
+  }
+  return SPAIN_REQUEST_STATUSES.includes(normalized) ? normalized : 'none';
+}
+
+function getSpainRequestStatus(stateOverride = null) {
+  let rawStatus = '';
+
+  if (stateOverride && typeof stateOverride === 'object') {
+    if (typeof stateOverride.spainRequestStatus === 'string') {
+      rawStatus = stateOverride.spainRequestStatus;
+    } else if (stateOverride.submission?.spainRequest?.status) {
+      rawStatus = stateOverride.submission.spainRequest.status;
     }
   }
-  if (addStayBtn) {
-    addStayBtn.classList.toggle('d-none', !showStays);
-    addStayBtn.disabled = !isAcknowledged || !showStays;
-    if (addStayBtn.disabled) {
-      addStayBtn.setAttribute('aria-disabled', 'true');
-    } else {
-      addStayBtn.removeAttribute('aria-disabled');
+
+  if (!rawStatus) {
+    const submissionState = getVisaSubmissionState();
+    rawStatus = submissionState.spainRequestStatus
+      || submissionState.spain?.status
+      || '';
+  }
+
+  if (!rawStatus) {
+    const fallbackState = stateOverride && typeof stateOverride === 'object'
+      ? stateOverride
+      : getMyVisaState();
+    rawStatus = fallbackState?.submission?.spainRequest?.status
+      || userProfileData?.visa?.spainRequest?.status
+      || '';
+  }
+
+  return normalizeSpainRequestStatus(rawStatus);
+}
+
+function isSpainApproved(stateOverride = null) {
+  return getSpainRequestStatus(stateOverride) === 'approved';
+}
+
+function isSpainRequested(stateOverride = null) {
+  return getSpainRequestStatus(stateOverride) === 'pending';
+}
+
+function setSpainStatus(status, reason = '') {
+  updateSpainRequestStatus(status, typeof reason === 'string' ? reason : '');
+}
+
+function updateSpainRequestStatus(nextStatus, reason = '') {
+  const previousStatus = getSpainRequestStatus();
+  const normalized = normalizeSpainRequestStatus(nextStatus);
+  const trimmed = reason.trim();
+  const nextState = saveMyVisaState((state) => {
+    state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+    const current = state.submission.spainRequest && typeof state.submission.spainRequest === 'object'
+      ? { ...state.submission.spainRequest }
+      : { ...getDefaultMyVisaState().submission.spainRequest };
+
+    const nowIso = new Date().toISOString();
+
+    current.status = normalized;
+    if (normalized === 'pending') {
+      current.requestReason = trimmed;
+      current.decisionReason = '';
+      current.requestTimestamp = nowIso;
+      current.decisionTimestamp = '';
+    } else if (normalized === 'denied') {
+      current.decisionReason = trimmed;
+      current.decisionTimestamp = nowIso;
+    } else if (normalized === 'approved') {
+      current.decisionReason = '';
+      current.decisionTimestamp = nowIso;
+    } else if (normalized === 'none') {
+      current.requestReason = '';
+      current.decisionReason = '';
+      current.requestTimestamp = '';
+      current.decisionTimestamp = '';
     }
-  }
-  if (showStays) {
-    renderSpainStayRows(spainState.stays || [], { disabled: !isAcknowledged });
-  } else if (staysList) {
-    staysList.innerHTML = '';
+
+    state.submission.spainRequest = current;
+    if (normalized !== 'approved') {
+      state.submission.expectedArrival = '';
+    }
+    return state;
+  });
+
+  ensureVisaDefaults();
+  const latestRequest = nextState.submission?.spainRequest || { ...getDefaultMyVisaState().submission.spainRequest };
+  userProfileData.visa.spainRequest = {
+    status: latestRequest.status,
+    requestReason: latestRequest.requestReason || '',
+    decisionReason: latestRequest.decisionReason || ''
+  };
+  persistVisaSubmissionState((state) => {
+    state.spainRequestStatus = normalized;
+    state.spainRequestReason = normalized === 'none'
+      ? ''
+      : (nextState.submission?.spainRequest?.requestReason || '').toString();
+    return state;
+  });
+  saveUserProfile();
+
+  let effectiveState = nextState;
+  if ((normalized === 'none' || normalized === 'denied') && previousStatus !== normalized) {
+    clearEuEntriesState();
+    effectiveState = getMyVisaState();
   }
 
-  const minorGroup = document.getElementById('submission-spain-minor-group');
-  const showMinorDocs = shouldShowMinorDocs();
+  renderVisaSubmissionSpain(getVisaSubmissionState(), effectiveState);
+  applySpainUiVisibility(normalized);
+  recalcVisaProgressAndRender();
+}
 
-  const coreList = document.getElementById('submission-spain-doc-list');
-  const checklistState = getChecklistState();
-  const includeMinor = shouldShowMinorDocs();
-  const visibleItems = Array.isArray(checklistState.items)
-    ? checklistState.items.filter(item => isChecklistItemVisible(item, includeMinor))
+function handleSubmissionSpainRequestClick() {
+  openSpainRequestModal('request');
+}
+
+function handleSubmissionSpainActionsClick(event) {
+  const approveBtn = event.target.closest('#submission-spain-approve-btn');
+  if (approveBtn) {
+    setSpainStatus('approved');
+    applySpainUiVisibility('approved');
+    return;
+  }
+  const denyBtn = event.target.closest('#submission-spain-deny-btn');
+  if (denyBtn) {
+    const reason = window.prompt('Provide a short reason for denying this request.');
+    if (reason === null) return;
+    const trimmed = reason.trim();
+    if (!trimmed) {
+      alert('A reason is required to deny the request.');
+      return;
+    }
+    setSpainStatus('denied', trimmed);
+    applySpainUiVisibility('denied');
+  }
+  const resetBtn = event.target.closest('#submission-spain-reset-btn');
+  if (resetBtn) {
+    handleSpainReset();
+    return;
+  }
+}
+
+function handleSpainReset() {
+  saveMyVisaState((state) => {
+    state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+    state.submission.spain = state.submission.spain || { ...getDefaultMyVisaState().submission.spain };
+    state.submission.spain.termsAccepted = false;
+    return state;
+  });
+  setSpainTermsAccepted(false);
+  updateSpainRequestStatus('none');
+  const submission = getVisaSubmissionState();
+  submission.spainInfoAccepted = false;
+  setVisaSubmissionState(submission);
+  saveUserProfile();
+  renderVisaSubmissionSpain(getVisaSubmissionState());
+  applySpainUiVisibility('none');
+  recalcVisaProgressAndRender();
+  cleanupModalArtifacts();
+}
+
+if (typeof window !== 'undefined') {
+  window.handleSpainReset = handleSpainReset;
+}
+
+function handleSubmissionSpainArrivalChange(event) {
+  const value = (event.target?.value || '').toString();
+  const nextState = saveMyVisaState((state) => {
+    state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+    state.submission.expectedArrival = value;
+    return state;
+  });
+  renderVisaSubmissionSpain(getVisaSubmissionState(), nextState);
+  recalcVisaProgressAndRender();
+}
+
+function persistSpainTravelChanges(entries, europeVisit) {
+  const sanitizedEntries = sanitizeSpainTravelEntries(entries);
+  let visitFlag = (europeVisit || '').toString().toLowerCase();
+  if (visitFlag !== 'yes' && visitFlag !== 'no') {
+    visitFlag = sanitizedEntries.length ? 'yes' : 'no';
+  }
+
+  const travelToStore = visitFlag === 'yes'
+    ? (sanitizedEntries.length ? sanitizedEntries : [{ place: '', entry: '', exit: '' }])
     : [];
-  const coreItems = visibleItems.filter(item => !item.minor);
-  const minorItems = visibleItems.filter(item => item.minor);
-  renderSubmissionSpainDocuments(coreList, coreItems, { disableInteractions: !isAcknowledged });
 
-  const minorList = document.getElementById('submission-spain-doc-list-minor');
-  if (minorList) {
-    if (showMinorDocs && minorItems.length) {
-      renderSubmissionSpainDocuments(minorList, minorItems, { disableInteractions: !isAcknowledged });
-      minorGroup?.classList.remove('d-none');
-    } else {
-      minorList.innerHTML = '';
-      minorGroup?.classList.add('d-none');
+  const storedTravel = setSpainTravelEntries(travelToStore);
+  setSpainEuropeVisitFlag(visitFlag);
+
+  const submissionState = persistVisaSubmissionState((state) => {
+    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
+    state.spain.europeVisit = visitFlag;
+    state.spain.stays = visitFlag === 'yes'
+      ? storedTravel.map((stay) => ({
+          place: stay.place,
+          entryDate: stay.entry,
+          exitDate: stay.exit
+        }))
+      : [];
+    return state;
+  });
+
+  const nextState = saveMyVisaState((state) => {
+    state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+    state.submission.spainTravel = storedTravel;
+    state.submission.spainEuropeVisit = visitFlag;
+    return state;
+  });
+
+  try {
+    if (auth.currentUser) {
+      saveProfileToFirestore(auth.currentUser.uid, userProfileData).catch((error) => {
+        console.error('Unable to persist Spain travel data', error);
+      });
     }
+  } catch (error) {
+    console.error('Unable to persist Spain travel data', error);
   }
+
+  renderVisaSubmissionSpain(submissionState, nextState);
+  recalcVisaProgressAndRender();
+}
+
+function handleSpainEuropeVisitChange(event) {
+  const selected = (event.target?.value || '').toString().toLowerCase();
+  if (selected === 'no') {
+    persistSpainTravelChanges([], 'no');
+    return;
+  }
+  const current = getSpainTravelEntries();
+  const next = current.length ? current : [{ place: '', entry: '', exit: '' }];
+  persistSpainTravelChanges(next, 'yes');
+}
+
+function handleAddSpainStayRow() {
+  const travel = getSpainTravelEntries();
+  travel.push({ place: '', entry: '', exit: '' });
+  persistSpainTravelChanges(travel, 'yes');
+}
+
+function handleRemoveSpainStayRow(index) {
+  const travel = getSpainTravelEntries();
+  if (index < 0 || index >= travel.length) return;
+  travel.splice(index, 1);
+  persistSpainTravelChanges(travel, 'yes');
+}
+
+function handleSpainStayFieldChange(index, field, value) {
+  if (index < 0) return;
+  const normalizedField = field === 'entry' ? 'entry' : field === 'exit' ? 'exit' : 'place';
+  const travel = getSpainTravelEntries();
+  while (travel.length <= index) {
+    travel.push({ place: '', entry: '', exit: '' });
+  }
+  travel[index] = {
+    place: normalizedField === 'place' ? value : travel[index].place,
+    entry: normalizedField === 'entry' ? value : travel[index].entry,
+    exit: normalizedField === 'exit' ? value : travel[index].exit
+  };
+  persistSpainTravelChanges(travel, 'yes');
+}
+
+function handleSpainStaysInput(event) {
+  const target = event.target;
+  if (!target || !target.dataset?.field) return;
+  const row = target.closest('.submission-spain-stay-row');
+  if (!row) return;
+  const index = Number(row.dataset.index);
+  if (!Number.isFinite(index)) return;
+  handleSpainStayFieldChange(index, target.dataset.field, target.value || '');
+}
+
+function handleSpainStaysClick(event) {
+  const removeBtn = event.target.closest('.submission-spain-remove-stay');
+  if (!removeBtn) return;
+  event.preventDefault();
+  const row = removeBtn.closest('.submission-spain-stay-row');
+  if (!row) return;
+  const index = Number(row.dataset.index);
+  if (!Number.isFinite(index)) return;
+  handleRemoveSpainStayRow(index);
 }
 
 function buildFileMetaFromFile(file, dataUrl) {
@@ -1255,38 +2904,6 @@ function openFileMeta(meta) {
   window.open(meta.dataUrl, '_blank', 'noopener');
 }
 
-function toggleSpainControlsDisabled(disabled, options = {}) {
-  const fieldset = options.fieldset || document.getElementById('submission-spain-europe-fieldset');
-  if (fieldset) {
-    fieldset.disabled = disabled;
-    if (disabled) {
-      fieldset.setAttribute('aria-disabled', 'true');
-    } else {
-      fieldset.removeAttribute('aria-disabled');
-    }
-    fieldset.classList.toggle('opacity-50', disabled);
-    const inputs = fieldset.querySelectorAll('input');
-    inputs.forEach((input) => {
-      input.disabled = disabled;
-    });
-  }
-
-  const docLists = [
-    document.getElementById('submission-spain-doc-list'),
-    document.getElementById('submission-spain-doc-list-minor')
-  ];
-  docLists.forEach((list) => {
-    if (!list) return;
-    list.classList.toggle('opacity-50', disabled);
-    if (disabled) {
-      list.setAttribute('aria-disabled', 'true');
-      list.style.pointerEvents = 'none';
-    } else {
-      list.removeAttribute('aria-disabled');
-      list.style.pointerEvents = '';
-    }
-  });
-}
 function formatSubmissionFileSize(bytes) {
   if (!bytes || Number.isNaN(bytes)) return '';
   if (bytes < 1024) return `${bytes} B`;
@@ -1302,16 +2919,24 @@ function updateVisaSubmissionUI(state) {
   const meta = resolveSubmissionStatusMeta(resolvedState.status);
 
   const choiceSelect = document.getElementById('submission-choice');
-  const selectedPath = resolvedState.submitChoice || 'usa';
+  let selectedPath = resolvedState.submitChoice || 'usa';
+  if (getIsMinor() && selectedPath === 'spain') {
+    selectedPath = 'usa';
+  }
   if (choiceSelect && choiceSelect.value !== selectedPath) {
     choiceSelect.value = selectedPath;
   }
   applySubmissionChoice(selectedPath);
-  const submissionLocation = selectedPath === 'spain' ? 'Spain' : 'USA';
-  saveMyVisaState((state) => {
-    state.submissionLocation = submissionLocation;
-    return state;
-  });
+
+  const current = getMyVisaState();
+  if (current.submission?.method !== selectedPath) {
+    saveMyVisaState((state) => {
+      state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+      state.submission.method = selectedPath;
+      return state;
+    });
+  }
+
   updateVisaAppointmentUI();
 
   const stateSelect = document.getElementById('submission-us-state');
@@ -1329,7 +2954,8 @@ function updateVisaSubmissionUI(state) {
 
   const center = resolveCenterForState(resolvedState.stateCode, resolvedState.caRegion);
   renderVisaSubmissionConsulate(resolvedState, center);
-  renderVisaSubmissionSpain(resolvedState);
+  renderVisaSubmissionSpain(resolvedState, getMyVisaState());
+  renderSubmissionProgress();
 
   const statusChip = document.getElementById('submission-status');
   if (statusChip) {
@@ -1440,21 +3066,32 @@ function renderSubmissionProgress(summary = null) {
   let total = null;
   let verified = null;
   let percent = null;
+  const myState = getMyVisaState();
+  const submissionMethod = myState.submission?.method === 'spain' ? 'spain' : 'usa';
 
-  if (summary && typeof summary === 'object') {
-    if (typeof summary.total === 'number') total = summary.total;
-    if (typeof summary.verified === 'number') verified = summary.verified;
-    if (typeof summary.percent === 'number') percent = summary.percent;
-  }
+  let spainDocsForRender = null;
+  if (submissionMethod === 'spain') {
+    const spainProgress = computeSpainSubmissionProgress();
+    total = spainProgress.total;
+    verified = spainProgress.verified;
+    percent = spainProgress.percent;
+    spainDocsForRender = spainProgress.docs;
+  } else {
+    if (summary && typeof summary === 'object') {
+      if (typeof summary.total === 'number') total = summary.total;
+      if (typeof summary.verified === 'number') verified = summary.verified;
+      if (typeof summary.percent === 'number') percent = summary.percent;
+    }
 
-  if (total === null || verified === null) {
-    const cl = getChecklistState();
-    const metrics = recalcVisaChecklistProgress(cl);
-    total = metrics.total;
-    verified = metrics.verified;
-    percent = metrics.percent;
-  } else if (percent === null && total > 0) {
-    percent = Math.round((verified / total) * 100);
+    if (total === null || verified === null) {
+      const cl = getChecklistState();
+      const metrics = recalcVisaChecklistProgress(cl);
+      total = metrics.total;
+      verified = metrics.verified;
+      percent = metrics.percent;
+    } else if (percent === null && total > 0) {
+      percent = Math.round((verified / total) * 100);
+    }
   }
 
   const safeTotal = Number.isFinite(total) ? Math.max(total, 0) : 0;
@@ -1472,6 +3109,9 @@ function renderSubmissionProgress(summary = null) {
 
   container.classList.toggle('placeholder-glow', safeTotal === 0);
   bar.classList.toggle('bg-success', true);
+
+  renderSubmissionDocList('submission-usa-doc-list', 'submission-usa-doc-empty', getChecklistMirrorDocs());
+  renderSubmissionDocList('submission-spain-doc-list', 'submission-spain-doc-empty', spainDocsForRender || getSpainRequiredDocs());
 
   applyProgressToTarget('visa-appointment-progress-bar', 'visa-appointment-progress-text', safePercent, safeVerified, safeTotal);
   applyProgressToTarget('visa-approval-progress-bar', 'visa-approval-progress-text', safePercent, safeVerified, safeTotal);
@@ -1492,19 +3132,61 @@ function applyProgressToTarget(barId, textId, percent, verified, total) {
   }
 }
 
+function clearEuEntriesState() {
+  ensureVisaDefaults();
+  userProfileData.visa.spainTravel = [];
+  userProfileData.visa.spainEuropeVisit = '';
+
+  persistVisaSubmissionState((state) => {
+    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
+    state.spain.europeVisit = '';
+    state.spain.stays = [];
+    return state;
+  });
+
+  saveMyVisaState((state) => {
+    state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+    state.submission.spainTravel = [];
+    state.submission.spainEuropeVisit = '';
+    return state;
+  });
+
+  if (typeof document !== 'undefined') {
+    const radios = document.querySelectorAll('input[name="submission-spain-eu-visit"]');
+    radios.forEach((radio) => {
+      radio.checked = false;
+    });
+    const staysBody = document.getElementById('submission-spain-stays-body');
+    if (staysBody) {
+      staysBody.innerHTML = '';
+    }
+  }
+
+  saveUserProfile();
+}
+
 function updateVisaAppointmentUI() {
   const myState = getMyVisaState();
-  const locationLabel = getSubmissionLocationLabel(myState);
+  const submissionState = getVisaSubmissionState();
   const appointment = myState.appointment || {};
+  const isSpain = (myState.submission?.method || 'usa') === 'spain';
 
   const banner = document.getElementById('visa-appointment-warning');
   const helper = document.getElementById('visa-appointment-helper');
   const dateInput = document.getElementById('visa-appointment-dt');
-  const centerInput = document.getElementById('visa-appointment-center');
+  const readCheck = document.getElementById('visa-appointment-read');
+  const saveBtn = document.getElementById('visa-appointment-save-btn');
   const fileMetaEl = document.getElementById('visa-appointment-file-meta');
   const viewBtn = document.getElementById('visa-appointment-view');
-
-  const isSpain = locationLabel === 'Spain';
+  const proofInput = document.getElementById('visa-appointment-proof');
+  const centerCard = document.getElementById('visa-appointment-center-card');
+  const centerCityEl = document.getElementById('visa-appointment-center-city');
+  const centerAddressEl = document.getElementById('visa-appointment-center-address');
+  const centerPhoneEl = document.getElementById('visa-appointment-center-phone');
+  const centerEmailEl = document.getElementById('visa-appointment-center-email');
+  const centerContactEl = document.getElementById('visa-appointment-center-contact');
+  const centerWebsiteLink = document.getElementById('visa-appointment-center-website');
+  const centerMapsLink = document.getElementById('visa-appointment-center-maps');
   if (banner) {
     const content = `<div class="fw-semibold">Last-minute path (Spain)</div><div>If your application will be submitted in Spain, ETURE staff will manage your appointment. Certificates of submission and resolution will appear in My Documents. You don’t need to book a BLS appointment.</div>`;
     banner.innerHTML = content;
@@ -1514,14 +3196,114 @@ function updateVisaAppointmentUI() {
     helper.classList.toggle('d-none', !isSpain);
   }
 
-  if (dateInput) {
-    dateInput.value = appointment.dateTime || '';
+  const centerInfo = resolveCenterForState(submissionState.stateCode, submissionState.caRegion);
+  let centerLabel = centerInfo?.details?.city || centerInfo?.details?.name || centerInfo?.city || '';
+  const centerDetails = centerInfo?.details || null;
+  const addressLines = Array.isArray(centerDetails?.addressLines) ? centerDetails.addressLines : [];
+  const phone = (centerDetails?.phone || '').trim();
+  const email = (centerDetails?.email || '').trim();
+  const site = (centerDetails?.site || centerInfo?.url || '').trim();
+  const mapsQuery = (centerDetails?.mapsQuery || centerLabel || '').trim();
+  let cardMessage = '';
+
+  if (!centerLabel && appointment.center) {
+    centerLabel = appointment.center;
   }
-  if (centerInput) {
-    centerInput.value = appointment.blsCenter || '';
+
+  if (!submissionState.stateCode) {
+    centerLabel = 'Center not assigned';
+    cardMessage = 'Select your state in the Submission tab to view your BLS center.';
+  } else if (centerInfo?.requiresRegion) {
+    centerLabel = 'California region needed';
+    cardMessage = 'Choose Northern or Southern California in the Submission tab to continue.';
+  } else if (centerInfo?.missing) {
+    centerLabel = 'Center not available';
+    cardMessage = 'ETURE will confirm your BLS center soon.';
+  }
+
+  if (dateInput) {
+    dateInput.value = appointment.datetime || '';
+    dateInput.disabled = isSpain;
+    dateInput.setAttribute('aria-disabled', isSpain ? 'true' : 'false');
+  }
+
+  if (centerCard) {
+    centerCard.classList.toggle('opacity-50', isSpain);
+    centerCard.setAttribute('aria-disabled', isSpain ? 'true' : 'false');
+  }
+  if (centerCityEl) {
+    centerCityEl.textContent = centerLabel || 'Center not assigned';
+  }
+  if (centerAddressEl) {
+    if (addressLines.length) {
+      centerAddressEl.innerHTML = addressLines.map((line) => `<div>${escapeHtml(line)}</div>`).join('');
+    } else if (cardMessage) {
+      centerAddressEl.innerHTML = `<div>${escapeHtml(cardMessage)}</div>`;
+    } else {
+      centerAddressEl.innerHTML = '<div>Details pending. ETURE will confirm soon.</div>';
+    }
+  }
+  if (centerContactEl) {
+    centerContactEl.classList.toggle('d-none', !phone && !email);
+  }
+  if (centerPhoneEl) {
+    if (phone) {
+      const telHref = phone.replace(/[^0-9+]/g, '');
+      centerPhoneEl.innerHTML = `<span class="fw-semibold">Phone:</span> <a href="tel:${escapeHtml(telHref)}">${escapeHtml(phone)}</a>`;
+      centerPhoneEl.classList.remove('d-none');
+    } else {
+      centerPhoneEl.textContent = '';
+      centerPhoneEl.classList.add('d-none');
+    }
+  }
+  if (centerEmailEl) {
+    if (email) {
+      const emailHref = encodeURIComponent(email);
+      centerEmailEl.innerHTML = `<span class="fw-semibold">Email:</span> <a href="mailto:${emailHref}">${escapeHtml(email)}</a>`;
+      centerEmailEl.classList.remove('d-none');
+    } else {
+      centerEmailEl.textContent = '';
+      centerEmailEl.classList.add('d-none');
+    }
+  }
+  if (centerWebsiteLink) {
+    if (site) {
+      centerWebsiteLink.href = site;
+      centerWebsiteLink.classList.remove('d-none');
+    } else {
+      centerWebsiteLink.href = '#';
+      centerWebsiteLink.classList.add('d-none');
+    }
+  }
+  if (centerMapsLink) {
+    const query = mapsQuery || addressLines.join(', ');
+    if (query) {
+      centerMapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      centerMapsLink.classList.remove('d-none');
+    } else {
+      centerMapsLink.href = '#';
+      centerMapsLink.classList.add('d-none');
+    }
+  }
+
+  if (readCheck) {
+    readCheck.checked = appointment.readAcknowledged === true;
+    readCheck.disabled = isSpain;
+    readCheck.setAttribute('aria-disabled', isSpain ? 'true' : 'false');
+  }
+  if (saveBtn) {
+    const acknowledged = appointment.readAcknowledged === true;
+    const canSave = isSpain ? true : acknowledged;
+    saveBtn.disabled = !canSave;
+    saveBtn.setAttribute('aria-disabled', canSave ? 'false' : 'true');
   }
 
   const proofFile = appointment.proofFile && normalizeFileMeta(appointment.proofFile);
+  if (proofInput) {
+    proofInput.disabled = isSpain;
+    proofInput.classList.toggle('d-none', isSpain && !proofFile);
+    proofInput.setAttribute('aria-disabled', isSpain ? 'true' : 'false');
+  }
   if (fileMetaEl) {
     const metaText = formatFileMeta(proofFile);
     if (metaText) {
@@ -1546,11 +3328,12 @@ async function handleVisaAppointmentFileChange(event) {
   const file = input.files[0];
   try {
     const dataUrl = await readFileAsDataUrl(file);
-    saveMyVisaState((state) => {
+    const nextState = saveMyVisaState((state) => {
       state.appointment = state.appointment || {};
       state.appointment.proofFile = buildFileMetaFromFile(file, dataUrl);
       return state;
     });
+    syncAppointmentProfile(nextState);
     updateVisaAppointmentUI();
   } catch (error) {
     console.error('Unable to read appointment proof', error);
@@ -1566,15 +3349,51 @@ function handleVisaAppointmentView() {
   }
 }
 
-function handleVisaAppointmentSave() {
-  const dateInput = document.getElementById('visa-appointment-dt');
-  const centerInput = document.getElementById('visa-appointment-center');
-  saveMyVisaState((state) => {
+function syncAppointmentProfile(state = null) {
+  ensureVisaDefaults();
+  const nextState = state || getMyVisaState();
+  const appointment = nextState.appointment || {};
+  userProfileData.visa.appointment = {
+    datetime: appointment.datetime || '',
+    center: appointment.center || '',
+    readAcknowledged: appointment.readAcknowledged === true,
+    proofFile: appointment.proofFile ? { ...appointment.proofFile } : null
+  };
+}
+
+function handleVisaAppointmentReadToggle(event) {
+  const checked = event?.target?.checked === true;
+  const nextState = saveMyVisaState((state) => {
     state.appointment = state.appointment || {};
-    state.appointment.dateTime = dateInput?.value || '';
-    state.appointment.blsCenter = centerInput?.value || '';
+    state.appointment.readAcknowledged = checked;
     return state;
   });
+  syncAppointmentProfile(nextState);
+  updateVisaAppointmentUI();
+}
+
+function handleVisaAppointmentSave() {
+  const myState = getMyVisaState();
+  if ((myState.submission?.method || 'usa') === 'spain') {
+    return;
+  }
+  const dateInput = document.getElementById('visa-appointment-dt');
+  const readCheck = document.getElementById('visa-appointment-read');
+  if (readCheck && !readCheck.checked) {
+    alert('Please confirm that you have read the appointment preparation checklist before saving.');
+    return;
+  }
+  const submissionState = getVisaSubmissionState();
+  const centerInfo = resolveCenterForState(submissionState.stateCode, submissionState.caRegion);
+  const centerLabel = centerInfo?.details?.city || centerInfo?.details?.name || centerInfo?.city || '';
+  const nextState = saveMyVisaState((state) => {
+    state.appointment = state.appointment || {};
+    state.appointment.datetime = dateInput?.value || '';
+    state.appointment.center = centerLabel;
+    state.appointment.readAcknowledged = readCheck?.checked === true;
+    return state;
+  });
+  syncAppointmentProfile(nextState);
   renderVisaOverview();
   updateVisaAppointmentUI();
 }
@@ -1780,9 +3599,11 @@ function initVisaAppointmentUI() {
 
   document.getElementById('visa-appointment-proof')?.addEventListener('change', handleVisaAppointmentFileChange);
   document.getElementById('visa-appointment-view')?.addEventListener('click', handleVisaAppointmentView);
+  document.getElementById('visa-appointment-read')?.addEventListener('change', handleVisaAppointmentReadToggle);
   document.getElementById('visa-appointment-save-btn')?.addEventListener('click', handleVisaAppointmentSave);
 
   updateVisaAppointmentUI();
+  syncAppointmentProfile();
 }
 
 function initVisaApprovalUI() {
@@ -1848,12 +3669,16 @@ function initVisaSubmissionUI() {
   const modalEl = document.getElementById('submission-deny-modal');
   const modalConfirm = document.getElementById('submission-deny-confirm');
   const choiceSelect = document.getElementById('submission-choice');
-  const europeYes = document.getElementById('submission-spain-europe-yes');
-  const europeNo = document.getElementById('submission-spain-europe-no');
-  const ackCheckbox = document.getElementById('spain-acknowledge-fee');
-  const staysList = document.getElementById('submission-spain-stays-list');
-  const addStayBtn = document.getElementById('submission-spain-add-stay');
-  const spainSection = document.getElementById('submission-spain-section');
+  const requestBtn = document.getElementById('spain-request-btn');
+  const requestActions = document.getElementById('submission-spain-request-actions');
+  const arrivalInput = document.getElementById('submission-spain-arrival-date');
+  const requestModalEl = document.getElementById('spain-request-modal');
+  const termsReasonInput = document.getElementById('spain-request-reason');
+  const termsAckCheckbox = document.getElementById('spain-terms-check');
+  const requestSubmitBtn = document.getElementById('spain-request-submit');
+  const requestCancelBtn = document.getElementById('spain-request-cancel');
+  const requestCloseBtn = document.getElementById('spain-request-close');
+  const viewMoreBtn = document.getElementById('spain-restrictions-viewmore');
 
   stateSelect?.addEventListener('change', handleSubmissionStateChange);
   caRegionSelect?.addEventListener('change', handleSubmissionCaRegionChange);
@@ -1864,14 +3689,9 @@ function initVisaSubmissionUI() {
   verifyBtn?.addEventListener('click', handleSubmissionVerify);
   denyBtn?.addEventListener('click', openSubmissionDenyModal);
   choiceSelect?.addEventListener('change', handleSubmissionChoiceChange);
-  europeYes?.addEventListener('change', handleSubmissionSpainEuropeChange);
-  europeNo?.addEventListener('change', handleSubmissionSpainEuropeChange);
-  ackCheckbox?.addEventListener('change', handleSubmissionSpainAcknowledgementChange);
-  addStayBtn?.addEventListener('click', handleSubmissionSpainAddStay);
-  staysList?.addEventListener('input', handleSubmissionSpainStayFieldChange);
-  staysList?.addEventListener('change', handleSubmissionSpainStayFieldChange);
-  staysList?.addEventListener('click', handleSubmissionSpainStayRemove);
-  spainSection?.addEventListener('click', handleSubmissionSpainFixClick);
+  requestBtn?.addEventListener('click', handleSubmissionSpainRequestClick);
+  requestActions?.addEventListener('click', handleSubmissionSpainActionsClick);
+  arrivalInput?.addEventListener('change', handleSubmissionSpainArrivalChange);
 
   if (modalEl && modalConfirm) {
     modalConfirm.addEventListener('click', handleSubmissionDenyConfirm);
@@ -1885,6 +3705,71 @@ function initVisaSubmissionUI() {
       }
     });
     submissionDenyModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  }
+
+  if (requestModalEl && !requestModalEl.dataset.bound) {
+    requestModalEl.dataset.bound = '1';
+    const removeAriaHidden = () => requestModalEl.removeAttribute('aria-hidden');
+    requestModalEl.addEventListener('hidden.bs.modal', () => {
+      spainRequestModal = null;
+      removeAriaHidden();
+      cleanupModalArtifacts();
+    });
+    requestModalEl.addEventListener('shown.bs.modal', removeAriaHidden);
+  }
+
+  if (requestSubmitBtn && requestSubmitBtn.dataset.bound !== '1') {
+    requestSubmitBtn.dataset.bound = '1';
+    requestSubmitBtn.addEventListener('click', handleSubmissionSpainRequestConfirm);
+  }
+
+  if (requestCancelBtn && requestCancelBtn.dataset.bound !== '1') {
+    requestCancelBtn.dataset.bound = '1';
+    requestCancelBtn.addEventListener('click', handleSpainRequestCancel);
+  }
+
+  if (requestCloseBtn && requestCloseBtn.dataset.bound !== '1') {
+    requestCloseBtn.dataset.bound = '1';
+    requestCloseBtn.addEventListener('click', handleSpainRequestClose);
+  }
+
+  if (termsReasonInput && termsReasonInput.dataset.bound !== '1') {
+    termsReasonInput.dataset.bound = '1';
+    termsReasonInput.addEventListener('input', validateSpainRequestModal);
+  }
+
+  if (termsAckCheckbox && termsAckCheckbox.dataset.bound !== '1') {
+    termsAckCheckbox.dataset.bound = '1';
+    termsAckCheckbox.addEventListener('change', validateSpainRequestModal);
+  }
+
+  if (viewMoreBtn && viewMoreBtn.dataset.bound !== '1') {
+    viewMoreBtn.dataset.bound = '1';
+    viewMoreBtn.addEventListener('click', (event) => {
+      event?.preventDefault?.();
+      openSpainRequestModal('view');
+    });
+  }
+
+  const euVisitRadios = document.querySelectorAll('input[name="submission-spain-eu-visit"]');
+  euVisitRadios.forEach((radio) => {
+    if (!radio || radio.dataset.bound === '1') return;
+    radio.dataset.bound = '1';
+    radio.addEventListener('change', handleSpainEuropeVisitChange);
+  });
+
+  const addStayBtn = document.getElementById('spain-add-stay-btn');
+  if (addStayBtn && addStayBtn.dataset.bound !== '1') {
+    addStayBtn.dataset.bound = '1';
+    addStayBtn.addEventListener('click', handleAddSpainStayRow);
+  }
+
+  const staysBody = document.getElementById('submission-spain-stays-body');
+  if (staysBody && staysBody.dataset.bound !== '1') {
+    staysBody.dataset.bound = '1';
+    staysBody.addEventListener('click', handleSpainStaysClick);
+    staysBody.addEventListener('input', handleSpainStaysInput);
+    staysBody.addEventListener('change', handleSpainStaysInput);
   }
 
   updateVisaSubmissionUI(getVisaSubmissionState());
@@ -2003,28 +3888,46 @@ function handleSubmissionDenyConfirm() {
 }
 
 function renderSubmissionSpainMirror() {
-  renderVisaSubmissionSpain(getVisaSubmissionState());
+  renderVisaSubmissionSpain(getVisaSubmissionState(), getMyVisaState());
 }
 
 function applySubmissionChoice(choice) {
   const normalized = choice === 'spain' ? 'spain' : 'usa';
-  const usaSection = document.getElementById('submission-usa-section');
-  const spainSection = document.getElementById('submission-spain-section');
-  if (usaSection) usaSection.classList.toggle('d-none', normalized !== 'usa');
-  if (spainSection) spainSection.classList.toggle('d-none', normalized !== 'spain');
-  const liveRegion = document.getElementById('submission-choice-live');
-  if (liveRegion) {
-    if (liveRegion.dataset.choiceValue !== normalized) {
-      liveRegion.textContent = normalized === 'spain'
-        ? 'Spain (last-minute) submission selected.'
-        : 'USA submission selected.';
-      liveRegion.dataset.choiceValue = normalized;
+  const isMinor = getIsMinor();
+  const select = document.getElementById('submission-choice');
+  if (select) {
+    const spainOption = select.querySelector('option[value="spain"]');
+    if (spainOption) {
+      spainOption.disabled = isMinor;
+      if (isMinor) {
+        spainOption.setAttribute('title', 'Minors must submit their visa application in the USA.');
+        spainOption.setAttribute('aria-disabled', 'true');
+      } else {
+        spainOption.setAttribute('title', 'Spain (last-minute)');
+        spainOption.setAttribute('aria-disabled', 'false');
+      }
     }
   }
-}
-
-function shouldShowMinorDocs() {
-  return getIsMinor();
+  const effectiveChoice = normalized === 'spain' && isMinor ? 'usa' : normalized;
+  if (select && select.value !== effectiveChoice) {
+    select.value = effectiveChoice;
+  }
+  const usaSection = document.getElementById('submission-usa-section');
+  const spainSection = document.getElementById('submission-spain-section');
+  if (usaSection) usaSection.classList.toggle('d-none', effectiveChoice !== 'usa');
+  if (spainSection) spainSection.classList.toggle('d-none', effectiveChoice !== 'spain');
+  const disableAppointments = effectiveChoice === 'spain';
+  setTabDisabled('visa-appointment-tab', disableAppointments);
+  setTabDisabled('visa-approval-tab', disableAppointments);
+  const liveRegion = document.getElementById('submission-choice-live');
+  if (liveRegion) {
+    if (liveRegion.dataset.choiceValue !== effectiveChoice) {
+      liveRegion.textContent = effectiveChoice === 'spain'
+        ? 'Spain (last-minute) submission selected.'
+        : 'USA submission selected.';
+      liveRegion.dataset.choiceValue = effectiveChoice;
+    }
+  }
 }
 
 function getChecklistDomIdForKey(key) {
@@ -2036,19 +3939,80 @@ function getChecklistDomIdForKey(key) {
   return fallback ? `chk-${fallback}` : '';
 }
 
+function setTabDisabled(tabButtonId, disabled) {
+  const button = document.getElementById(tabButtonId);
+  if (!button) return;
+  const prevent = TAB_DISABLE_HANDLERS.get(tabButtonId);
+  if (disabled) {
+    if (!prevent) {
+      const handler = (event) => event.preventDefault();
+      button.addEventListener('click', handler, true);
+      TAB_DISABLE_HANDLERS.set(tabButtonId, handler);
+    }
+    button.classList.add('disabled', 'pe-none', 'text-muted');
+    button.setAttribute('aria-disabled', 'true');
+    button.setAttribute('tabindex', '-1');
+  } else {
+    if (prevent) {
+      button.removeEventListener('click', prevent, true);
+      TAB_DISABLE_HANDLERS.delete(tabButtonId);
+    }
+    button.classList.remove('disabled', 'pe-none', 'text-muted');
+    button.setAttribute('aria-disabled', 'false');
+    button.removeAttribute('tabindex');
+  }
+
+  const targetSelector = button.getAttribute('data-bs-target');
+  if (targetSelector) {
+    const pane = document.querySelector(targetSelector);
+    if (pane) {
+      if (disabled) {
+        pane.setAttribute('aria-disabled', 'true');
+      } else {
+        pane.removeAttribute('aria-disabled');
+      }
+    }
+  }
+}
+
 function handleSubmissionChoiceChange(event) {
-  const value = (event.target?.value || '').toString().toLowerCase();
-  const next = value === 'spain' ? 'spain' : 'usa';
+  const rawValue = (event.target?.value || '').toString().toLowerCase();
+  const desired = rawValue === 'spain' ? 'spain' : 'usa';
+  const isMinor = getIsMinor();
+  const next = isMinor && desired === 'spain' ? 'usa' : desired;
+
+  if (desired === 'spain' && isMinor) {
+    alert('Minors must submit their visa application in the USA.');
+  }
+
   persistVisaSubmissionState((state) => {
     state.submitChoice = next;
     return state;
   });
-  const locationLabel = next === 'spain' ? 'Spain' : 'USA';
+
   saveMyVisaState((state) => {
-    state.submissionLocation = locationLabel;
+    state.submission = state.submission || { ...getDefaultMyVisaState().submission };
+    state.submission.method = next;
+    if (next !== 'spain') {
+      state.submission.spain = state.submission.spain || { ...getDefaultMyVisaState().submission.spain };
+      state.submission.spain.termsAccepted = false;
+    }
     return state;
   });
+
+  if (next !== 'spain') {
+    setSpainInfoAccepted(false);
+    setSpainTermsAccepted(false);
+  }
+
+  if (event.target && event.target.value !== next) {
+    event.target.value = next;
+  }
+
+  applySubmissionChoice(next);
+  renderVisaSubmissionSpain(getVisaSubmissionState(), getMyVisaState());
   updateVisaAppointmentUI();
+  recalcVisaProgressAndRender();
 }
 
 function handleChecklistMinorToggle(event) {
@@ -2072,148 +4036,6 @@ function goToChecklistAndFocus(docKey) {
   const domId = getChecklistDomIdForKey(normalizedKey);
   if (!domId) return;
   switchToChecklistAndFocus(domId);
-}
-
-function handleSubmissionSpainEuropeChange(event) {
-  if (!getSpainFeeAck()) {
-    event.preventDefault();
-    return;
-  }
-  const value = (event.target?.value || '').toString().toLowerCase();
-  if (!['yes', 'no'].includes(value)) return;
-  persistVisaSubmissionState((state) => {
-    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
-    state.spain.europeVisit = value;
-    return state;
-  });
-}
-
-function handleSubmissionSpainAcknowledgementChange(event) {
-  setSpainFeeAck(Boolean(event.target?.checked));
-}
-
-function announceSpainStayChange(message) {
-  const region = document.getElementById('submission-spain-stays-live');
-  if (region) {
-    region.textContent = '';
-    region.textContent = message;
-  }
-}
-
-function isSpainStayInvalid(stay) {
-  if (!stay) return false;
-  const entry = stay.entryDate || '';
-  const exit = stay.exitDate || '';
-  return entry && exit && entry > exit;
-}
-
-function renderSpainStayRows(stays, options = {}) {
-  const list = document.getElementById('submission-spain-stays-list');
-  if (!list) return;
-  const disabled = Boolean(options.disabled);
-  if (!Array.isArray(stays) || !stays.length) {
-    list.innerHTML = '<tr class="text-muted"><td colspan="4">No stays added yet.</td></tr>';
-    return;
-  }
-
-  list.innerHTML = stays.map((stay, index) => {
-    const place = escapeHtml(stay.place || '');
-    const entryDate = escapeHtml(stay.entryDate || '');
-    const exitDate = escapeHtml(stay.exitDate || '');
-    const invalid = isSpainStayInvalid(stay);
-    const entryClass = invalid ? ' is-invalid' : '';
-    const exitClass = invalid ? ' is-invalid' : '';
-    const errorId = invalid ? `submission-spain-stay-${index}-error` : '';
-    const invalidFeedback = invalid
-      ? `<div id="${errorId}" class="invalid-feedback d-block">Exit date must be on or after entry date.</div>`
-      : '';
-    const disabledAttr = disabled ? ' disabled' : '';
-
-    return `
-      <tr data-index="${index}">
-        <td>
-          <label class="visually-hidden" for="submission-spain-stay-${index}-place">Country or place</label>
-          <input type="text" class="form-control form-control-sm" id="submission-spain-stay-${index}-place" data-index="${index}" data-field="place" value="${place}" placeholder="Country / Place"${disabledAttr}>
-        </td>
-        <td>
-          <label class="visually-hidden" for="submission-spain-stay-${index}-entry">Date of entry</label>
-          <input type="date" class="form-control form-control-sm${entryClass}" id="submission-spain-stay-${index}-entry" data-index="${index}" data-field="entryDate" value="${entryDate}" ${errorId ? `aria-describedby="${errorId}"` : ''}${disabledAttr}>
-        </td>
-        <td>
-          <label class="visually-hidden" for="submission-spain-stay-${index}-exit">Date of exit</label>
-          <input type="date" class="form-control form-control-sm${exitClass}" id="submission-spain-stay-${index}-exit" data-index="${index}" data-field="exitDate" value="${exitDate}" ${errorId ? `aria-describedby="${errorId}"` : ''}${disabledAttr}>
-          ${invalidFeedback}
-        </td>
-        <td class="text-end">
-          <button type="button" class="btn btn-link text-danger btn-sm p-0 submission-spain-remove-stay" data-index="${index}" data-remove-stay="1"${disabledAttr}>Remove</button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function handleSubmissionSpainAddStay(event) {
-  event.preventDefault();
-  if (!getSpainFeeAck()) {
-    return;
-  }
-  persistVisaSubmissionState((state) => {
-    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
-    const current = Array.isArray(state.spain.stays) ? state.spain.stays.slice() : [];
-    current.push({ place: '', entryDate: '', exitDate: '' });
-    state.spain.stays = current;
-    return state;
-  });
-  announceSpainStayChange('Stay added.');
-}
-
-function handleSubmissionSpainStayFieldChange(event) {
-  const target = event.target;
-  if (!target || target.dataset.index === undefined || !target.dataset.field) return;
-  if (target.disabled || !getSpainFeeAck()) return;
-  const index = Number(target.dataset.index);
-  if (Number.isNaN(index)) return;
-  const field = target.dataset.field;
-  const value = target.value || '';
-
-  persistVisaSubmissionState((state) => {
-    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
-    const current = Array.isArray(state.spain.stays) ? state.spain.stays.slice() : [];
-    while (current.length <= index) {
-      current.push({ place: '', entryDate: '', exitDate: '' });
-    }
-    const updated = { ...current[index], [field]: value };
-    current[index] = updated;
-    state.spain.stays = current;
-    return state;
-  });
-}
-
-function handleSubmissionSpainStayRemove(event) {
-  const button = event.target.closest('.submission-spain-remove-stay');
-  if (!button) return;
-  event.preventDefault();
-  if (button.disabled || !getSpainFeeAck()) return;
-  const index = Number(button.dataset.index);
-  if (Number.isNaN(index)) return;
-
-  persistVisaSubmissionState((state) => {
-    state.spain = state.spain || { ...SPAIN_SUBMISSION_DEFAULTS };
-    const current = Array.isArray(state.spain.stays) ? state.spain.stays.slice() : [];
-    current.splice(index, 1);
-    state.spain.stays = current;
-    return state;
-  });
-  announceSpainStayChange('Stay removed.');
-}
-
-function handleSubmissionSpainFixClick(event) {
-  const button = event.target.closest('.submission-spain-fix-btn');
-  if (!button) return;
-  if (button.disabled) return;
-  const docKey = button.dataset.docKey || button.dataset.checklistTarget;
-  if (!docKey) return;
-  goToChecklistAndFocus(docKey);
 }
 
 function switchToChecklistAndFocus(domId) {
@@ -2326,6 +4148,7 @@ const pages = {
   finanzas: 'views/finanzas.html',
   chat: 'views/chat.html',
   ayuda: 'views/ayuda.html',
+  'my-program': 'src/views/my-program.html',
   visa: 'views/my-visa.html'    // ← ESTA LÍNEA con coma arriba
 };
 const perfilSubPages = {
@@ -2554,6 +4377,26 @@ function ensureVisaDefaults() {
   // porcentaje estimado (lo recalculamos al vuelo, pero guardamos el último)
   v.progressPct = Number(v.progressPct) || 0;
   v.submission = normalizeVisaSubmissionState(v.submission);
+  v.appointment = v.appointment || {
+    datetime: '',
+    center: '',
+    readAcknowledged: false,
+    proofFile: null
+  };
+  v.spainRequest = v.spainRequest || {
+    status: 'none',
+    reason: ''
+  };
+  v.spainTravel = sanitizeSpainTravelEntries(v.spainTravel);
+  const visitFlag = (v.spainEuropeVisit || '').toString().toLowerCase();
+  if (visitFlag === 'yes' || visitFlag === 'no') {
+    v.spainEuropeVisit = visitFlag;
+  } else if (v.spainTravel.length) {
+    v.spainEuropeVisit = 'yes';
+  } else {
+    v.spainEuropeVisit = '';
+  }
+  v.spainInfoAccepted = v.spainInfoAccepted === true;
 }
 // --- A PARTIR DE AQUÍ EMPIEZA EL CÓDIGO QUE YA TENÍAS ---
 
@@ -2695,48 +4538,27 @@ async function renderPage(pageId) {
     // --- My Visa (inicialización de Overview y eventos) ---
     if (pageId === 'visa') {
       // Pintar el dashboard de Overview al entrar a My Visa
-      renderVisaOverview();
-      initVisaChecklistUI();
-      initVisaSubmissionUI();
-      initVisaAppointmentUI();
-      initVisaApprovalUI();
-      initVisaTieUI();
+      renderVisaTab('overview');
 
       // Ocultar todos los paneles menos el activo por si el CSS de tabs no aplica
-      contentDiv.querySelectorAll('.tab-content .tab-pane').forEach((pane) => {
-        if (pane.classList.contains('active')) {
-          pane.removeAttribute('hidden');
-        } else {
-          pane.setAttribute('hidden', '');
-        }
-      });
+      showTabPane('visa-overview');
 
       // (opcional) Re-pintar al cambiar de pestañas si vuelves a Overview
       const tabs = document.getElementById('visa-tabs');
       if (tabs) {
-        const resolvePane = (btn) => {
-          const targetSelector = btn?.getAttribute('data-bs-target');
-          return targetSelector ? contentDiv.querySelector(targetSelector) : null;
-        };
+        bindVisaTabClicks();
         const overviewSummary = contentDiv.querySelector('.visa-overview-summary');
 
         // Aseguramos que el resumen esté visible al cargar Overview por primera vez
         overviewSummary?.classList.remove('d-none');
 
         tabs.addEventListener('show.bs.tab', (ev) => {
-          const paneToShow = resolvePane(ev.target);
-          if (!paneToShow) return;
-
-          contentDiv.querySelectorAll('.tab-content .tab-pane').forEach((pane) => {
-            if (pane === paneToShow) {
-              pane.removeAttribute('hidden');
-            } else {
-              pane.setAttribute('hidden', '');
-            }
-          });
+          const targetSelector = ev.target?.getAttribute('data-bs-target');
+          const paneId = targetSelector ? targetSelector.replace('#', '') : null;
+          showTabPane(paneId);
 
           if (overviewSummary) {
-            if (paneToShow.id === 'visa-overview') {
+            if (paneId === 'visa-overview') {
               overviewSummary.classList.remove('d-none');
             } else {
               overviewSummary.classList.add('d-none');
@@ -2745,14 +4567,13 @@ async function renderPage(pageId) {
         });
 
         tabs.addEventListener('shown.bs.tab', (ev) => {
-          const target = ev.target && ev.target.getAttribute('data-bs-target');
-          if (target === '#visa-overview') renderVisaOverview();
-          if (target === '#visa-checklist') initVisaChecklistUI();
-          if (target === '#visa-submission') initVisaSubmissionUI();
-          if (target === '#visa-appointment') initVisaAppointmentUI();
-          if (target === '#visa-approval') initVisaApprovalUI();
-          if (target === '#visa-tie') initVisaTieUI();
+          const tabName = ev.target?.getAttribute('data-tab');
+          if (tabName) {
+            renderVisaTab(tabName);
+          }
         });
+
+        document.dispatchEvent(new CustomEvent('visa:tabs-ready'));
       }
 
       // Atajos "Go to …" del dashboard: siempre muestran la pestaña del header
@@ -2804,6 +4625,9 @@ async function renderPage(pageId) {
       // 👉 añade la inicialización del nuevo módulo:
       initProcessFeature();
     }
+    if (pageId === 'my-program') {
+      initMyProgramView(contentDiv);
+    }
     if (pageId === 'tareas') {
       if (auth.currentUser) {
         await initTasksFeature(auth.currentUser);
@@ -2818,6 +4642,113 @@ async function renderPage(pageId) {
     contentDiv.innerHTML = `<p class="text-danger">There was an error loading this section.</p>`;
   }
 }
+
+function initMyProgramView(contentRoot) {
+  if (!contentRoot) return;
+
+  const tabs = contentRoot.querySelector('#my-program-tabs');
+  if (!tabs || tabs.dataset.initialized === 'true') return;
+
+  const navButtons = Array.from(tabs.querySelectorAll('[data-bs-toggle="tab"]'));
+  const tabPanes = Array.from(contentRoot.querySelectorAll('#my-program-content .tab-pane'));
+  const firstButton = navButtons[0];
+
+  navButtons.forEach((btn) => {
+    btn.classList.remove('active');
+    btn.setAttribute('aria-selected', 'false');
+  });
+  tabPanes.forEach((pane) => {
+    pane.classList.remove('show', 'active');
+  });
+
+  if (firstButton) {
+    const targetSelector = firstButton.getAttribute('data-bs-target');
+    if (window.bootstrap?.Tab) {
+      bootstrap.Tab.getOrCreateInstance(firstButton).show();
+    } else {
+      firstButton.classList.add('active');
+      firstButton.setAttribute('aria-selected', 'true');
+      if (targetSelector) {
+        const firstPane = contentRoot.querySelector(targetSelector);
+        if (firstPane) {
+          firstPane.classList.add('show', 'active');
+        }
+      }
+    }
+  }
+
+  if (!window.bootstrap?.Tab) {
+    tabs.addEventListener('click', (event) => {
+      const trigger = event.target.closest('[data-bs-toggle="tab"]');
+      if (!trigger) return;
+
+      event.preventDefault();
+
+      navButtons.forEach((btn) => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+      });
+      tabPanes.forEach((pane) => {
+        pane.classList.remove('show', 'active');
+      });
+
+      trigger.classList.add('active');
+      trigger.setAttribute('aria-selected', 'true');
+
+      const nextSelector = trigger.getAttribute('data-bs-target');
+      if (nextSelector) {
+        const pane = contentRoot.querySelector(nextSelector);
+        if (pane) {
+          pane.classList.add('show', 'active');
+        }
+      }
+    });
+  }
+
+  tabs.dataset.initialized = 'true';
+  // TODO: Link "Edit in MyVisa" actions to "#my-visa-trip"
+  // TODO: Wire CTAs to backend (rides/driver) later
+}
+
+function handleHashNavigation() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const currentHash = window.location.hash;
+  if (currentHash !== '#my-program') {
+    return;
+  }
+
+  const navLink = document.querySelector('#main-nav a[href="#my-program"]');
+  if (navLink) {
+    if (window.bootstrap?.Tab) {
+      bootstrap.Tab.getOrCreateInstance(navLink).show();
+      return;
+    }
+
+    document.querySelectorAll('#main-nav .nav-link').forEach((link) => {
+      link.classList.remove('active');
+    });
+    navLink.classList.add('active');
+
+    const targetSelector = navLink.getAttribute('data-bs-target');
+    if (targetSelector) {
+      document.querySelectorAll('#main-content .tab-pane').forEach((pane) => {
+        pane.classList.remove('show', 'active');
+      });
+      const targetPane = document.querySelector(targetSelector);
+      if (targetPane) {
+        targetPane.classList.add('show', 'active');
+      }
+    }
+  }
+
+  renderPage('my-program');
+}
+
+window.addEventListener('hashchange', handleHashNavigation);
+
 // Pinta el bloque de "Tasks pendientes" del INICIO usando la caché de tasks.js
 function renderHomeTasksSnapshot(rootEl) {
   if (!rootEl) return;
@@ -4627,113 +6558,114 @@ function renderVisaOverview() {
 // === MyVisa > CHECKLIST ===
 const VISA_CHECKLIST_CATALOG = [
   {
-    key: 'id-proof',
-    legacyKeys: ['idProof'],
-    title: 'ID / Proof of Residence',
-    instructionsHtml: '<p>Acceptable photo ID that proves jurisdiction (state or region) for consulate assignment.</p>'
-  },
-  {
     key: 'visa-form',
     legacyKeys: ['visaForm'],
-    title: 'Visa Application Form',
-    instructionsHtml: '<p>Use the official National Visa Application. Complete all fields and sign. No blanks.</p>'
-  },
-  {
-    key: 'recent-photo',
-    legacyKeys: ['photo'],
-    title: 'Recent Photograph (2x2)',
-    instructionsHtml: '<p>Color, plain white background, taken in the last 6 months.</p><p>No glasses, hats, or filters.</p>'
-  },
-  {
-    key: 'fees',
-    title: 'Consular & BLS Fee (receipt)',
-    instructionsHtml: '<p>Provide proof of payment of both Consulate fee and BLS service fee (when applicable).</p>'
+    title: 'Visa Application',
+    instructionsHtml: '<p>Complete and sign the National Visa Application form. Handwritten entries must be in capital letters and match your passport details.</p>'
   },
   {
     key: 'passport',
-    title: 'Valid Passport (scan + copy)',
-    instructionsHtml: '<ul><li>Passport valid for entire program + 3 extra months.</li><li>At least two blank pages.</li><li>Passports issued over 10 years ago are not accepted.</li><li>Include a photocopy (not notarized).</li><li>Emergency passports are not accepted.</li></ul>'
+    title: 'Original Passport',
+    instructionsHtml: '<p>Passport must include at least two blank pages, remain valid for the program plus three additional months, and have been issued within the last 10 years. Emergency passports are not accepted. Include a plain photocopy.</p>'
+  },
+  {
+    key: 'id-proof',
+    legacyKeys: ['idProof'],
+    title: 'ID - Proof of Jurisdiction',
+    instructionsHtml: '<p>Provide a notarized copy of proof of residence within the consular jurisdiction (e.g., driver’s license, state ID, voter registration, or current student ID).</p>'
   },
   {
     key: 'us-status',
     legacyKeys: ['usStatus'],
-    title: 'U.S. Immigration Status',
-    instructionsHtml: '<p>Proof of lawful status (e.g., Green Card, I-20 + I-94, or valid U.S. visa + I-94).</p>'
+    title: 'U.S. immigration status',
+    instructionsHtml: '<p>Upload a notarized copy of your lawful U.S. status (e.g., Green Card, valid U.S. visa with I-94, work permit, or parole). Not required for U.S. citizens.</p>'
   },
   {
-    key: 'financial-means',
-    legacyKeys: ['funds'],
-    title: 'Proof of Financial Means',
-    instructionsHtml: '<p>Bank statements, scholarship letters, or sponsor letter showing sufficient funds.</p>'
+    key: 'disclaimer',
+    legacyKeys: ['disclaimer'],
+    title: 'Disclaimer Form',
+    instructionsHtml: '<p>Ensure the ETURE disclaimer is signed before uploading. Minors must include guardian signatures.</p>'
   },
   {
-    key: 'financial-means-translation',
-    legacyKeys: ['fundsTrans'],
-    title: 'Translation of Financial Means',
-    instructionsHtml: '<p>Certified translation to Spanish if originals are not in Spanish.</p>'
+    key: 'recent-photo',
+    legacyKeys: ['photo'],
+    title: 'Two Recent Passport-sized photos.',
+    instructionsHtml: '<p>Provide two identical, color 2&quot;x2&quot; photos taken within the last 6 months on a white background. No glasses, hats, or filters.</p>'
   },
   {
-    key: 'fbi-report',
-    legacyKeys: ['fbiReport'],
-    title: 'FBI Background Check (report)',
-    instructionsHtml: '<p>Original FBI report, issued within validity window (commonly 180 days).</p>'
-  },
-  {
-    key: 'fbi-report-translation',
-    legacyKeys: ['fbiTrans'],
-    title: 'Translation of FBI Report',
-    instructionsHtml: '<p>Certified Spanish translation of the FBI background report.</p>'
-  },
-  {
-    key: 'fbi-apostille',
-    legacyKeys: ['fbiApostille'],
-    title: 'Apostille of FBI',
-    instructionsHtml: '<p>Apostille of the FBI report (if required by your consulate).</p>'
-  },
-  {
-    key: 'fbi-apostille-translation',
-    legacyKeys: ['fbiApostTrans'],
-    title: 'Translation of Apostille of FBI',
-    instructionsHtml: '<p>Certified Spanish translation of the apostille (if applicable).</p>'
+    key: 'fees',
+    title: 'VISA Fee & BLS Fee',
+    instructionsHtml: '<p>Upload proof of payment for the Consulate fee (usually a money order) and the BLS service fee (typically debit or cash). Verify accepted payment methods with your consulate/BLS center.</p>'
   },
   {
     key: 'medical-certificate',
     legacyKeys: ['medical'],
     title: 'Medical Certificate',
-    instructionsHtml: '<p>Doctor’s letter stating you are free of any disease that could have serious public health repercussions.</p>'
+    instructionsHtml: '<p>Doctor’s certificate confirming you are free from diseases of public health concern, issued within the last 3 months on official letterhead and signed/stamped by the physician.</p>'
   },
   {
-    key: 'disclaimer',
-    legacyKeys: ['disclaimer'],
-    title: 'Disclaimer Form (signed)',
-    instructionsHtml: '<p>ETURE/Academy disclaimer signed by the student (and guardian if minor).</p>'
+    key: 'fbi-report',
+    legacyKeys: ['fbiReport'],
+    title: 'FBI Check',
+    instructionsHtml: '<p>Submit the FBI background check issued within 6 months of your visa appointment. State or local checks are not accepted.</p>'
+  },
+  {
+    key: 'fbi-apostille',
+    legacyKeys: ['fbiApostille'],
+    title: 'Apostille of FBI',
+    instructionsHtml: '<p>Provide the Hague Apostille authenticating the FBI background check. Ensure it references the same report uploaded.</p>'
+  },
+  {
+    key: 'financial-means',
+    legacyKeys: ['funds'],
+    title: 'Financial Means',
+    instructionsHtml: '<p>Upload a notarized support letter (e.g., from a parent/guardian) and supporting bank statements demonstrating at least USD $700 per month of financial coverage.</p>'
   },
   {
     key: 'birth-certificate',
     legacyKeys: ['birthCert'],
-    title: 'Birth Certificate (+ apostille + translation)',
-    instructionsHtml: '<p>Original birth certificate with apostille and certified translation.</p>',
+    title: 'Notarized copy of Birth Certificate',
+    instructionsHtml: '<p>Provide the original (returned after review) and a notarized copy of your birth certificate issued within the last 12 months.</p>',
     minor: true
   },
   {
     key: 'parents-passports',
     legacyKeys: ['parentsPass'],
-    title: 'Parents’ Passports (notarized copies)',
-    instructionsHtml: '<p>Notarized copies of both parents’ passports.</p>',
+    title: 'Apostille of Birth Certificate',
+    instructionsHtml: '<p>Upload the Hague Apostille that authenticates your birth certificate. Recommended providers include Monument Visa.</p>',
     minor: true
+  },
+  {
+    key: 'fbi-report-translation',
+    legacyKeys: ['fbiTrans'],
+    title: 'Translation of FBI',
+    instructionsHtml: '<p>Certified Spanish translation of the FBI background check.</p>'
+  },
+  {
+    key: 'fbi-apostille-translation',
+    legacyKeys: ['fbiApostTrans'],
+    title: 'Translation of Apostille of FBI',
+    instructionsHtml: '<p>Certified Spanish translation of the Hague Apostille attached to your FBI background check.</p>'
   },
   {
     key: 'parental-authorization',
     legacyKeys: ['parentAuth'],
-    title: 'Parental Authorization (notarized)',
-    instructionsHtml: '<p>Notarized authorization from both parents for the minor to study abroad.</p>',
+    title: 'Translation of Birth Certificate',
+    instructionsHtml: '<p>Certified Spanish translation of the birth certificate. Use approved translators or agencies experienced with consular requirements.</p>',
     minor: true
   },
   {
     key: 'sex-crimes-registry',
     legacyKeys: ['sexRegistry'],
-    title: 'Sex Crimes Registry Authorization',
-    instructionsHtml: '<p>Certificate or authorization per consulate instructions.</p>',
+    title: 'Translation of Apostille of Birth Certificate',
+    instructionsHtml: '<p>Certified Spanish translation of the apostille issued for the birth certificate.</p>',
+    minor: true
+  },
+  {
+    key: 'financial-means-translation',
+    legacyKeys: ['fundsTrans'],
+    title: 'If you are under 18',
+    instructionsHtml: '<p>Follow the minor checklist requirements: notarized parental authorization, sexual crimes registry form, notarized copies of guardians’ passports, and any required templates provided by ETURE.</p>',
     minor: true
   }
 ];
@@ -4938,138 +6870,68 @@ function syncChecklistKeyedState(cl) {
   });
 }
 
+function createEmptyChecklistProgress() {
+  return {
+    items: [],
+    verified: 0,
+    total: 0,
+    uploaded: 0
+  };
+}
+
+function ensureChecklistProgress(progress) {
+  if (!progress || typeof progress !== 'object') {
+    return createEmptyChecklistProgress();
+  }
+
+  if (!Array.isArray(progress.items)) {
+    progress.items = [];
+  }
+
+  if (!Number.isFinite(progress.total)) {
+    progress.total = progress.items.length;
+  }
+
+  if (!Number.isFinite(progress.uploaded)) {
+    progress.uploaded = 0;
+  }
+
+  if (!Number.isFinite(progress.verified)) {
+    progress.verified = progress.uploaded;
+  }
+
+  return progress;
+}
+
 function recalcVisaChecklistProgress(cl) {
+  const progress = ensureChecklistProgress(cl);
   const includeMinor = getIsMinor();
-  const items = Array.isArray(cl.items)
-    ? cl.items.filter(item => isChecklistItemVisible(item, includeMinor))
+  const allowedKeys = getChecklistAllowedKeys();
+  const visibleItems = Array.isArray(progress.items)
+    ? progress.items.filter(item => isChecklistItemVisible(item, includeMinor) && allowedKeys.includes(item.key))
     : [];
-  const total = items.length;
-  const verified = items.filter(item => normalizeChecklistStatus(item.status) === 'verified').length;
-  cl.total = total;
-  cl.uploaded = verified;
+  const total = visibleItems.length;
+  const verified = visibleItems.filter(item => normalizeChecklistStatus(item.status) === 'verified').length;
+  progress.total = total;
+  progress.uploaded = verified;
+  progress.verified = verified;
   return { total, verified, percent: total > 0 ? Math.round((verified / total) * 100) : 0 };
 }
 
-function getChecklistState() {
-  ensureVisaDefaults();
-  if (!userProfileData.visa.checklist) {
-    userProfileData.visa.checklist = { items: [], total: 0, uploaded: 0, _updatedAt: '' };
-  }
-
-  const cl = userProfileData.visa.checklist;
-  cl.isMinor = getIsMinor();
-  const existingArray = Array.isArray(cl.items) ? cl.items : [];
-  const fromArray = new Map(existingArray.map(item => [item.key, item]));
-
-  const keyed = {};
-  Object.keys(cl).forEach((key) => {
-    if (['items', 'total', 'uploaded', '_updatedAt'].includes(key)) return;
-    const value = cl[key];
-    if (value && typeof value === 'object') keyed[key] = value;
-  });
-
-  cl.items = VISA_CHECKLIST_CATALOG.map((catalogItem) => {
-    const aliases = [catalogItem.key, ...(catalogItem.legacyKeys || [])];
-    let stored = null;
-    for (const alias of aliases) {
-      if (fromArray.has(alias)) {
-        stored = fromArray.get(alias);
-        break;
-      }
-      if (keyed[alias]) {
-        stored = keyed[alias];
-        break;
-      }
-    }
-
-    aliases.forEach(alias => {
-      if (alias !== catalogItem.key) delete cl[alias];
-    });
-
-    const status = normalizeChecklistStatus(stored?.status);
-    const fileUrl = stored?.fileUrl || stored?.file_url || '';
-    const fileName = stored?.fileName || stored?.file_name || '';
-    const fileSize = stored?.fileSize ?? stored?.file_size ?? null;
-    const fileMime = stored?.fileMime || stored?.file_mime || '';
-    const notes = stored?.notes || '';
-    const updatedAt = stored?.updatedAt || stored?.updated_at || stored?._updatedAt || '';
-
-    let reviewRaw = stored?.review;
-    if (!reviewRaw && stored) {
-      const fallbackReviewedAt = stored?.reviewedAt || stored?.reviewed_at || '';
-      const fallbackReviewerName = stored?.reviewerName || stored?.reviewer_name || '';
-      const fallbackReviewerId = stored?.reviewerId || stored?.reviewer_id || '';
-      const verifiedAt = stored?.verifiedAt || stored?.verified_at || '';
-      const verifiedBy = stored?.verifiedBy || stored?.verified_by || '';
-      const verifiedByName = stored?.verifiedByName || stored?.verified_by_name || '';
-      const deniedAt = stored?.deniedAt || stored?.denied_at || '';
-      const deniedBy = stored?.deniedBy || stored?.denied_by || '';
-      const deniedByName = stored?.deniedByName || stored?.denied_by_name || '';
-      const denialReasonLegacy = stored?.denialReason || stored?.denial_reason || '';
-
-      if (status === 'verified') {
-        reviewRaw = {
-          reviewerId: verifiedBy || fallbackReviewerId || '',
-          reviewerName: verifiedByName || fallbackReviewerName || '',
-          reviewedAt: verifiedAt || fallbackReviewedAt || '',
-          decision: 'verified',
-          reason: ''
-        };
-      } else if (status === 'denied') {
-        reviewRaw = {
-          reviewerId: deniedBy || fallbackReviewerId || '',
-          reviewerName: deniedByName || fallbackReviewerName || '',
-          reviewedAt: deniedAt || fallbackReviewedAt || '',
-          decision: 'denied',
-          reason: denialReasonLegacy || ''
-        };
-      }
-    }
-
-    let review = null;
-    if (reviewRaw && typeof reviewRaw === 'object') {
-      review = {
-        reviewerId: reviewRaw.reviewerId || reviewRaw.reviewedBy || '',
-        reviewerName: reviewRaw.reviewerName || '',
-        reviewedAt: reviewRaw.reviewedAt || reviewRaw.reviewed_at || '',
-        decision: reviewRaw.decision || '',
-        reason: reviewRaw.reason || ''
-      };
-    }
-
-    if (review) {
-      review.decision = review.decision || (status === 'verified' ? 'verified' : status === 'denied' ? 'denied' : '');
-      if (review.decision === 'denied') {
-        review.reason = (review.reason || stored?.denialReason || stored?.denial_reason || '').trim();
-      } else {
-        review.reason = '';
-      }
-      if (!review.reviewedAt) review.reviewedAt = updatedAt;
-    }
-
-    if (!review || !review.decision) {
-      review = null;
-    }
-
-    return {
-      key: catalogItem.key,
-      title: catalogItem.title,
-      minor: Boolean(catalogItem.minor),
-      status,
-      fileUrl,
-      fileName,
-      fileSize,
-      fileMime,
-      notes,
-      updatedAt,
-      review,
-      sampleUrl: catalogItem.sampleUrl || ''
-    };
-  });
-
-  recalcVisaChecklistProgress(cl);
-  syncChecklistKeyedState(cl);
-  return cl;
+function getProgressCountsForMode(mode) {
+  const cl = getChecklistState();
+  const includeMinor = getIsMinor();
+  const allowedKeys = getChecklistDefinitionForMode(mode)
+    .filter((entry) => includeMinor || entry.minor !== true)
+    .map((entry) => entry.key)
+    .filter((key) => key !== 'eture-docs');
+  const items = Array.isArray(cl.items)
+    ? cl.items
+        .filter((item) => item.key !== 'eture-docs')
+        .filter((item) => isChecklistItemVisible(item, includeMinor) && allowedKeys.includes(item.key))
+    : [];
+  const verified = items.filter(item => normalizeChecklistStatus(item.status) === 'verified').length;
+  return { verified, total: items.length };
 }
 
 function getChecklistItem(key) {
@@ -5078,64 +6940,667 @@ function getChecklistItem(key) {
   return cl.items.find(item => item.key === normalizedKey) || null;
 }
 
-function renderVisaChecklistProgress(cl) {
-  const { total, verified, percent } = recalcVisaChecklistProgress(cl);
+function renderVisaChecklistProgress(stateOverride = null) {
+  const mode = typeof getSubmissionMode === 'function' ? getSubmissionMode() : 'usa';
+  const definition = typeof getChecklistDefinitionForMode === 'function' ? getChecklistDefinitionForMode(mode) : [];
+  const safeDefinition = Array.isArray(definition) ? definition : [];
+  const state = stateOverride && typeof stateOverride === 'object' ? stateOverride : getChecklistState();
+  const normalizedState = state && typeof state === 'object' ? state : { items: [] };
+  const recalculated = recalcVisaChecklistProgress(normalizedState);
+  const includeMinor = getIsMinor();
+  const filteredKeys = safeDefinition
+    .filter((item) => item && item.key)
+    .filter((item) => includeMinor || item.minor !== true)
+    .map((item) => normalizeChecklistKeyInput(item.key));
+  const keySet = new Set(filteredKeys);
+  let total = keySet.size;
+  const stateItems = Array.isArray(normalizedState.items) ? normalizedState.items : [];
+  let verified = stateItems
+    .filter((item) => keySet.has(normalizeChecklistKeyInput(item?.key)))
+    .filter((item) => normalizeChecklistStatus(item?.status) === 'verified')
+    .length;
+
+  if (total === 0) {
+    total = recalculated.total;
+    verified = recalculated.verified;
+  } else {
+    verified = Math.min(verified, total);
+  }
+
+  const percent = total > 0 ? Math.round((verified / total) * 100) : 0;
+
   const bar = document.getElementById('visa-checklist-progress-bar');
   if (bar) {
     bar.style.width = `${percent}%`;
     bar.setAttribute('aria-valuenow', String(percent));
   }
+
   const text = document.getElementById('visa-verified-progress');
   if (text) text.textContent = `${verified}/${total} verified`;
+
+  const summaryEl = document.getElementById('visa-checklist-progress');
+  if (summaryEl) summaryEl.textContent = `${verified}/${total} verified`;
+
+  visaUiState.checklistProgress = {
+    items: Array.isArray(normalizedState.items) ? normalizedState.items.slice() : [],
+    verified,
+    total,
+    uploaded: verified,
+    percent
+  };
+
   renderSubmissionProgress({ total, verified, percent });
   renderSubmissionSpainMirror();
+  renderVisaEtureDocs();
+  updatePortfolioButtonState();
+}
+
+function recvVisaChecklistProgress(payload) {
+  const base = payload && typeof payload === 'object' ? { ...payload } : {};
+  const normalizedItems = Array.isArray(base.items) ? base.items.slice() : [];
+  const progress = ensureChecklistProgress({
+    ...base,
+    items: normalizedItems
+  });
+  visaUiState.checklistProgress = progress;
+  renderVisaChecklistProgress(progress);
+}
+
+if (typeof window !== 'undefined') {
+  window.recvVisaChecklistProgress = recvVisaChecklistProgress;
+}
+
+async function persistEtureDocsToProfile(docs) {
+  ensureVisaDefaults();
+  userProfileData.visa.etureDocs = docs.map((doc) => ({
+    id: doc.id,
+    name: doc.name,
+    status: doc.status,
+    fileMeta: doc.fileMeta ? { ...doc.fileMeta } : null,
+    fileUrl: doc.fileMeta?.dataUrl || doc.fileUrl || '',
+    uploadedAt: doc.fileMeta?.uploadedAt || doc.uploadedAt || new Date().toISOString()
+  }));
+
+  try {
+    if (auth.currentUser) {
+      await saveProfileToFirestore(auth.currentUser.uid, userProfileData);
+    }
+  } catch (error) {
+    console.error('Unable to persist ETURE documents', error);
+  }
+}
+
+function downloadEtureDoc(doc) {
+  if (!doc) return;
+  const fileMeta = doc.fileMeta || null;
+  const url = fileMeta?.dataUrl || doc.fileUrl || '';
+  if (!url) {
+    alert('File not available.');
+    return;
+  }
+  const link = document.createElement('a');
+  link.href = url;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.download = (fileMeta?.name || doc.name || 'document').toString();
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+async function handleEtureDocRemove(id) {
+  const confirmed = window.confirm('Remove this ETURE document?');
+  if (!confirmed) return;
+
+  const nextState = saveMyVisaState((state) => {
+    state.etureDocs = Array.isArray(state.etureDocs)
+      ? state.etureDocs.filter((doc) => (doc.id || doc.key) !== id)
+      : [];
+    return state;
+  });
+  try {
+    await persistEtureDocsToProfile(nextState.etureDocs || []);
+  } catch (error) {
+    console.error('Unable to remove ETURE document', error);
+    alert('Unable to remove the document. Please try again.');
+  } finally {
+    const clState = getChecklistState();
+    renderVisaChecklistProgress(clState);
+    renderVisaChecklistList(clState);
+    if (currentVisaChecklistKey) {
+      renderVisaChecklistDetail(currentVisaChecklistKey);
+    }
+    renderVisaOverview();
+  }
 }
 
 function renderVisaChecklistList(cl) {
   const container = document.getElementById('visa-checklist-list');
   if (!container) return;
 
+  const mode = getSubmissionMode();
   const includeMinor = getIsMinor();
-  const visibleItems = Array.isArray(cl.items)
-    ? cl.items.filter(item => isChecklistItemVisible(item, includeMinor))
-    : [];
+  const definition = getChecklistDefinitionForMode(mode);
+  const itemsByKey = new Map(Array.isArray(cl.items) ? cl.items.map((item) => [item.key, item]) : []);
 
-  if (!visibleItems.length) {
+  const navItems = [];
+
+  const etureDocs = getEtureDocs();
+  const etureStatus = etureDocs.length ? 'uploaded' : 'pending';
+  const etureMeta = getChecklistVisualState({ status: etureStatus });
+  navItems.push({
+    key: 'eture-docs',
+    title: 'Eture Acceptance Letters',
+    minorPill: '',
+    meta: etureMeta
+  });
+
+  definition
+    .filter((entry) => includeMinor || entry.minor !== true)
+    .forEach((entry) => {
+      const base = itemsByKey.get(entry.key);
+      const item = base ? { ...base } : { key: entry.key, status: 'pending' };
+      item.title = entry.label;
+      item.minor = entry.minor === true;
+      const meta = getChecklistVisualState(item);
+      const minorPill = item.minor ? '<span class="badge bg-info text-dark ms-2">Minor</span>' : '';
+      navItems.push({
+        key: entry.key,
+        title: entry.label,
+        minorPill,
+        meta
+      });
+    });
+
+  if (!navItems.length) {
     container.innerHTML = '<div class="p-3 text-muted small">No documents configured yet.</div>';
+    currentVisaChecklistKey = 'eture-docs';
     return;
   }
 
-  if (!visibleItems.some(item => item.key === currentVisaChecklistKey)) {
-    currentVisaChecklistKey = visibleItems[0]?.key || null;
+  if (!navItems.some(item => item.key === currentVisaChecklistKey)) {
+    currentVisaChecklistKey = 'eture-docs';
   }
 
-  container.innerHTML = visibleItems.map((item) => {
-    const normalizedKey = normalizeChecklistKeyInput(item.key);
-    const isActive = normalizedKey === normalizeChecklistKeyInput(currentVisaChecklistKey);
-    const meta = getChecklistVisualState(item);
-    const checkmark = meta.key === 'verified'
-      ? '<span class="text-success fw-bold" aria-hidden="true">✓</span>'
-      : '';
-    const minorPill = item.minor
-      ? '<span class="badge bg-info text-dark ms-2">Minor</span>'
-      : '';
+  container.innerHTML = navItems.map((item) => {
+    const isActive = item.key === normalizeChecklistKeyInput(currentVisaChecklistKey);
+    const meta = item.meta;
+    const badgeClasses = `visa-doc-status ${meta.listClass || ''}`.trim();
+    const domId = getChecklistDomIdForKey(item.key);
     const ariaCurrent = isActive ? 'aria-current="true"' : '';
+    const ariaLabel = `${item.title} - ${meta.label || ''}`;
     const highlightClass = isActive ? ' border border-primary bg-light text-dark fw-semibold' : '';
     const iconHtml = meta.icon ? `<span aria-hidden="true" class="me-1">${meta.icon}</span>` : '';
-    const ariaLabel = `${item.title} - ${meta.label}`;
-    const rowClasses = `visa-doc-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-2 text-start${highlightClass}`;
-    const badgeClasses = `visa-doc-status ${meta.listClass}`;
-    const domId = getChecklistDomIdForKey(normalizedKey);
+
     return `
-      <button type="button" id="${domId}" class="${rowClasses}" data-doc-key="${normalizedKey}" ${ariaCurrent} aria-label="${ariaLabel}">
-        <span class="me-2 flex-grow-1 text-truncate" title="${item.title.replace(/"/g, '&quot;')}">${item.title}${minorPill}</span>
+      <button type="button" id="${domId}" class="visa-doc-row list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-2 text-start${highlightClass}" data-doc-key="${item.key}" data-doc-title="${escapeHtml(item.title)}" ${ariaCurrent} aria-label="${ariaLabel}">
+        <span class="me-2 flex-grow-1 text-truncate" title="${item.title.replace(/"/g, '&quot;')}">${item.title}${item.minorPill || ''}</span>
         <span class="d-flex align-items-center gap-2 flex-shrink-0">
-          <span class="${badgeClasses}" data-state="${meta.key}">${iconHtml}${meta.label}</span>
-          ${checkmark}
+          <span class="${badgeClasses}" data-state="${meta.key || ''}">${iconHtml}${meta.label || ''}</span>
         </span>
       </button>
     `;
   }).join('');
+}
+
+function renderVisaEtureDocs() {
+  refreshEtureDocsPanel();
+}
+
+function refreshEtureDocsPanel() {
+  const detail = document.getElementById('eture-docs-detail');
+  const listEl = document.getElementById('eture-docs-list');
+  const uploadRow = document.getElementById('eture-upload-row');
+  const nameInput = document.getElementById('eture-doc-name-input');
+  const fileInput = document.getElementById('eture-doc-file-input');
+  const errorEl = document.getElementById('eture-doc-error');
+  const lastUpdateEl = document.getElementById('eture-docs-last-update');
+  if (!detail || !listEl) return;
+
+  const docs = getEtureDocs();
+  const canManage = isCurrentUserStaff() || isDemoModeEnabled();
+
+  if (uploadRow) uploadRow.style.display = canManage ? '' : 'none';
+  if (nameInput) {
+    nameInput.disabled = !canManage;
+    if (!canManage) nameInput.value = '';
+  }
+  if (fileInput) {
+    fileInput.disabled = !canManage;
+    if (!canManage) fileInput.value = '';
+  }
+  if (errorEl) errorEl.classList.add('d-none');
+
+  if (!docs.length) {
+    listEl.innerHTML = '<div class="text-muted">No ETURE documents uploaded yet.</div>';
+  } else {
+    listEl.innerHTML = docs.map((doc) => {
+      const fileMeta = doc.fileMeta || {};
+      const filename = fileMeta.name || doc.name || 'Document';
+      const sizeText = formatSubmissionFileSize(fileMeta.size || 0);
+      const uploadedAt = doc.uploadedAt ? formatDateForDisplay(doc.uploadedAt) : '';
+      const metaParts = [];
+      if (filename) metaParts.push(escapeHtml(filename));
+      if (sizeText) metaParts.push(escapeHtml(sizeText));
+      if (uploadedAt) metaParts.push(`Uploaded ${escapeHtml(uploadedAt)}`);
+    const subtitle = metaParts.length ? metaParts.join(' • ') : '—';
+    const removeBtn = canManage
+      ? `<button type="button" class="btn btn-outline-danger btn-sm btn-eture-remove" data-id="${escapeHtml(doc.id)}">Remove</button>`
+      : '';
+
+    return `
+        <div class="list-group-item eture-doc-row d-flex justify-content-between align-items-start gap-3" data-id="${escapeHtml(doc.id)}">
+          <div>
+            <div class="fw-semibold">${escapeHtml(doc.name)}</div>
+            <div class="small text-muted">${subtitle}</div>
+          </div>
+          <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-secondary btn-sm btn-eture-download" data-id="${escapeHtml(doc.id)}">Download</button>
+            ${removeBtn}
+          </div>
+        </div>
+      `;
+  }).join('');
+  }
+
+  if (lastUpdateEl) {
+    const latest = docs.reduce((acc, doc) => {
+      if (!doc.uploadedAt) return acc;
+      return !acc || doc.uploadedAt > acc ? doc.uploadedAt : acc;
+    }, null);
+    lastUpdateEl.textContent = latest ? (formatDateForDisplay(latest) || '—') : '—';
+  }
+
+  updatePortfolioButtonState();
+}
+
+async function handleEtureDocUpload() {
+  const nameInput = document.getElementById('eture-doc-name-input');
+  const fileInput = document.getElementById('eture-doc-file-input');
+  const errorEl = document.getElementById('eture-doc-error');
+  if (!isCurrentUserStaff() && !isDemoModeEnabled()) return;
+  if (!nameInput || !fileInput) return;
+
+  const name = nameInput.value.trim();
+  const file = fileInput.files?.[0] || null;
+  if (!name || !file) {
+    if (errorEl) {
+      errorEl.textContent = 'Please provide a document name and select a file.';
+      errorEl.classList.remove('d-none');
+    }
+    return;
+  }
+
+  if (errorEl) errorEl.classList.add('d-none');
+
+  try {
+    const dataUrl = await readFileAsDataUrl(file);
+    const fileMeta = buildFileMetaFromFile(file, dataUrl);
+    if (!fileMeta) throw new Error('Invalid file');
+
+    const id = `eture-${Date.now()}`;
+    const docRecord = {
+      id,
+      name,
+      status: 'uploaded',
+      fileMeta,
+      fileUrl: fileMeta.dataUrl || '',
+      uploadedAt: fileMeta.uploadedAt || new Date().toISOString()
+    };
+
+    const nextState = saveMyVisaState((state) => {
+      state.etureDocs = Array.isArray(state.etureDocs) ? state.etureDocs.slice() : [];
+      state.etureDocs.push(docRecord);
+      return state;
+    });
+
+    await persistEtureDocsToProfile(nextState.etureDocs || []);
+    nameInput.value = '';
+    fileInput.value = '';
+    currentVisaChecklistKey = 'eture-docs';
+    const clState = getChecklistState();
+    renderVisaChecklistProgress(clState);
+    renderVisaChecklistList(clState);
+    renderVisaChecklistDetail(currentVisaChecklistKey);
+    renderVisaOverview();
+  } catch (error) {
+    console.error('Unable to add ETURE document', error);
+    if (errorEl) {
+      errorEl.textContent = 'Unable to upload the document. Please try again.';
+      errorEl.classList.remove('d-none');
+    }
+  }
+}
+
+function buildPortfolioDocuments() {
+  const studentDocs = VISA_CHECKLIST_CATALOG.map((catalog) => {
+    const item = getChecklistItem(catalog.key);
+    const status = normalizeChecklistStatus(item?.status);
+    return {
+      key: catalog.key,
+      title: catalog.title,
+      status,
+      fileUrl: (item?.fileUrl || '').toString(),
+      fileMime: (item?.fileMime || '').toString(),
+      fileName: (item?.fileName || '').toString(),
+      category: 'Student'
+    };
+  });
+
+  const etureDocs = getNormalizedEtureDocs().map((doc) => {
+    const fileMeta = doc.fileMeta || null;
+    const fileUrl = fileMeta?.dataUrl || doc.fileUrl || '';
+    return {
+      key: doc.id,
+      title: doc.name,
+      status: normalizeChecklistStatus(doc.status),
+      fileUrl,
+      fileMime: fileMeta?.type || doc.fileMime || '',
+      fileName: fileMeta?.name || doc.fileName || '',
+      category: 'ETURE'
+    };
+  });
+
+  return {
+    studentDocs,
+    etureDocs,
+    allDocs: [...studentDocs, ...etureDocs]
+  };
+}
+
+function updatePortfolioButtonState() {
+  const buttons = [
+    document.getElementById('visa-portfolio-download'),
+    document.getElementById('eture-docs-download-portfolio')
+  ].filter(Boolean);
+  if (!buttons.length) return;
+
+  const checklist = getChecklistState();
+  const { total, verified } = recalcVisaChecklistProgress(checklist);
+  const ready = total > 0 && verified === total;
+
+  buttons.forEach((button) => {
+    button.disabled = !ready;
+    button.setAttribute('aria-disabled', ready ? 'false' : 'true');
+    button.classList.remove('btn-outline-secondary', 'btn-outline-primary', 'btn-primary');
+    if (ready) {
+      button.classList.add('btn-primary');
+    } else {
+      button.classList.add('btn-outline-secondary');
+      button.textContent = 'Download Portfolio';
+    }
+  });
+
+  const warningEl = document.getElementById('visa-portfolio-warning');
+  if (warningEl) {
+    warningEl.classList.add('d-none');
+    warningEl.classList.remove('alert-danger');
+    warningEl.classList.add('alert-warning');
+    warningEl.textContent = '';
+  }
+}
+
+function wrapTextLines(text, font, fontSize, maxWidth) {
+  if (!text) return [];
+  const words = text.split(/\s+/);
+  const lines = [];
+  let current = '';
+  words.forEach((word) => {
+    const tentative = current ? `${current} ${word}` : word;
+    const width = font.widthOfTextAtSize(tentative, fontSize);
+    if (width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = tentative;
+    }
+  });
+  if (current) lines.push(current);
+  return lines;
+}
+
+function resolveMime(mime, url) {
+  if (mime) return mime;
+  const lower = (url || '').toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  return mime || '';
+}
+
+function isPdfMime(mime) {
+  return typeof mime === 'string' && mime.includes('pdf');
+}
+
+function isImageMime(mime) {
+  return typeof mime === 'string' && mime.startsWith('image/');
+}
+
+async function fetchFileBuffer(url) {
+  if (!url) return { buffer: null, mime: '' };
+  if (url.startsWith('data:')) {
+    const commaIndex = url.indexOf(',');
+    const meta = url.substring(0, commaIndex);
+    const data = url.substring(commaIndex + 1);
+    const base64 = meta.includes(';base64');
+    let mime = '';
+    const mimeMatch = meta.match(/^data:([^;]+)/);
+    if (mimeMatch) mime = mimeMatch[1];
+    if (base64) {
+      const binary = atob(data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return { buffer: bytes.buffer, mime };
+    }
+    const decoded = decodeURIComponent(data);
+    const bytes = new TextEncoder().encode(decoded);
+    return { buffer: bytes.buffer, mime };
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Unable to fetch file (${response.status})`);
+  }
+  const mime = response.headers.get('content-type') || '';
+  const buffer = await response.arrayBuffer();
+  return { buffer, mime };
+}
+
+let pdfLibModule = null;
+async function loadPdfLib() {
+  if (!pdfLibModule) {
+    pdfLibModule = await import('https://cdn.skypack.dev/pdf-lib@1.17.1?min');
+  }
+  return pdfLibModule;
+}
+
+async function generatePortfolioPdf(studentDocs, etureDocs) {
+  const { PDFDocument, StandardFonts } = await loadPdfLib();
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const now = new Date();
+  const coverPage = pdfDoc.addPage();
+  const coverWidth = coverPage.getWidth();
+  const coverHeight = coverPage.getHeight();
+  const margin = 72;
+  coverPage.drawText('MyVisa Portfolio', {
+    x: margin,
+    y: coverHeight - margin,
+    size: 26,
+    font: fontBold
+  });
+  coverPage.drawText(`Generated on ${now.toLocaleString()}`, {
+    x: margin,
+    y: coverHeight - margin - 36,
+    size: 12,
+    font
+  });
+
+  const allDocs = [...studentDocs, ...etureDocs];
+  let indexPage = pdfDoc.addPage();
+  let cursorY = indexPage.getHeight() - margin;
+  indexPage.drawText('Index', {
+    x: margin,
+    y: cursorY,
+    size: 18,
+    font: fontBold
+  });
+  cursorY -= 24;
+
+  allDocs.forEach((doc, idx) => {
+    const label = `${idx + 1}. [${doc.category}] ${doc.title} — ${doc.status.toUpperCase()}${doc.fileUrl ? '' : ' (missing)'}`;
+    const lines = wrapTextLines(label, font, 12, indexPage.getWidth() - margin * 2);
+    lines.forEach((line) => {
+      if (cursorY < margin) {
+        indexPage = pdfDoc.addPage();
+        cursorY = indexPage.getHeight() - margin;
+      }
+      indexPage.drawText(line, {
+        x: margin,
+        y: cursorY,
+        size: 12,
+        font
+      });
+      cursorY -= 16;
+    });
+  });
+
+  const addHeaderPage = (docIndex, doc) => {
+    const page = pdfDoc.addPage();
+    const width = page.getWidth();
+    const height = page.getHeight();
+    let headerY = height - margin;
+    const titleLines = wrapTextLines(`${docIndex}. ${doc.title}`, fontBold, 16, width - margin * 2);
+    titleLines.forEach((line) => {
+      page.drawText(line, {
+        x: margin,
+        y: headerY,
+        size: 16,
+        font: fontBold
+      });
+      headerY -= 18;
+    });
+    page.drawText(`[${doc.category}] Status: ${doc.status.toUpperCase()}`, {
+      x: margin,
+      y: headerY - 6,
+      size: 12,
+      font
+    });
+    return page;
+  };
+
+  for (let i = 0; i < allDocs.length; i += 1) {
+    const doc = allDocs[i];
+    addHeaderPage(i + 1, doc);
+    if (!doc.fileUrl) {
+      const missingPage = pdfDoc.addPage();
+      missingPage.drawText('No file uploaded for this document.', {
+        x: margin,
+        y: missingPage.getHeight() - margin - 36,
+        size: 12,
+        font
+      });
+      continue;
+    }
+
+    try {
+      const { buffer, mime } = await fetchFileBuffer(doc.fileUrl);
+      if (!buffer) continue;
+      const data = new Uint8Array(buffer);
+      const resolvedMime = resolveMime(doc.fileMime || mime, doc.fileUrl);
+      if (isPdfMime(resolvedMime)) {
+        const externalPdf = await PDFDocument.load(data);
+        const copiedPages = await pdfDoc.copyPages(externalPdf, externalPdf.getPageIndices());
+        copiedPages.forEach((page) => pdfDoc.addPage(page));
+      } else if (isImageMime(resolvedMime)) {
+        const page = pdfDoc.addPage();
+        const image = resolvedMime === 'image/png'
+          ? await pdfDoc.embedPng(data)
+          : await pdfDoc.embedJpg(data);
+        const { width, height } = page.getSize();
+        const maxWidth = width - margin * 2;
+        const maxHeight = height - margin * 2;
+        const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+        const drawWidth = image.width * scale;
+        const drawHeight = image.height * scale;
+        page.drawImage(image, {
+          x: (width - drawWidth) / 2,
+          y: (height - drawHeight) / 2,
+          width: drawWidth,
+          height: drawHeight
+        });
+      } else {
+        const page = pdfDoc.addPage();
+        page.drawText('Unsupported file format for this document.', {
+          x: margin,
+          y: page.getHeight() - margin - 36,
+          size: 12,
+          font
+        });
+      }
+    } catch (error) {
+      console.error('Unable to append document to portfolio', error);
+      const page = pdfDoc.addPage();
+      page.drawText('Unable to include this file in the portfolio.', {
+        x: margin,
+        y: page.getHeight() - margin - 36,
+        size: 12,
+        font
+      });
+    }
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `MyVisa-Portfolio-${now.toISOString().slice(0, 10)}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+async function handlePortfolioDownloadClick(event) {
+  event.preventDefault();
+  const button = event.currentTarget;
+  if (!button || button.disabled) return;
+  const warningEl = document.getElementById('visa-portfolio-warning');
+  const liveRegion = document.getElementById('visa-portfolio-live');
+  const { studentDocs, etureDocs, allDocs } = buildPortfolioDocuments();
+  if (warningEl) {
+    warningEl.classList.add('d-none');
+    warningEl.textContent = '';
+  }
+
+  button.disabled = true;
+  button.textContent = 'Preparing...';
+
+  try {
+    await generatePortfolioPdf(studentDocs, etureDocs);
+    if (liveRegion) {
+      liveRegion.textContent = 'Portfolio downloaded successfully.';
+    }
+  } catch (error) {
+    console.error('Portfolio generation failed', error);
+    if (warningEl) {
+      warningEl.classList.remove('d-none');
+      warningEl.classList.remove('alert-warning');
+      warningEl.classList.add('alert-danger');
+      warningEl.textContent = 'Unable to generate portfolio. Please try again.';
+    } else {
+      alert('Unable to generate portfolio. Please try again.');
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Download Portfolio';
+    updatePortfolioButtonState();
+  }
 }
 
 function updateVisaDemoModeNote() {
@@ -5147,32 +7612,87 @@ function updateVisaDemoModeNote() {
 function getVisibleChecklistItems() {
   const cl = getChecklistState();
   const includeMinor = getIsMinor();
-  return cl.items.filter(item => isChecklistItemVisible(item, includeMinor));
+  const mode = getSubmissionMode();
+  const definition = getChecklistDefinitionForMode(mode);
+  const itemsByKey = new Map(cl.items.map((item) => [item.key, item]));
+
+  const items = definition
+    .filter((entry) => includeMinor || entry.minor !== true)
+    .map((entry) => {
+      const item = itemsByKey.get(entry.key);
+      if (!item) {
+        return {
+          key: entry.key,
+          title: entry.label,
+          status: 'pending',
+          minor: entry.minor === true
+        };
+      }
+      return item;
+    });
+
+  const etureEntry = {
+    key: 'eture-docs',
+    title: 'Eture Acceptance Letters',
+    status: getEtureDocs().length ? 'uploaded' : 'pending',
+    minor: false
+  };
+
+  return [etureEntry, ...items];
+}
+
+function getChecklistNavigationItems() {
+  const mode = getSubmissionMode();
+  const includeMinor = getIsMinor();
+  const items = getChecklistDefinitionForMode(mode)
+    .filter((entry) => includeMinor || entry.minor !== true)
+    .map((entry) => ({ key: entry.key, title: entry.label }));
+  return [{ key: 'eture-docs', title: 'Eture Acceptance Letters' }, ...items];
 }
 
 function renderVisaChecklistDetail(key) {
   let normalizedKey = normalizeChecklistKeyInput(key);
-  let item = normalizedKey ? getChecklistItem(normalizedKey) : null;
+  const mode = getSubmissionMode();
+  const allowedKeys = getChecklistAllowedKeys(mode);
   const includeMinor = getIsMinor();
-  if (item && !isChecklistItemVisible(item, includeMinor)) {
-    item = null;
-  }
-  if (!item) {
-    const visibleItems = getVisibleChecklistItems();
-    if (visibleItems.length) {
-      item = visibleItems[0];
-      normalizedKey = item.key;
-      currentVisaChecklistKey = item.key;
-    } else {
-      normalizedKey = '';
-      currentVisaChecklistKey = null;
+  let item = null;
+  if (normalizedKey && normalizedKey !== 'eture-docs') {
+    if (allowedKeys.includes(normalizedKey)) {
+      const candidate = getChecklistItem(normalizedKey);
+      if (candidate && isChecklistItemVisible(candidate, includeMinor)) {
+        item = candidate;
+      }
     }
-  } else {
-    currentVisaChecklistKey = item.key;
   }
+
+  const visibleItems = getVisibleChecklistItems();
+  if (!item && normalizedKey !== 'eture-docs') {
+    const fallback = visibleItems.find((entry) => entry.key !== 'eture-docs');
+    if (fallback) {
+      normalizedKey = fallback.key;
+      item = getChecklistItem(fallback.key) || fallback;
+    } else {
+      normalizedKey = 'eture-docs';
+    }
+  }
+
+  if (!normalizedKey) {
+    normalizedKey = 'eture-docs';
+  }
+
+  const isEture = normalizedKey === 'eture-docs';
+  currentVisaChecklistKey = isEture
+    ? 'eture-docs'
+    : (item ? normalizeChecklistKeyInput(item.key) : 'eture-docs');
+
+  if (!isEture && (!item || item.key !== currentVisaChecklistKey)) {
+    item = getChecklistItem(currentVisaChecklistKey) || item;
+  }
+  let helpTitle = '';
   updateVisaDemoModeNote();
   const titleEl = document.getElementById('visa-doc-title');
   const instructionsEl = document.getElementById('doc-instructions');
+  const instructionsMoreBtn = document.getElementById('doc-instructions-more-btn');
   const sampleBtn = document.getElementById('doc-sample-btn');
   const fileInput = document.getElementById('doc-file-input');
   const replaceBtn = document.getElementById('doc-replace-btn');
@@ -5192,135 +7712,262 @@ function renderVisaChecklistDetail(key) {
   if (!titleEl || !instructionsEl || !sampleBtn || !fileInput || !viewBtn || !notesEl || !prevBtn || !nextBtn) {
     return;
   }
+  const headerSection = document.getElementById('visa-doc-header');
+  const etureDetail = document.getElementById('eture-docs-detail');
+  const standardSections = [
+    document.getElementById('doc-instructions-wrapper'),
+    document.getElementById('visa-doc-upload'),
+    verifiedMessageEl,
+    denialAlert,
+    staffActions,
+    notesEl,
+    progressEl
+  ].filter(Boolean);
 
-  const catalog = item ? getChecklistCatalogItem(item.key) : null;
-
-  if (item) {
-    const minorPill = item.minor ? ' <span class="badge bg-info text-dark ms-2">Minor</span>' : '';
-    titleEl.innerHTML = `${item.title}${minorPill}`;
-    instructionsEl.innerHTML = catalog?.instructionsHtml || '<p>No instructions available yet.</p>';
-    titleEl.setAttribute('tabindex', '-1');
-  } else {
-    titleEl.innerHTML = 'Select a document';
-    instructionsEl.innerHTML = '<p>Select a document on the left to view instructions.</p>';
-    titleEl.removeAttribute('tabindex');
-  }
-
-  applyChecklistChipForItem(item);
-
-  const sampleUrl = catalog?.sampleUrl || '';
-  sampleBtn.disabled = !sampleUrl;
-  sampleBtn.dataset.sampleUrl = sampleUrl;
-  sampleBtn.setAttribute('aria-label', item ? `View sample document for ${item.title}` : 'View sample document');
-
-  const status = normalizeChecklistStatus(item?.status);
-  const review = item?.review || null;
-
-  const hasFile = Boolean(item?.fileUrl);
-  if (hasFile) {
-    fileInput.classList.add('visually-hidden');
-    replaceBtn.classList.remove('d-none');
-    replaceBtn.disabled = false;
-  } else {
-    fileInput.classList.remove('visually-hidden');
-    replaceBtn.classList.add('d-none');
-    replaceBtn.disabled = true;
-  }
-
-  fileInput.disabled = !item;
-  fileInput.value = '';
-  fileInput.setAttribute('aria-label', item ? `Upload file for ${item.title}` : 'Upload file');
-  fileInput.setAttribute('title', 'Upload PDF, JPG or PNG');
-
-  replaceBtn.setAttribute('aria-label', item ? `Replace uploaded file for ${item.title}` : 'Replace uploaded file');
-  replaceBtn.title = item?.fileName ? `Replace ${item.fileName}` : 'Replace uploaded file';
-  replaceBtn.onclick = () => fileInput.click();
-
-  viewBtn.disabled = !hasFile;
-  viewBtn.classList.toggle('d-none', !hasFile);
-  viewBtn.dataset.fileUrl = hasFile ? item.fileUrl : '';
-  viewBtn.setAttribute('aria-label', item ? `View uploaded file for ${item.title}` : 'View uploaded file');
-  viewBtn.title = item?.fileName || 'Open uploaded file';
-
-  if (notesEl) {
-    notesEl.disabled = !item;
-    notesEl.value = item?.notes || '';
-    notesEl.setAttribute('aria-label', item ? `Notes for ${item.title}` : 'Notes');
-  }
-
-  if (verifiedMessageEl) {
-    if (status === 'verified' && review?.reviewedAt) {
-      const formatted = formatDateForDisplay(review.reviewedAt);
-      verifiedMessageEl.textContent = formatted
-        ? `Verified by admissions on ${formatted}.`
-        : 'Verified by admissions.';
-      verifiedMessageEl.classList.remove('d-none');
-    } else if (status === 'verified') {
-      verifiedMessageEl.textContent = 'Verified by admissions.';
-      verifiedMessageEl.classList.remove('d-none');
-    } else {
-      verifiedMessageEl.textContent = '';
+  if (isEture) {
+    const etureDocs = getEtureDocs();
+    applyChecklistChipForItem({ status: etureDocs.length ? 'uploaded' : 'pending' });
+    headerSection?.classList.add('d-none');
+    standardSections.forEach((section) => section.classList.add('d-none'));
+    if (instructionsMoreBtn) {
+      instructionsMoreBtn.disabled = true;
+      instructionsMoreBtn.removeAttribute('data-doc-key');
+      instructionsMoreBtn.setAttribute('aria-label', 'View more instructions');
+    }
+    if (sampleBtn) {
+      sampleBtn.disabled = true;
+      sampleBtn.dataset.sampleUrl = '';
+      sampleBtn.setAttribute('aria-label', 'View sample document');
+    }
+    if (fileInput) {
+      fileInput.value = '';
+      fileInput.disabled = true;
+      fileInput.classList.add('visually-hidden');
+    }
+    if (replaceBtn) {
+      replaceBtn.classList.add('d-none');
+      replaceBtn.disabled = true;
+    }
+    if (viewBtn) {
+      viewBtn.classList.add('d-none');
+      viewBtn.disabled = true;
+    }
+    if (notesEl) {
+      notesEl.value = '';
+      notesEl.disabled = true;
+    }
+    if (verifiedMessageEl) {
       verifiedMessageEl.classList.add('d-none');
+      verifiedMessageEl.textContent = '';
     }
-  }
-
-  if (denialAlert && denialReasonEl) {
-    if (status === 'denied') {
-      const reason = (review?.reason || '').trim() || 'No reason provided.';
-      denialAlert.classList.remove('d-none');
-      denialReasonEl.textContent = `File denied: ${reason}. Please upload a new file to re-submit for review.`;
-    } else {
+    if (denialAlert) {
       denialAlert.classList.add('d-none');
-      denialReasonEl.textContent = '';
     }
-  }
-
-  const canReview = isCurrentUserStaff();
-  const shouldShowReviewActions = canReview && item && hasFile;
-  if (staffActions) {
-    staffActions.classList.toggle('d-none', !shouldShowReviewActions);
-  }
-
-  if (verifyBtn) {
-    const canVerify = canReview && item && hasFile && status === 'uploaded';
-    verifyBtn.disabled = !canVerify;
-    const verifyTitle = canVerify
-      ? 'Mark as verified'
-      : status === 'denied'
-        ? 'Upload a new file to reset the review'
-        : 'Available when a file is uploaded and pending review';
-    verifyBtn.title = verifyTitle;
-    verifyBtn.setAttribute('aria-label', item ? `Verify document ${item.title}` : 'Verify document');
-  }
-
-  if (denyBtn) {
-    const canDeny = canReview && item && hasFile && (status === 'uploaded' || status === 'verified');
-    denyBtn.disabled = !canDeny;
-    const denyTitle = canDeny
-      ? 'Mark as denied'
-      : hasFile
-        ? 'Upload a new file to restart the review'
-        : 'Upload a file to manage review decisions';
-    denyBtn.title = denyTitle;
-    denyBtn.setAttribute('aria-label', item ? `Deny document ${item.title}` : 'Deny document');
-  }
-
-  if (progressEl) {
-    if (!item) {
+    if (staffActions) {
+      staffActions.classList.add('d-none');
+    }
+    if (progressEl) {
+      progressEl.classList.add('d-none');
       progressEl.textContent = '';
-    } else if (!hasFile) {
-      progressEl.textContent = 'No file uploaded yet.';
-    } else if (status === 'verified') {
-      progressEl.textContent = 'Verified by staff.';
-    } else if (status === 'denied') {
-      progressEl.textContent = 'Denied – upload a new file to re-submit for review.';
+    }
+    if (titleEl) {
+      titleEl.textContent = 'Eture Acceptance Letters';
+      titleEl.setAttribute('tabindex', '-1');
+    }
+    if (etureDetail) {
+      etureDetail.style.display = '';
+      renderVisaEtureDocs();
+    }
+    helpTitle = 'Eture Acceptance Letters';
+  } else {
+    headerSection?.classList.remove('d-none');
+    standardSections.forEach((section) => section.classList.remove('d-none'));
+    if (progressEl) progressEl.classList.remove('d-none');
+    if (etureDetail) {
+      etureDetail.style.display = 'none';
+    }
+
+    const catalog = item ? getChecklistCatalogItem(item.key) : null;
+    const definitionEntry = normalizedKey
+      ? getChecklistDefinitionForMode(mode).find((entry) => entry.key === normalizedKey)
+      : null;
+    const rawTitleCandidate = definitionEntry?.label || item?.title || catalog?.title || 'Select a document';
+    const primaryHelpKey = resolveHelpKey(rawTitleCandidate);
+    let helpEntry = primaryHelpKey ? HELP_MAP[primaryHelpKey] : null;
+    if (!helpEntry && catalog?.title && catalog.title !== rawTitleCandidate) {
+      const catalogHelpKey = resolveHelpKey(catalog.title);
+      helpEntry = catalogHelpKey ? HELP_MAP[catalogHelpKey] : null;
+    }
+    const displayTitle = helpEntry?.title || rawTitleCandidate;
+    const isMinorEntry = definitionEntry?.minor === true || item?.minor === true;
+    const helpHtml = helpEntry?.fullHtml || helpEntry?.html || catalog?.instructionsHtml || '<p>No instructions available yet.</p>';
+
+    if (item) {
+      const minorPill = isMinorEntry ? ' <span class="badge bg-info text-dark ms-2">Minor</span>' : '';
+      titleEl.innerHTML = `${displayTitle}${minorPill}`;
+      instructionsEl.innerHTML = helpHtml;
+      titleEl.setAttribute('tabindex', '-1');
     } else {
-      progressEl.textContent = 'File uploaded. Awaiting review.';
+      titleEl.innerHTML = displayTitle;
+      instructionsEl.innerHTML = '<p>Select a document on the left to view instructions.</p>';
+      titleEl.removeAttribute('tabindex');
     }
-    if (status === 'verified') {
-      progressEl.textContent += ' Replacing will send this item back to "Uploaded" for re-review.';
+
+    if (instructionsMoreBtn) {
+      const moreUrl = helpEntry?.moreUrl || '';
+      const hasInlineHelp = Boolean(helpEntry?.fullHtml || helpEntry?.html);
+      const enableMore = Boolean(item && (moreUrl || hasInlineHelp));
+      if ('disabled' in instructionsMoreBtn) {
+        instructionsMoreBtn.disabled = !enableMore;
+      }
+      instructionsMoreBtn.classList.toggle('disabled', !enableMore);
+      if (enableMore && normalizedKey) {
+        instructionsMoreBtn.dataset.docKey = normalizedKey;
+        instructionsMoreBtn.setAttribute('aria-label', `View more instructions for ${displayTitle}`);
+      } else {
+        instructionsMoreBtn.removeAttribute('data-doc-key');
+        instructionsMoreBtn.setAttribute('aria-label', 'View more instructions');
+      }
+      if (moreUrl) {
+        instructionsMoreBtn.removeAttribute('aria-disabled');
+        instructionsMoreBtn.dataset.helpUrl = moreUrl;
+      } else {
+        if (instructionsMoreBtn.dataset) {
+          delete instructionsMoreBtn.dataset.helpUrl;
+        }
+        instructionsMoreBtn.removeAttribute('data-help-url');
+        if (enableMore) {
+          instructionsMoreBtn.removeAttribute('aria-disabled');
+        } else {
+          instructionsMoreBtn.setAttribute('aria-disabled', 'true');
+        }
+      }
     }
+
+    applyChecklistChipForItem(item);
+
+    const sampleUrl = helpEntry?.sampleUrl || catalog?.sampleUrl || '';
+    sampleBtn.disabled = !sampleUrl;
+    if (sampleUrl) {
+      sampleBtn.dataset.sampleUrl = sampleUrl;
+    } else if (sampleBtn.dataset) {
+      delete sampleBtn.dataset.sampleUrl;
+      sampleBtn.removeAttribute('data-sample-url');
+    }
+    sampleBtn.setAttribute('aria-label', item ? `View sample document for ${displayTitle}` : 'View sample document');
+
+    const status = normalizeChecklistStatus(item?.status);
+    const review = item?.review || null;
+
+    const hasFile = Boolean(item?.fileUrl);
+    if (hasFile) {
+      fileInput.classList.add('visually-hidden');
+      replaceBtn.classList.remove('d-none');
+      replaceBtn.disabled = false;
+    } else {
+      fileInput.classList.remove('visually-hidden');
+      replaceBtn.classList.add('d-none');
+      replaceBtn.disabled = true;
+    }
+
+    fileInput.disabled = !item;
+    fileInput.value = '';
+    fileInput.setAttribute('aria-label', item ? `Upload file for ${displayTitle}` : 'Upload file');
+    fileInput.setAttribute('title', 'Upload PDF, JPG or PNG');
+
+    replaceBtn.setAttribute('aria-label', item ? `Replace uploaded file for ${displayTitle}` : 'Replace uploaded file');
+    replaceBtn.title = item?.fileName ? `Replace ${item.fileName}` : 'Replace uploaded file';
+    replaceBtn.onclick = () => fileInput.click();
+
+    viewBtn.disabled = !hasFile;
+    viewBtn.classList.toggle('d-none', !hasFile);
+    viewBtn.dataset.fileUrl = hasFile ? item.fileUrl : '';
+    viewBtn.setAttribute('aria-label', item ? `View uploaded file for ${displayTitle}` : 'View uploaded file');
+    viewBtn.title = item?.fileName || 'Open uploaded file';
+
+    if (notesEl) {
+      notesEl.disabled = !item;
+      notesEl.value = item?.notes || '';
+      notesEl.setAttribute('aria-label', item ? `Notes for ${displayTitle}` : 'Notes');
+    }
+
+    if (verifiedMessageEl) {
+      if (status === 'verified' && review?.reviewedAt) {
+        const formatted = formatDateForDisplay(review.reviewedAt);
+        verifiedMessageEl.textContent = formatted
+          ? `Verified by admissions on ${formatted}.`
+          : 'Verified by admissions.';
+        verifiedMessageEl.classList.remove('d-none');
+      } else if (status === 'verified') {
+        verifiedMessageEl.textContent = 'Verified by admissions.';
+        verifiedMessageEl.classList.remove('d-none');
+      } else {
+        verifiedMessageEl.textContent = '';
+        verifiedMessageEl.classList.add('d-none');
+      }
+    }
+
+    if (denialAlert && denialReasonEl) {
+      if (status === 'denied') {
+        const reason = (review?.reason || '').trim() || 'No reason provided.';
+        denialAlert.classList.remove('d-none');
+        denialReasonEl.textContent = `File denied: ${reason}. Please upload a new file to re-submit for review.`;
+      } else {
+        denialAlert.classList.add('d-none');
+        denialReasonEl.textContent = '';
+      }
+    }
+
+    const canReview = isCurrentUserStaff();
+    const shouldShowReviewActions = canReview && item && hasFile;
+    if (staffActions) {
+      staffActions.classList.toggle('d-none', !shouldShowReviewActions);
+    }
+
+    if (verifyBtn) {
+      const canVerify = canReview && item && hasFile && status === 'uploaded';
+      verifyBtn.disabled = !canVerify;
+      const verifyTitle = canVerify
+        ? 'Mark as verified'
+        : status === 'denied'
+          ? 'Upload a new file to reset the review'
+          : 'Available when a file is uploaded and pending review';
+      verifyBtn.title = verifyTitle;
+      verifyBtn.setAttribute('aria-label', item ? `Verify document ${displayTitle}` : 'Verify document');
+    }
+
+    if (denyBtn) {
+      const canDeny = canReview && item && hasFile && (status === 'uploaded' || status === 'verified');
+      denyBtn.disabled = !canDeny;
+      const denyTitle = canDeny
+        ? 'Mark as denied'
+        : hasFile
+          ? 'Upload a new file to restart the review'
+          : 'Upload a file to manage review decisions';
+      denyBtn.title = denyTitle;
+      denyBtn.setAttribute('aria-label', item ? `Deny document ${displayTitle}` : 'Deny document');
+    }
+
+    if (progressEl) {
+      if (!item) {
+        progressEl.textContent = '';
+      } else if (!hasFile) {
+        progressEl.textContent = 'No file uploaded yet.';
+      } else if (status === 'verified') {
+        progressEl.textContent = 'Verified by staff.';
+      } else if (status === 'denied') {
+        progressEl.textContent = 'Denied – upload a new file to re-submit for review.';
+      } else {
+        progressEl.textContent = 'File uploaded. Awaiting review.';
+      }
+      if (status === 'verified') {
+        progressEl.textContent += ' Replacing will send this item back to "Uploaded" for re-review.';
+      }
+    }
+    helpTitle = item ? displayTitle : '';
   }
+
+  setChecklistHelpForTitle(helpTitle);
 
   const cl = getChecklistState();
   if (updatedEl) {
@@ -5328,12 +7975,21 @@ function renderVisaChecklistDetail(key) {
     updatedEl.textContent = `Last update — ${timestamp ? new Date(timestamp).toLocaleString() : '—'}`;
   }
 
-  const visibleItems = getVisibleChecklistItems();
-  const currentIndex = visibleItems.findIndex(i => i.key === currentVisaChecklistKey);
-  prevBtn.disabled = currentIndex <= 0;
-  nextBtn.disabled = currentIndex === -1 || currentIndex >= visibleItems.length - 1;
+  const navItems = getChecklistNavigationItems();
+  const currentIndex = navItems.findIndex(entry => entry.key === currentVisaChecklistKey);
+  const prevKey = navItems[currentIndex - 1]?.key;
+  const nextKey = navItems[currentIndex + 1]?.key;
+  prevBtn.disabled = !prevKey;
+  nextBtn.disabled = !nextKey;
   prevBtn.setAttribute('aria-label', 'Go to previous document');
   nextBtn.setAttribute('aria-label', 'Go to next document');
+
+  prevBtn.onclick = () => {
+    if (prevKey) renderVisaChecklistDetail(prevKey);
+  };
+  nextBtn.onclick = () => {
+    if (nextKey) renderVisaChecklistDetail(nextKey);
+  };
 
   const detailCard = document.getElementById('visa-doc-detail');
   const detailBody = detailCard?.querySelector('.card-body');
@@ -5346,7 +8002,7 @@ function renderVisaChecklistDetail(key) {
     detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  if (item) {
+  if (!isEture && item) {
     setTimeout(() => {
       if (typeof titleEl.focus === 'function') {
         try {
@@ -5359,7 +8015,49 @@ function renderVisaChecklistDetail(key) {
         titleEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }, 50);
+  } else if (isEture) {
+    setTimeout(() => {
+      const uploadRow = document.getElementById('eture-upload-row');
+      const nameInput = document.getElementById('eture-doc-name-input');
+      if (uploadRow && uploadRow.style.display !== 'none' && nameInput && typeof nameInput.focus === 'function') {
+        try {
+          nameInput.focus({ preventScroll: true });
+        } catch (error) {
+          nameInput.focus();
+        }
+      }
+    }, 50);
   }
+}
+
+function openVisaDocInstructionsModal(docKey) {
+  const normalizedKey = normalizeChecklistKeyInput(docKey);
+  if (!normalizedKey) return;
+  const item = getChecklistItem(normalizedKey) || getChecklistCatalogItem(normalizedKey);
+  const modalEl = document.getElementById('visa-doc-instructions-modal');
+  if (!modalEl) return;
+  const titleEl = document.getElementById('visa-doc-instructions-modal-title');
+  const bodyEl = document.getElementById('visa-doc-instructions-modal-body');
+  const catalog = getChecklistCatalogItem(normalizedKey);
+  const rawTitle = catalog?.title || item?.title || '';
+  const helpKey = resolveHelpKey(rawTitle);
+  let helpEntry = helpKey ? HELP_MAP[helpKey] : null;
+  if (!helpEntry && item?.title && item.title !== rawTitle) {
+    const itemHelpKey = resolveHelpKey(item.title);
+    helpEntry = itemHelpKey ? HELP_MAP[itemHelpKey] : null;
+  }
+  const instructionsHtml = helpEntry?.fullHtml || helpEntry?.html || catalog?.instructionsHtml || item?.instructionsHtml || '';
+  if (!instructionsHtml) return;
+
+  if (titleEl) {
+    titleEl.textContent = helpEntry?.title || rawTitle || 'Document instructions';
+  }
+  if (bodyEl) {
+    bodyEl.innerHTML = instructionsHtml;
+  }
+
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
 }
 
 function announceVisaChecklistStatus(message) {
@@ -5402,9 +8100,9 @@ function initVisaChecklistUI() {
   if (!tab) return;
 
   const cl = getChecklistState();
-  if (!currentVisaChecklistKey || !cl.items.find(item => item.key === currentVisaChecklistKey)) {
-    const firstPending = cl.items.find(item => item.status !== 'verified');
-    currentVisaChecklistKey = (firstPending || cl.items[0])?.key || null;
+  const validKeys = new Set(['eture-docs', ...cl.items.map((item) => item.key)]);
+  if (!currentVisaChecklistKey || !validKeys.has(currentVisaChecklistKey)) {
+    currentVisaChecklistKey = 'eture-docs';
   }
 
   renderVisaChecklistProgress(cl);
@@ -5419,8 +8117,25 @@ function initVisaChecklistUI() {
   if (visaChecklistEventsBound) return;
 
   tab.querySelector('#visa-checklist-list')?.addEventListener('click', handleVisaChecklistListClick);
+  const etureUploadBtn = document.getElementById('eture-doc-upload-btn');
+  if (etureUploadBtn && etureUploadBtn.dataset.bound !== '1') {
+    etureUploadBtn.dataset.bound = '1';
+    etureUploadBtn.addEventListener('click', handleEtureDocUpload);
+  }
+  const etureList = document.getElementById('eture-docs-list');
+  if (etureList && etureList.dataset.bound !== '1') {
+    etureList.dataset.bound = '1';
+    etureList.addEventListener('click', handleEtureDocListClick);
+  }
+  tab.querySelector('#visa-portfolio-download')?.addEventListener('click', handlePortfolioDownloadClick);
+  const eturePortfolioBtn = document.getElementById('eture-docs-download-portfolio');
+  if (eturePortfolioBtn && eturePortfolioBtn.dataset.bound !== '1') {
+    eturePortfolioBtn.dataset.bound = '1';
+    eturePortfolioBtn.addEventListener('click', handlePortfolioDownloadClick);
+  }
   tab.querySelector('#doc-file-input')?.addEventListener('change', handleVisaDocFileChange);
   tab.querySelector('#doc-view-btn')?.addEventListener('click', handleVisaDocViewClick);
+  tab.querySelector('#doc-instructions-more-btn')?.addEventListener('click', handleVisaDocInstructionsMoreClick);
   tab.querySelector('#doc-sample-btn')?.addEventListener('click', handleVisaDocSampleClick);
   tab.querySelector('#doc-notes')?.addEventListener('blur', handleVisaDocNotesChange);
   tab.querySelector('#doc-prev-btn')?.addEventListener('click', () => navigateChecklist(-1));
@@ -5469,9 +8184,9 @@ function initVisaChecklistUI() {
 }
 
 function handleVisaChecklistListClick(event) {
-  const button = event.target.closest('[data-doc-key]');
-  if (!button) return;
-  const key = normalizeChecklistKeyInput(button.getAttribute('data-doc-key'));
+  const trigger = event.target.closest('[data-doc-key]');
+  if (!trigger) return;
+  const key = normalizeChecklistKeyInput(trigger.getAttribute('data-doc-key'));
   if (!key || key === currentVisaChecklistKey) return;
 
   currentVisaChecklistKey = key;
@@ -5490,6 +8205,145 @@ function navigateChecklist(direction) {
   renderVisaChecklistList(getChecklistState());
   renderVisaChecklistDetail(currentVisaChecklistKey);
 }
+
+// --- Checklist help integration ---
+function getChecklistDomRefs() {
+  const pane = document.getElementById('visa-checklist');
+  if (!pane) return {};
+
+  let helpBox = pane.querySelector('#doc-instructions') || pane.querySelector('#visa-docs-help');
+  if (!helpBox) {
+    const wrapper = pane.querySelector('#doc-instructions-wrapper');
+    helpBox = document.createElement('div');
+    helpBox.id = 'visa-docs-help';
+    helpBox.className = 'small text-muted';
+    if (wrapper) {
+      wrapper.insertBefore(helpBox, wrapper.firstChild || null);
+    } else {
+      pane.appendChild(helpBox);
+    }
+  }
+
+  const btnMore = pane.querySelector('#doc-instructions-more-btn') || pane.querySelector('#visa-docs-viewmore');
+  const btnSample = pane.querySelector('#doc-sample-btn') || pane.querySelector('#visa-docs-sample');
+
+  return { pane, helpBox, btnMore, btnSample };
+}
+
+function extractChecklistItemTitle(node) {
+  if (!node) return '';
+  const attrTitle = node.getAttribute('data-doc-title') || node.getAttribute('data-title');
+  if (attrTitle) return attrTitle.trim();
+
+  const titleCandidate = node.querySelector('.flex-grow-1, h6, .title, .label');
+  if (titleCandidate) {
+    return (titleCandidate.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  const text = (node.textContent || '').replace(/\s+/g, ' ').trim();
+  return text;
+}
+
+function setChecklistHelpForTitle(rawTitle) {
+  const { helpBox, btnMore, btnSample } = getChecklistDomRefs();
+  if (!helpBox) return;
+
+  const key = resolveHelpKey(rawTitle || '');
+  const help = key ? HELP_MAP[key] : undefined;
+  const defaultHtml = `<div class="text-muted">Select a document on the left to view instructions.</div>`;
+
+  const contentHtml = help?.fullHtml || help?.html || '';
+
+  if (contentHtml) {
+    helpBox.classList.remove('text-muted');
+    const titleHtml = help.title ? `<h6 class="fw-semibold mb-2 mb-md-3">${help.title}</h6>` : '';
+    helpBox.innerHTML = `${titleHtml}${contentHtml}`;
+  } else {
+    helpBox.classList.add('text-muted');
+    helpBox.innerHTML = defaultHtml;
+  }
+
+  if (btnMore) {
+    const isAnchor = btnMore.tagName === 'A';
+    const moreUrl = help?.moreUrl || '';
+    const hasInlineHelp = Boolean(contentHtml);
+    const enableBtn = Boolean(moreUrl || hasInlineHelp);
+    if ('disabled' in btnMore) {
+      btnMore.disabled = !enableBtn;
+    }
+    btnMore.classList.toggle('disabled', !enableBtn);
+    if (moreUrl) {
+      btnMore.removeAttribute('aria-disabled');
+      if (isAnchor) {
+        btnMore.href = moreUrl;
+        btnMore.target = '_blank';
+        btnMore.rel = 'noopener';
+      } else {
+        btnMore.dataset.helpUrl = moreUrl;
+      }
+    } else {
+      if (enableBtn) {
+        btnMore.removeAttribute('aria-disabled');
+      } else {
+        btnMore.setAttribute('aria-disabled', 'true');
+      }
+      if (isAnchor) {
+        btnMore.removeAttribute('href');
+        btnMore.removeAttribute('target');
+        btnMore.removeAttribute('rel');
+      } else if (btnMore.dataset) {
+        delete btnMore.dataset.helpUrl;
+      }
+      btnMore.removeAttribute('data-help-url');
+    }
+  }
+
+  if (btnSample) {
+    const isAnchor = btnSample.tagName === 'A';
+    const sampleUrl = help?.sampleUrl || '';
+    if ('disabled' in btnSample) {
+      btnSample.disabled = !sampleUrl;
+    }
+    btnSample.classList.toggle('disabled', !sampleUrl);
+    if (sampleUrl) {
+      btnSample.removeAttribute('aria-disabled');
+      if (isAnchor) {
+        btnSample.href = sampleUrl;
+        btnSample.target = '_blank';
+        btnSample.rel = 'noopener';
+      } else {
+        btnSample.dataset.sampleUrl = sampleUrl;
+      }
+    } else {
+      btnSample.setAttribute('aria-disabled', 'true');
+      if (isAnchor) {
+        btnSample.removeAttribute('href');
+        btnSample.removeAttribute('target');
+        btnSample.removeAttribute('rel');
+      } else if (btnSample.dataset) {
+        delete btnSample.dataset.sampleUrl;
+      }
+      btnSample.removeAttribute('data-sample-url');
+    }
+  }
+}
+
+document.addEventListener('click', (event) => {
+  const item = event.target.closest('#visa-checklist-list [data-doc-title]');
+  if (!item) return;
+  const title = extractChecklistItemTitle(item);
+  setChecklistHelpForTitle(title);
+});
+
+window.addEventListener('app:state-updated', () => {
+  const current = document.querySelector('#visa-checklist-list [aria-current="true"], #visa-checklist-list .active');
+  const title = extractChecklistItemTitle(current);
+  setChecklistHelpForTitle(title);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  setChecklistHelpForTitle('');
+}, { once: true });
 
 async function handleVisaDocFileChange(event) {
   const input = event.target;
@@ -5682,12 +8536,44 @@ function handleVisaDocViewClick() {
   }
 }
 
+function handleVisaDocInstructionsMoreClick(event) {
+  const button = event.currentTarget;
+  if (button?.dataset?.helpUrl) {
+    event.preventDefault();
+    window.open(button.dataset.helpUrl, '_blank', 'noopener');
+    return;
+  }
+  const key = normalizeChecklistKeyInput(button?.dataset?.docKey || currentVisaChecklistKey);
+  if (!key) return;
+  openVisaDocInstructionsModal(key);
+}
+
 function handleVisaDocSampleClick(event) {
   const button = event.currentTarget;
   const url = button?.dataset?.sampleUrl;
   if (url) {
     window.open(url, '_blank', 'noopener');
   }
+}
+
+async function handleEtureDocListClick(event) {
+  const removeBtn = event.target.closest('.btn-eture-remove');
+  if (removeBtn) {
+    const removeId = removeBtn.getAttribute('data-id');
+    if (removeId) {
+      await handleEtureDocRemove(removeId);
+    }
+    return;
+  }
+
+  const downloadBtn = event.target.closest('.btn-eture-download');
+  if (!downloadBtn) return;
+  event.preventDefault();
+  const id = downloadBtn.getAttribute('data-id');
+  if (!id) return;
+  const doc = getEtureDocs().find((item) => item.id === id);
+  if (!doc) return;
+  downloadEtureDoc(doc);
 }
 
 async function handleVisaDocNotesChange(event) {
@@ -5759,15 +8645,18 @@ async function initApp(user) {
   // 1) PERFIL: crear si no existe y cargar datos reales
   try {
     // ensureProfile devuelve { id, ...datosPerfil }
-    const existing = await ensureProfile(user.uid, emptyProfileData);
-    const { id, ...profileData } = existing || {};
-    if (profileData && Object.keys(profileData).length) {
-      profileState.data = profileData;   // actualiza el estado global
-      userProfileData = profileState.data; // re-vincula la referencia local
-    }
+   const existing = await ensureProfile(user.uid, emptyProfileData);
+   const { id, ...profileData } = existing || {};
+   if (profileData && Object.keys(profileData).length) {
+     profileState.data = profileData;   // actualiza el estado global
+     userProfileData = profileState.data; // re-vincula la referencia local
+   }
   } catch (err) {
     console.error('Error cargando/creando perfil:', err);
   }
+
+  emitAppStateUpdated();
+  evaluateTripUnlockFromState();
 
   // 2) TAREAS: precargar la caché para que Inicio no muestre 0
   await preloadTasks(user.uid);
@@ -5785,6 +8674,10 @@ async function initApp(user) {
 
   // 3) Render inicial
   renderPage('inicio'); // puedes cambiarlo a 'perfil' si prefieres aterrizar ahí
+
+  if (typeof window !== 'undefined' && window.location.hash === '#my-program') {
+    handleHashNavigation();
+  }
 }
 
 
@@ -6190,5 +9083,45 @@ document.addEventListener('docs:changed', () => {
   }
 });
 
+// --- Overview anchors -> real tab switch (prefer click on the real tab) ---
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest('[data-visa-tab-target]');
+  if (!el) return;
+
+  const target = el.getAttribute('data-visa-tab-target');
+  if (!target) return;
+
+  ev.preventDefault();
+
+  try {
+    const id = target.replace(/^#/, '');
+
+    // 1) Busca el control de tab real (button/link) y haz click
+    const tabCtrl =
+      document.querySelector(`#${id}-tab`) ||
+      document.querySelector(`[data-bs-target="#${id}"]`) ||
+      document.querySelector(`[aria-controls="${id}"]`) ||
+      document.querySelector(`a[href="#${id}"][role="tab"]`);
+
+    if (tabCtrl && typeof tabCtrl.click === 'function') {
+      tabCtrl.click(); // esto ejecuta toda la lógica asociada a la pestaña
+      return;
+    }
+
+    // 2) Fallback: si no hay control, usa la función directa
+    if (typeof window.showTabPane === 'function') {
+      window.showTabPane(id);
+    } else if (typeof showTabPane === 'function') {
+      showTabPane(id);
+    }
+  } catch (_) { /* noop */ }
+});
+
+
 // app.js - NUEVA LÍNEA AL FINAL
+// Integration Notes:
+// - Tabs rely on ids tab-paperwork, tab-travel, tab-housing, tab-vinaros for CTA wiring.
+// - initMyProgramView is the extension point for Firestore/REST data once services are ready.
+// - handleHashNavigation exits early for unknown hashes so existing routes keep control.
+// - Bootstrap.Tab usage stays vanilla; no jQuery layer was introduced.
 handleAuthState(initApp);

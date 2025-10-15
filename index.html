@@ -15,6 +15,7 @@
   <link rel="preload" href="assets/fonts/poppins/Poppins-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/neue-power/NeuePower-Bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/brand/brand.css">
+  <link rel="stylesheet" href="./src/styles/visa.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Google Fonts -->
@@ -63,6 +64,13 @@
                 <span>My Visa</span>
               </a>
             </li>
+            <!-- Integration Notes:
+                 - Keep MyVisa immediately before My Program in the navigation list.
+                 - Hash routing for My Program remains controlled by app.js.
+            -->
+            <li class="nav-item">
+              <a href="#my-program" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#my-program-content">🎓<span class="ms-3">My Program</span></a>
+            </li>
             <li class="nav-item">
               <a href="#tareas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#tareas-content">
                 <i class="bi bi-check2-square me-3"></i>
@@ -106,7 +114,7 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-grow-1 p-4" style="overflow-y:auto; height:100vh;">
+      <main id="app-view" class="flex-grow-1 p-4" style="overflow-y:auto; height:100vh;">
         <!-- Barra superior con Cerrar sesión -->
         <div class="container my-2 d-flex justify-content-end">
           <button data-action="logout" type="button" class="btn btn-outline-danger btn-sm">
@@ -118,6 +126,7 @@
           <div class="tab-pane fade" id="perfil-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="proceso-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="visa-content" role="tabpanel"></div>
+          <div class="tab-pane fade" id="my-program-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="tareas-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="documentos-content" role="tabpanel"></div>
           <div class="tab-pane fade" id="finanzas-content" role="tabpanel"></div>

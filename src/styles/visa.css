@@ -1,0 +1,44 @@
+// File: src/styles/visa.css — Build: 2025-10-14T14:20Z
+
+/* Checklist compact progress — looks like a “battery” bar with % inside */
+#visa-checklist-progress-wrap {
+  max-width: 260px;        /* compact width */
+  margin-left: auto;       /* push to the right in the header row */
+}
+
+#visa-checklist-progress-wrap.progress {
+  height: 12px;            /* a bit thicker than default */
+  border-radius: 9999px;   /* pill style */
+  background-color: var(--bs-gray-200, #e9ecef);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Inner bar */
+#visa-checklist-progress-bar {
+  position: relative;
+  font-weight: 600;
+  line-height: 12px;       /* centers the % vertically */
+}
+
+/* % label inside the bar, taken from aria-valuenow (no JS changes needed) */
+#visa-checklist-progress-wrap::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: -6px;
+  width: 5px;
+  height: 8px;
+  background-color: var(--bs-gray-400, #adb5bd);
+  border-radius: 2px;
+}
+
+/* Optional: when very low %, keep label readable (fallback color) */
+#visa-checklist-progress-bar[aria-valuenow="0"]::after,
+#visa-checklist-progress-bar[aria-valuenow="1"]::after,
+#visa-checklist-progress-bar[aria-valuenow="2"]::after,
+#visa-checklist-progress-bar[aria-valuenow="3"]::after,
+#visa-checklist-progress-bar[aria-valuenow="4"]::after,
+#visa-checklist-progress-bar[aria-valuenow="5"]::after {
+  color: #212529;
+}
