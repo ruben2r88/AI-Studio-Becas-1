@@ -1,3 +1,4 @@
+// File: login.html — Build: 2025-11-05T16:45Z
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,49 +10,57 @@
     <link rel="preload" href="assets/fonts/poppins/Poppins-Regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="assets/fonts/neue-power/NeuePower-Bold.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="assets/brand/brand.css">
-
     <style>
         :root{
-        --bs-primary: #9C231F; /* rojo Eture */
-        --eture-red:  #9C231F; /* mantiene tu variable local */
+          --bs-primary:#9C231F; /* rojo Eture */
+          --eture-red:#9C231F;
         }
-        body { font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-        #auth-container .logo-container {
-        width: 80%;
-        max-width: 300px;
-        margin: 0 auto 1rem;
-        }
-        .btn-eture-red {
-        background-color: var(--eture-red);
-        border-color: var(--eture-red);
-        color: #fff;
-        }
-        .btn-eture-red:hover {
-        background-color: #7b1a17;  /* tono oscuro consistente con brand.css */
-        border-color: #7b1a17;
-        }
-        .text-eture-red { color: var(--eture-red) !important; }
-
-        /* Forzar tamaño logo en login */
-        .login-brand .brand-logo {
-        width: 160px;
-        height: auto;
-        }
-
-
+        body{ font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+        #auth-container .logo-container{ width:80%; max-width:300px; margin:0 auto 1rem; }
+        .btn-eture-red{ background-color:var(--eture-red); border-color:var(--eture-red); color:#fff; }
+        .btn-eture-red:hover{ background-color:#7b1a17; border-color:#7b1a17; }
+        .text-eture-red{ color:var(--eture-red)!important; }
+        .login-brand .brand-logo{ width:160px; height:auto; }
+        /* selector de rol */
+        .role-btn{ padding:12px 14px; border-radius:12px; }
+        .role-btn.active{ outline:3px solid var(--eture-red); }
+        .role-hint{ font-size:.9rem; }
     </style>
 </head>
 <body>
     <div id="auth-container">
-        <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background-image: url('https://images.unsplash.com/photo-1551958214-2d5b3943c7a4?q=80&w=2070&auto=format&fit=crop'); background-size: cover; background-position: center;">
-            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark" style="opacity: 0.6;"></div>
-            <div class="position-relative bg-white p-4 rounded-3 shadow-lg" style="width: 100%; max-width: 420px;">
+        <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background-image:url('https://images.unsplash.com/photo-1551958214-2d5b3943c7a4?q=80&w=2070&auto=format&fit=crop'); background-size:cover; background-position:center;">
+            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark" style="opacity:.6;"></div>
+            <div class="position-relative bg-white p-4 rounded-3 shadow-lg" style="width:100%; max-width:420px;">
+                <!-- Vista Login -->
                 <div id="login-view">
                     <div class="login-brand text-center my-3">
                         <img src="assets/brand/eture-logo-black.png" alt="eTure" class="brand-logo" width="160" height="auto" decoding="async">
                     </div>
+
+                    <!-- Nuevo: selector de área -->
+                    <div class="mb-3">
+                        <p class="mb-2 text-center role-hint">Choose your area</p>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-dark w-100 role-btn" data-area="US">🇺🇸 US Player</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-dark w-100 role-btn" data-area="ES">🇪🇸 ES Player</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-dark w-100 role-btn" data-area="COACHES">🏈 Coaches (US)</button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-outline-dark w-100 role-btn" data-area="STAFF">👥 Staff</button>
+                            </div>
+                        </div>
+                        <div class="form-text text-center mt-2">We’ll remember your choice on this device.</div>
+                    </div>
+
                     <h2 class="h4 fw-bold text-center mb-2">Welcome to Eture</h2>
-                    <p class="text-center text-muted mb-4">Log in to continue your American dream.</p>
+                    <p class="text-center text-muted mb-3">Log in to continue your American dream.</p>
+
                     <form id="login-form">
                         <div class="mb-3">
                             <label for="login-email" class="form-label">Email</label>
@@ -61,28 +70,46 @@
                             <label for="login-password" class="form-label">Password</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="login-password" required>
-                                <span class="input-group-text" id="toggle-password" style="cursor: pointer;">
+                                <span class="input-group-text" id="toggle-password" style="cursor:pointer;">
                                     <i class="bi bi-eye-slash"></i>
                                 </span>
                             </div>
                         </div>
                         <button type="submit" class="btn btn-eture-red w-100 fw-bold py-2">Log In</button>
                     </form>
-                    <p class="text-center small mt-4">Don't have an account? <a href="#" id="show-register" class="fw-bold text-eture-red text-decoration-none">Create one here</a></p>
+
+                    <p class="text-center small mt-4">Don't have an account?
+                        <a href="#" id="show-register" class="fw-bold text-eture-red text-decoration-none">Create one here</a>
+                    </p>
                 </div>
+
+                <!-- Vista Registro -->
                 <div id="register-view" class="d-none">
                     <div class="logo-container login-brand">
                         <img src="assets/brand/eture-logo-black.png" alt="eTure" class="brand-logo">
                     </div>
                     <h2 class="h4 fw-bold text-center mb-2">Create Your Account</h2>
                     <p class="text-center text-muted mb-4">Start your path toward a scholarship in the U.S.</p>
+
                     <form id="register-form">
-                        <div class="mb-3"><label for="register-name" class="form-label">Full Name</label><input type="text" class="form-control" id="register-name" required></div>
-                        <div class="mb-3"><label for="register-email" class="form-label">Email</label><input type="email" class="form-control" id="register-email" required></div>
-                        <div class="mb-4"><label for="register-password" class="form-label">Password</label><input type="password" class="form-control" id="register-password" required></div>
+                        <div class="mb-3">
+                            <label for="register-name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="register-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="register-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="register-email" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="register-password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="register-password" required>
+                        </div>
                         <button type="submit" class="btn btn-eture-red w-100 fw-bold py-2">Create Account</button>
                     </form>
-                    <p class="text-center small mt-4">Already have an account? <a href="#" id="show-login" class="fw-bold text-eture-red text-decoration-none">Log in</a></p>
+
+                    <p class="text-center small mt-4">Already have an account?
+                        <a href="#" id="show-login" class="fw-bold text-eture-red text-decoration-none">Log in</a>
+                    </p>
                 </div>
             </div>
         </div>

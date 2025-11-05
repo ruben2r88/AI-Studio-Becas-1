@@ -10,15 +10,15 @@ const templatePath = path.join(rootDir, 'templates', 'base-layout.html');
 const outputDir = path.join(rootDir, 'static');
 
 const pages = [
-  { id: 'inicio', label: 'Home', title: 'Eture | Home', partial: 'views/inicio.html', icon: 'bi-speedometer2' },
-  { id: 'perfil', label: 'My Profile', title: 'Eture | My Profile', partial: 'views/perfil.html', icon: 'bi-person-circle' },
-  { id: 'proceso', label: 'My Process', title: 'Eture | My Process', partial: 'views/proceso.html', icon: 'bi-diagram-3' },
-  { id: 'visa', label: 'My Visa', title: 'Eture | My Visa', partial: 'views/my-visa.html', icon: 'bi-passport' },
-  { id: 'tareas', label: 'Task List', title: 'Eture | Task List', partial: 'views/tareas.html', icon: 'bi-check2-square' },
-  { id: 'documentos', label: 'My Documents', title: 'Eture | My Documents', partial: 'views/documentos.html', icon: 'bi-folder2' },
+  { id: 'inicio', label: 'Home', title: 'Eture | Home', partial: 'views/us/inicio.html', icon: 'bi-speedometer2' },
+  { id: 'perfil', label: 'My Profile', title: 'Eture | My Profile', partial: 'views/us/perfil.html', icon: 'bi-person-circle' },
+  { id: 'proceso', label: 'My Process', title: 'Eture | My Process', partial: 'views/us/proceso.html', icon: 'bi-diagram-3' },
+  { id: 'visa', label: 'My Visa', title: 'Eture | My Visa', partial: 'views/us/my-visa.html', icon: 'bi-passport' },
+  { id: 'tareas', label: 'Task List', title: 'Eture | Task List', partial: 'views/us/tareas.html', icon: 'bi-check2-square' },
+  { id: 'documentos', label: 'My Documents', title: 'Eture | My Documents', partial: 'views/us/documentos.html', icon: 'bi-folder2' },
   { id: 'finanzas', label: 'My Financials', title: 'Eture | My Financials', partial: 'views/us/myfinancials.html', icon: 'bi-piggy-bank' },
-  { id: 'chat', label: 'Chat', title: 'Eture | Chat', partial: 'views/chat.html', icon: 'bi-chat-dots' },
-  { id: 'ayuda', label: 'Help', title: 'Eture | Help', partial: 'views/ayuda.html', icon: 'bi-life-preserver' }
+  { id: 'chat', label: 'Chat', title: 'Eture | Chat', partial: 'views/us/chat.html', icon: 'bi-chat-dots' },
+  { id: 'ayuda', label: 'Help', title: 'Eture | Help', partial: 'views/us/ayuda.html', icon: 'bi-life-preserver' }
 ];
 
 function buildNavItems(activeId) {

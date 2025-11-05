@@ -4150,16 +4150,16 @@ function toSpanishDate(dateString) { // YYYY-MM-DD -> DD/MM/YYYY
 let userProfileData = profileState.data;
 
 const pages = {
-  inicio: 'views/inicio.html',
-  perfil: 'views/perfil.html',
-  proceso: 'views/proceso.html',
-  tareas: 'views/tareas.html',
-  documentos: 'views/documentos.html',
+  inicio: 'views/us/inicio.html',
+  perfil: 'views/us/perfil.html',
+  proceso: 'views/us/proceso.html',
+  tareas: 'views/us/tareas.html',
+  documentos: 'views/us/documentos.html',
   finanzas: 'views/us/myfinancials.html',
-  chat: 'views/chat.html',
-  ayuda: 'views/ayuda.html',
-  'my-program': 'views/my-program.html', // My Program view lives under /views, not /src/views
-  visa: 'views/my-visa.html'    // ← ESTA LÍNEA con coma arriba
+  chat: 'views/us/chat.html',
+  ayuda: 'views/us/ayuda.html',
+  'my-program': 'views/us/my-program.html', // My Program view lives under /views, not /src/views
+  visa: 'views/us/my-visa.html'    // ← ESTA LÍNEA con coma arriba
 };
 const perfilSubPages = {
     personales: `
