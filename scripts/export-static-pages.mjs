@@ -16,7 +16,7 @@ const pages = [
   { id: 'visa', label: 'My Visa', title: 'Eture | My Visa', partial: 'views/my-visa.html', icon: 'bi-passport' },
   { id: 'tareas', label: 'Task List', title: 'Eture | Task List', partial: 'views/tareas.html', icon: 'bi-check2-square' },
   { id: 'documentos', label: 'My Documents', title: 'Eture | My Documents', partial: 'views/documentos.html', icon: 'bi-folder2' },
-  { id: 'finanzas', label: 'Financial Status', title: 'Eture | Financial Status', partial: 'views/finanzas.html', icon: 'bi-piggy-bank' },
+  { id: 'finanzas', label: 'My Financials', title: 'Eture | My Financials', partial: 'views/us/myfinancials.html', icon: 'bi-piggy-bank' },
   { id: 'chat', label: 'Chat', title: 'Eture | Chat', partial: 'views/chat.html', icon: 'bi-chat-dots' },
   { id: 'ayuda', label: 'Help', title: 'Eture | Help', partial: 'views/ayuda.html', icon: 'bi-life-preserver' }
 ];

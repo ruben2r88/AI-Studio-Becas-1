@@ -1,0 +1,1115 @@
+<section id="my-program" class="eture-section py-4">
+  <div class="container">
+    <header class="mb-4">
+      <h1 class="mb-1 eture-heading">My Program</h1>
+      <p class="mb-1 text-uppercase small fw-semibold text-muted">ETURE EXPERIENCE</p>
+      <p class="text-muted mb-0">Read-only guides plus a few simple actions to organize your stay.</p>
+    </header>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs flex-wrap" id="my-program-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-essentials" data-bs-toggle="tab" data-bs-target="#panel-essentials" type="button" role="tab" aria-controls="panel-essentials" aria-selected="true">
+          <i class="bi bi-file-earmark-text align-middle me-1"></i><span class="align-middle">Essentials</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-travel" data-bs-toggle="tab" data-bs-target="#panel-travel" type="button" role="tab" aria-controls="panel-travel" aria-selected="false">
+          <i class="bi bi-airplane align-middle me-1"></i><span class="align-middle">Travel</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-housing" data-bs-toggle="tab" data-bs-target="#panel-housing" type="button" role="tab" aria-controls="panel-housing" aria-selected="false">
+          <i class="bi bi-house-door align-middle me-1"></i><span class="align-middle">Housing</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-shipments" data-bs-toggle="tab" data-bs-target="#panel-shipments" type="button" role="tab" aria-controls="panel-shipments" aria-selected="false">
+          <i class="bi bi-box-seam align-middle me-1"></i><span class="align-middle">Shipments</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-guide" data-bs-toggle="tab" data-bs-target="#panel-guide" type="button" role="tab" aria-controls="panel-guide" aria-selected="false">
+          <i class="bi bi-geo-alt align-middle me-1"></i><span class="align-middle">City Guide</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-calendar" data-bs-toggle="tab" data-bs-target="#panel-calendar" type="button" role="tab" aria-controls="panel-calendar" aria-selected="false">
+          <i class="bi bi-calendar3 align-middle me-1"></i><span class="align-middle">Calendar</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-prepare-trip" data-bs-toggle="tab" data-bs-target="#panel-prepare-trip" type="button" role="tab" aria-controls="panel-prepare-trip" aria-selected="false" data-tab="prepare-trip">
+          <i class="bi bi-suitcase2 align-middle me-1"></i><span class="align-middle">Prepare Your Trip to Spain</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="my-program-content">
+
+      <!-- 1) ESSENTIALS -->
+      <div class="tab-pane fade show active" id="panel-essentials" role="tabpanel" aria-labelledby="tab-essentials">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+
+          <!-- Contracts -->
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" data-id="essentials-contracts">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-file-text align-middle"></i><span>Program Contracts</span>
+                </h5>
+                <p class="text-muted small">Read the official contract. Download the PDF.</p>
+                <div class="mt-auto d-grid gap-2 pt-2">
+                  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modal-contracts">Open</button>
+                </div>
+                <small class="text-muted d-block mt-3">ID: essentials-contracts</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Insurance -->
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" data-id="essentials-insurance">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-shield-plus align-middle"></i><span>Insurance Card</span>
+                </h5>
+                <p class="text-muted small">Emergency numbers, coverage and claims.</p>
+                <div class="mt-auto d-grid gap-2 pt-2">
+                  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modal-insurance">Open</button>
+                </div>
+                <small class="text-muted d-block mt-3">ID: essentials-insurance</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Safety -->
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" data-id="essentials-safety">
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between">
+                  <h5 class="card-title mb-0 d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-life-preserver align-middle"></i><span>Safety Protocol</span>
+                  </h5>
+                  <span class="badge d-none" data-badge="ack-safety">Acknowledged</span>
+                </div>
+                <p class="text-muted small mt-2">Emergency steps, local numbers, evacuation.</p>
+                <div class="mt-auto d-grid gap-2 pt-2">
+                  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modal-safety">Open</button>
+                </div>
+                <small class="text-muted d-block mt-3">ID: essentials-safety</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conduct -->
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" data-id="essentials-conduct">
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between">
+                  <h5 class="card-title mb-0 d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-people align-middle"></i><span>Code of Conduct</span>
+                  </h5>
+                  <span class="badge d-none" data-badge="ack-conduct">Acknowledged</span>
+                </div>
+                <p class="text-muted small mt-2">Behavior, etiquette, disciplinary process.</p>
+                <div class="mt-auto d-grid gap-2 pt-2">
+                  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modal-conduct">Open</button>
+                </div>
+                <small class="text-muted d-block mt-3">ID: essentials-conduct</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rules -->
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" data-id="essentials-rules">
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between">
+                  <h5 class="card-title mb-0 d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-journal-check align-middle"></i><span>Program Rules</span>
+                  </h5>
+                  <span class="badge d-none" data-badge="ack-rules">Acknowledged</span>
+                </div>
+                <p class="text-muted small mt-2">Attendance, curfew, guests, facilities.</p>
+                <div class="mt-auto d-grid gap-2 pt-2">
+                  <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#modal-rules">Open</button>
+                </div>
+                <small class="text-muted d-block mt-3">ID: essentials-rules</small>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 2) TRAVEL -->
+      <div class="tab-pane fade" id="panel-travel" role="tabpanel" aria-labelledby="tab-travel">
+        <div id="travel-initial-banner" class="alert alert-info d-flex align-items-center justify-content-between small" role="alert">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-airplane-arrival"></i>
+            <span><strong>Initial arrival:</strong> Set your first trip in <em>My Visa</em> (no duplication here).</span>
+          </div>
+          <a href="#my-visa-trip" class="btn btn-outline-primary btn-sm" data-deeplink="true">Edit in My Visa</a>
+        </div>
+
+        <div class="row g-4 mt-3">
+          <!-- Future Trips -->
+          <div class="col-12 col-lg-8 mb-4 mb-lg-0">
+            <div class="card eture-card h-100 eture-hover">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-airplane-engines align-middle"></i><span>Future Trips</span>
+                </h5>
+                <p class="text-muted small">Add any future arrivals or departures.</p>
+
+                <form class="small border rounded p-3 bg-light" id="future-trip-form">
+                  <div class="mb-2">
+                    <label class="form-label">Trip type</label>
+                    <select class="form-select" id="trip-type">
+                      <option value="arrival">Arrival</option>
+                      <option value="departure">Departure</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-2">
+                    <label class="form-label">Location in Spain (airport/station)</label>
+                    <select class="form-select" id="trip-location">
+                      <option value="cdt">Castellón Airport (CDT)</option>
+                      <option value="vlc">Valencia Airport (VLC)</option>
+                      <option value="bcn-t1">Barcelona Airport (BCN) — Terminal 1</option>
+                      <option value="bcn-t2">Barcelona Airport (BCN) — Terminal 2</option>
+                      <option value="vln-train">Valencia Train (Joaquín Sorolla)</option>
+                      <option value="other">Other…</option>
+                    </select>
+                    <div id="trip-location-hint" class="form-text">
+                      Prefer <strong>Castellón (CDT)</strong> when possible — it’s our recommended airport for the Vinaròs program.
+                    </div>
+                  </div>
+
+                  <div class="mb-2 d-none" id="trip-location-other-wrap">
+                    <label class="form-label">Other location (airport/station)</label>
+                    <input class="form-control" id="trip-location-other" placeholder="Type the location name">
+                  </div>
+
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label">Date</label>
+                      <input type="date" class="form-control" id="trip-date">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label">Time</label>
+                      <input type="time" class="form-control" id="trip-time">
+                    </div>
+                  </div>
+
+                  <div class="mb-2 mt-2">
+                    <label class="form-label">Flight / Train no.</label>
+                    <input type="text" class="form-control" id="trip-number" placeholder="E.g., VY1234">
+                  </div>
+
+                  <div class="d-grid gap-2 mt-3">
+                    <button class="btn btn-primary fw-semibold w-100" type="button" id="btn-save-trip">Save Trip</button>
+                    <button class="btn btn-outline-primary fw-semibold" type="button">Request Ride</button>
+                    <button class="btn btn-outline-secondary fw-semibold" type="button" disabled title="Driver not assigned yet">Message Driver</button>
+                  </div>
+                </form>
+
+                <small class="text-muted d-block mt-3">ID: travel-future-trips</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-4">
+            <div class="card eture-card h-100 eture-hover">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-list-check align-middle"></i><span>My Trips</span>
+                </h5>
+
+                <div class="mt-2">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#trips-upcoming-wrap" aria-expanded="true">Upcoming</button>
+                  <div id="trips-upcoming-wrap" class="collapse show">
+                    <ul id="trips-upcoming-list" class="list-group list-group-flush small mt-2 gy-2"></ul>
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#trips-past-wrap" aria-expanded="false">Past</button>
+                  <div id="trips-past-wrap" class="collapse">
+                    <ul id="trips-past-list" class="list-group list-group-flush small mt-2 gy-2"></ul>
+                  </div>
+                </div>
+
+                <div class="text-muted small mt-3">ID: travel-my-trips</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) HOUSING (igual que antes) -->
+      <div class="tab-pane fade" id="panel-housing" role="tabpanel" aria-labelledby="tab-housing">
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-building align-middle"></i><span>Residence Information</span>
+                </h5>
+                <p class="text-muted small">Rules, roommates, cleaning schedule.</p>
+                <div class="d-flex justify-content-end">
+                  <a href="#" id="link-copy-roominfo" class="small text-decoration-none">Copy room info</a>
+                  <span class="mx-2 text-muted">·</span>
+                  <a href="#" id="link-view-address" class="small text-decoration-none" data-bs-toggle="modal" data-bs-target="#modal-full-address">View full address</a>
+                  <span id="copy-roominfo-msg" class="ms-2 small text-success d-none">Copied!</span>
+                </div>
+                <!-- Residence Info (inline demo) -->
+                <dl class="row mb-2">
+                  <dt class="col-5">Building / Residence</dt><dd class="col-7" id="res-building">Residence Vinaròs — North Building</dd>
+                  <dt class="col-5">Floor</dt><dd class="col-7" id="res-floor">3</dd>
+                  <dt class="col-5">Room</dt><dd class="col-7" id="res-room">305B</dd>
+                </dl>
+                <h6 class="mt-3 mb-1">Roommates</h6>
+                <ul id="res-roommates" class="list-group list-group-flush small mb-3">
+                  <li class="list-group-item d-flex align-items-center justify-content-between">
+                    <span>🇺🇸&thinsp;John Miller</span>
+                    <a class="small text-decoration-none" href="#" title="PENDING">Contact</a>
+                  </li>
+                  <li class="list-group-item d-flex align-items-center justify-content-between">
+                    <span>🇲🇽&thinsp;Diego Pérez</span>
+                    <a class="small text-decoration-none" href="#" title="PENDING">Contact</a>
+                  </li>
+                </ul>
+
+                <h6 class="mt-3 mb-1">Documents</h6>
+                <table class="table table-sm align-middle w-auto" id="docs-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Document</th>
+                      <th scope="col" class="text-end">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <a href="#" id="link-housing-rules" data-bs-toggle="modal" data-bs-target="#modal-housing-rules" class="text-decoration-none fw-semibold">
+                          Open Housing Rules
+                        </a>
+                      </td>
+                      <td class="text-end">
+                        <span id="badge-ack-rules" class="badge bg-success">Acknowledged</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <a href="#" id="link-cleaning-code" data-bs-toggle="modal" data-bs-target="#modal-cleaning-code" class="text-decoration-none fw-semibold">
+                          Open Cleaning Code
+                        </a>
+                      </td>
+                      <td class="text-end">
+                        <span id="badge-ack-cleaning" class="badge bg-success">Acknowledged</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#modal-conduct" class="text-decoration-none fw-semibold">
+                          Open Code of Conduct
+                        </a>
+                      </td>
+                      <td class="text-end">—</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <!-- Bottom line (keep) -->
+                <div class="mt-2 small">
+                  <span class="text-muted">ID: housing-residence</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-egg-fried align-middle"></i><span>Dining Hall</span>
+                </h5>
+                <p class="text-muted small">Opening hours and today’s menu.</p>
+                <table class="table table-sm mb-3" id="dining-hours-menu">
+                  <thead>
+                    <tr>
+                      <th scope="col">Open Hours</th>
+                      <th scope="col" class="border-start ps-3">Today’s Menu</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Breakfast</strong> — 7:00 a.m. – 9:00 a.m.</td>
+                      <td class="border-start ps-3"><strong>Breakfast:</strong> Eggs, toast, fruit</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Lunch</strong> — 12:00 p.m. – 2:00 p.m.</td>
+                      <td class="border-start ps-3"><strong>Lunch:</strong> Chicken with rice</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Dinner</strong> — 7:00 p.m. – 9:00 p.m.</td>
+                      <td class="border-start ps-3"><strong>Dinner:</strong> Pork with potatoes</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="mt-2">
+                  <label class="form-label small">Allergies / Dietary notes</label>
+                  <div class="input-group mb-2">
+                    <input id="dining-note-input" type="text" class="form-control" placeholder="E.g., Gluten-free, No pork" aria-label="Add allergy or dietary note">
+                    <button id="btn-add-note" class="btn btn-primary fw-semibold" type="button">Add note</button>
+                  </div>
+                  <div id="dining-input-hint" class="form-text"></div>
+                  <ul id="dining-notes-list" class="list-group list-group-flush mb-2"></ul>
+                  <div id="dining-saved-msg" class="form-text" aria-live="polite"></div>
+                </div>
+                <div id="dining-shared" class="small text-muted mt-1"></div>
+                <small class="text-muted d-block mt-3">ID: housing-dining</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Full Address (DEMO) -->
+      <div class="modal fade" id="modal-full-address" tabindex="-1" aria-labelledby="modalFullAddressLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title d-inline-flex align-items-center gap-2" id="modalFullAddressLabel">
+                <i class="bi bi-geo-alt"></i><span>Residence Address</span>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p id="full-address-text" class="mb-0">
+                1234 North Campus Rd<br>
+                Vinaròs, CA 90000<br>
+                United States
+              </p>
+            </div>
+            <div class="modal-footer">
+              <button id="btn-copy-address" type="button" class="btn btn-outline-secondary">Copy address</button>
+              <a id="link-open-maps" class="btn btn-primary" href="#" target="_blank" rel="noopener">Open in Google Maps</a>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Housing Rules -->
+      <div class="modal fade" id="modal-housing-rules" tabindex="-1" aria-labelledby="modalHousingRulesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title d-inline-flex align-items-center gap-2" id="modalHousingRulesLabel">
+                <i class="bi bi-journal-check"></i><span>Housing Rules</span>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body small">
+              <p class="mb-2">Please read and follow these rules during your stay:</p>
+              <ul>
+                <li>Quiet hours from 22:00 to 08:00.</li>
+                <li>No guests after 21:00 without prior permission.</li>
+                <li>Keep common areas clean and tidy.</li>
+                <li>Report damages immediately to staff.</li>
+              </ul>
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="ack-housing-rules">
+                <label class="form-check-label fw-semibold" for="ack-housing-rules">I have read and agree with the Housing Rules</label>
+              </div>
+              <div id="ack-housing-rules-inline" class="small text-success mt-2"></div>
+            </div>
+            <div class="modal-footer">
+              <span id="ack-housing-rules-msg" class="me-auto small text-muted"></span>
+              <button id="btn-download-housing-rules" type="button" class="btn btn-outline-secondary" disabled>Download a copy</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Cleaning Code -->
+      <div class="modal fade" id="modal-cleaning-code" tabindex="-1" aria-labelledby="modalCleaningCodeLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title d-inline-flex align-items-center gap-2" id="modalCleaningCodeLabel">
+                <i class="bi bi-broom"></i><span>Cleaning Code</span>
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body small">
+              <p class="mb-2">Basic cleaning responsibilities:</p>
+              <ul>
+                <li>Daily: make your bed and keep your room organized.</li>
+                <li>Weekly: take out trash and clean surfaces.</li>
+                <li>Bathroom: leave it clean after every use.</li>
+                <li>Kitchen: wash dishes and wipe counters after cooking.</li>
+              </ul>
+              <div class="form-check mt-3">
+                <input class="form-check-input" type="checkbox" id="ack-cleaning-code">
+                <label class="form-check-label fw-semibold" for="ack-cleaning-code">I have read and agree with the Cleaning Code</label>
+              </div>
+              <div id="ack-cleaning-code-inline" class="small text-success mt-2"></div>
+            </div>
+            <div class="modal-footer">
+              <span id="ack-cleaning-code-msg" class="me-auto small text-muted"></span>
+              <button id="btn-download-cleaning-code" type="button" class="btn btn-outline-secondary" disabled>Download a copy</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4) SHIPMENTS (igual; botón “Download” ya uniforme arriba) -->
+      <div class="tab-pane fade" id="panel-shipments" role="tabpanel" aria-labelledby="tab-shipments">
+        <div class="row g-4">
+          <div class="col-12">
+            <div class="card eture-card eture-hover">
+              <div class="card-body">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-geo-alt align-middle"></i><span>Shipping Address</span>
+                </h5>
+                <p class="text-muted small mb-2">Your program city determines the delivery address.</p>
+                <div class="row g-3 small">
+                  <div class="col-md-4">
+                    <label class="form-label">Program city</label>
+                    <select class="form-select" id="ship-city">
+                      <option>Vinaròs</option>
+                      <option>Valencia</option>
+                    </select>
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label">Address (placeholder)</label>
+                    <input class="form-control" id="ship-address" type="text" placeholder="Will be provided by staff later" disabled>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card eture-card eture-hover">
+              <div class="card-body">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-box-seam align-middle"></i><span>My Trackings</span>
+                </h5>
+                <div class="row g-2 align-items-end small mb-2">
+                  <div class="col-md-4">
+                    <label class="form-label">Carrier</label>
+                    <input class="form-control" id="trk-carrier" placeholder="DHL, UPS, Correos…">
+                  </div>
+                  <div class="col-md-5">
+                    <label class="form-label">Tracking number / URL</label>
+                    <input class="form-control" id="trk-number" placeholder="e.g., 1Z999... or https://...">
+                  </div>
+                  <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary fw-semibold" type="button" id="btn-add-tracking">Add Tracking</button>
+                  </div>
+                </div>
+                <ul class="list-group small" id="trk-list">
+                  <li class="list-group-item d-flex justify-content-between text-muted" data-empty="true">
+                    <span>No trackings yet.</span><span>—</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5) GUIDE (igual) -->
+      <div class="tab-pane fade" id="panel-guide" role="tabpanel" aria-labelledby="tab-guide">
+        <!-- City Guide — Filters -->
+        <div id="cg-filters" class="mb-3">
+          <!-- Row 1: City pills -->
+          <ul id="cg-city-pills" class="nav nav-pills gap-2 mb-2">
+            <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-city="Vinaròs">Vinaròs</a></li>
+            <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-city="Valencia">Valencia</a></li>
+            <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-city="Madrid">Madrid</a></li>
+            <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-city="Barcelona">Barcelona</a></li>
+          </ul>
+          <!-- Row 2: Section pills + actions -->
+          <div class="d-flex align-items-center justify-content-between">
+            <ul id="cg-section-pills" class="nav nav-pills gap-2">
+              <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-section="accommodation">Accommodation</a></li>
+              <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-section="restaurants">Restaurants</a></li>
+              <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-section="cultural">Cultural Activities</a></li>
+              <li class="nav-item"><a class="nav-link py-1 px-2" href="#" data-section="airports">Recommended Airport</a></li>
+            </ul>
+            <div class="d-flex gap-2">
+              <button id="cg-btn-add" class="btn btn-primary btn-sm fw-semibold">Add place</button>
+              <button id="cg-btn-import" class="btn btn-outline-secondary btn-sm">Import sample</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- City Guide — Section content -->
+        <div id="cg-content">
+          <!-- Accommodation -->
+          <div id="cg-section-accommodation" class="d-none">
+            <table class="table table-sm align-middle">
+              <thead><tr>
+                <th>Name</th><th>Type</th><th>Actions</th><th>Notes</th>
+              </tr></thead>
+              <tbody id="cg-acc-tbody"></tbody>
+            </table>
+          </div>
+          <!-- Restaurants -->
+          <div id="cg-section-restaurants" class="d-none">
+            <table class="table table-sm align-middle">
+              <thead><tr>
+                <th>Name</th><th>Area</th><th>Actions</th><th>Notes</th>
+              </tr></thead>
+              <tbody id="cg-rest-tbody"></tbody>
+            </table>
+          </div>
+          <!-- Cultural Activities -->
+          <div id="cg-section-cultural" class="d-none">
+            <table class="table table-sm align-middle">
+              <thead><tr>
+                <th>Section</th><th>Name</th><th>Area</th><th>Actions</th><th>Notes / Hours</th>
+              </tr></thead>
+              <tbody id="cg-cul-tbody"></tbody>
+            </table>
+          </div>
+          <!-- Recommended Airport -->
+          <div id="cg-section-airports" class="d-none">
+            <table class="table table-sm align-middle w-auto">
+              <thead><tr>
+                <th>IATA</th><th>Airport</th><th>Recommendation</th><th>Distance/Time</th><th>Actions</th><th>Notes</th>
+              </tr></thead>
+              <tbody id="cg-air-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- City Guide — Add/Edit Modal -->
+        <div class="modal fade" id="cg-modal" tabindex="-1" aria-labelledby="cgModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg"><div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="cgModalLabel">Add place</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form id="cg-form" class="row g-3">
+                <!-- Shared -->
+                <div class="col-md-6">
+                  <label class="form-label">Name*</label>
+                  <input type="text" class="form-control" id="cg-f-name" required>
+                </div>
+                <div class="col-md-6 cg-f-only-acc">
+                  <label class="form-label">Type*</label>
+                  <select id="cg-f-type" class="form-select">
+                    <option>Hotel</option><option>Hostel</option><option>Airbnb</option><option>Residence</option>
+                  </select>
+                </div>
+                <div class="col-md-6 cg-f-only-rest">
+                  <label class="form-label">Area</label>
+                  <input type="text" class="form-control" id="cg-f-area" placeholder="Vinaròs, Peñíscola, Morella…">
+                </div>
+                <div class="col-md-4 cg-f-only-cul">
+                  <label class="form-label">Section*</label>
+                  <select id="cg-f-section" class="form-select">
+                    <option>Museum</option><option>Monument</option><option>Theatre</option><option>Park</option><option>Trip</option>
+                  </select>
+                </div>
+                <div class="col-md-4 cg-f-only-air">
+                  <label class="form-label">IATA*</label>
+                  <input type="text" class="form-control" id="cg-f-iata" placeholder="VLC, CDG…">
+                </div>
+                <div class="col-md-8 cg-f-only-air">
+                  <label class="form-label">Airport*</label>
+                  <input type="text" class="form-control" id="cg-f-airport">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Link*</label>
+                  <input type="url" class="form-control" id="cg-f-link" placeholder="Booking/Website/Google Maps URL">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Address</label>
+                  <input type="text" class="form-control" id="cg-f-address" placeholder="Optional street address">
+                </div>
+                <div class="col-md-6 cg-f-only-air">
+                  <label class="form-label">Recommendation*</label>
+                  <select id="cg-f-reco" class="form-select">
+                    <option>Recommended</option><option>Alternative</option>
+                  </select>
+                </div>
+                <div class="col-md-6 cg-f-only-air">
+                  <label class="form-label">Distance/Time</label>
+                  <input type="text" class="form-control" id="cg-f-dist" placeholder="e.g., 60 km / 45 min">
+                </div>
+                <div class="col-12 cg-f-only-cul">
+                  <label class="form-label">Hours</label>
+                  <input type="text" class="form-control" id="cg-f-hours" placeholder="e.g., Tue–Sun 10:00–18:00">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Notes</label>
+                  <textarea class="form-control" id="cg-f-notes" rows="2"></textarea>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button id="cg-f-copyaddr" type="button" class="btn btn-outline-secondary">Copy address</button>
+              <a id="cg-f-openmaps" class="btn btn-outline-secondary" target="_blank" rel="noopener">Open in Maps</a>
+              <button id="cg-f-save" type="button" class="btn btn-primary">Save</button>
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- 6) CALENDAR (igual) -->
+      <div class="tab-pane fade" id="panel-calendar" role="tabpanel" aria-labelledby="tab-calendar">
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" id="cal-gameweeks">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-collection align-middle"></i><span>Game Weeks</span>
+                </h5>
+                <ul class="list-unstyled mb-2 flex-grow-1" id="cal-gw-list"></ul>
+              </div>
+              <div class="card-footer d-flex justify-content-end">
+                <button id="ffcv-open" type="button" class="btn btn-outline-primary btn-sm" data-action="import-ffcv">Import from FFCV</button>
+                <button id="btn-gw-import" class="btn btn-sm btn-outline-primary">Import sample</button>
+                <button id="btn-gw-clear" class="btn btn-sm btn-outline-secondary ms-2">Clear</button>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" id="cal-breaks">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-suitcase2 align-middle"></i><span>Breaks & Holidays</span>
+                </h5>
+                <ul class="list-unstyled mb-2 flex-grow-1" id="cal-breaks-list"></ul>
+              </div>
+              <div class="card-footer d-flex justify-content-end">
+                <button id="btn-breaks-import" class="btn btn-sm btn-outline-primary">Import sample</button>
+                <button id="btn-breaks-clear" class="btn btn-sm btn-outline-secondary ms-2">Clear</button>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" id="cal-classes">
+              <div class="card-body d-flex flex-column">
+                <h5 class="card-title d-inline-flex align-items-center gap-2">
+                  <i class="bi bi-book align-middle"></i><span>Class Hours</span>
+                </h5>
+                <div class="d-flex gap-2 mb-2">
+                  <input id="cls-text" class="form-control" placeholder="E.g., Spanish class every day 2–3 p.m. at Resi 2">
+                  <button id="btn-cls-add" class="btn btn-primary">Add</button>
+                </div>
+                <ul class="list-unstyled mb-0 flex-grow-1" id="cal-classes-list"></ul>
+              </div>
+              <div class="card-footer d-flex align-items-center justify-content-between">
+                <small class="text-muted">Tip: add multiple lines; they persist.</small>
+                <button id="btn-cls-clear" class="btn btn-sm btn-outline-secondary">Clear</button>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card eture-card h-100 eture-hover" id="cal-showcase">
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-start justify-content-between gap-2">
+                  <h5 class="card-title d-inline-flex align-items-center gap-2 mb-0">
+                    <i class="bi bi-stars align-middle"></i><span>Showcase Dates</span>
+                  </h5>
+                  <button id="btn-sc-edit" class="btn btn-sm btn-outline-secondary">Edit</button>
+                </div>
+                <div id="sc-when-where" class="mb-2"></div>
+                <ul id="sc-agenda-list" class="small mb-0 flex-grow-1"></ul>
+              </div>
+              <div class="card-footer d-flex justify-content-end">
+                <a id="sc-maps-link" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">Open in Google Maps</a>
+                <button id="btn-sc-ics" class="btn btn-sm btn-outline-primary ms-2">Export .ics</button>
+                <button id="btn-sc-import" class="btn btn-sm btn-outline-primary ms-2">Import sample</button>
+                <button id="btn-sc-clear" class="btn btn-sm btn-outline-secondary ms-2">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase Edit Modal -->
+        <div class="modal fade" id="scEditModal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Showcase</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Start (YYYY-MM-DD)</label>
+                    <input id="sc-start" class="form-control" placeholder="2026-02-09">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">End (YYYY-MM-DD)</label>
+                    <input id="sc-end" class="form-control" placeholder="2026-02-11">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Maps URL</label>
+                    <input id="sc-maps" class="form-control" placeholder="https://maps.google.com/?q=...">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Where</label>
+                    <input id="sc-where" class="form-control" placeholder="Venue, City, Country">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Agenda (one line per bullet)</label>
+                    <textarea id="sc-agenda" class="form-control" rows="6" placeholder="Mon: ...&#10;Tue: ..."></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <span class="me-auto small text-muted" id="sc-msg"></span>
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button id="sc-save" class="btn btn-primary">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="panel-prepare-trip" role="tabpanel" aria-labelledby="tab-prepare-trip" data-section="prepare-trip">
+        <div class="card mb-3" id="prep-sizes-card">
+          <div class="card-header">Sizes for Training Kit</div>
+          <div class="card-body">
+            <form id="prep-sizes-form" class="row g-3">
+              <div class="col-6">
+                <label class="form-label">Training T-shirt size</label>
+                <select id="sz-shirt" class="form-select form-select-sm">
+                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+                </select>
+
+                <label class="form-label mt-3">Training Shorts size</label>
+                <select id="sz-shorts" class="form-select form-select-sm">
+                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+                </select>
+
+                <label class="form-label mt-3">Sweatpants size</label>
+                <select id="sz-pants" class="form-select form-select-sm">
+                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+                </select>
+
+                <label class="form-label mt-3">Socks size</label>
+                <select id="sz-socks" class="form-select form-select-sm">
+                  <option>S</option><option>M</option><option>L</option>
+                </select>
+              </div>
+
+              <div class="col-6">
+                <label class="form-label">Hoodie size</label>
+                <select id="sz-hoodie" class="form-select form-select-sm">
+                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+                </select>
+
+                <label class="form-label mt-3">Jacket size</label>
+                <select id="sz-jacket" class="form-select form-select-sm">
+                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+                </select>
+
+                <label class="form-label mt-3">Shoe size (US/EU)</label>
+                <input id="sz-shoes" class="form-control form-control-sm" placeholder="e.g., US 9 / EU 42"/>
+
+                <div class="form-check mt-3">
+                  <input id="is-gk" class="form-check-input" type="checkbox">
+                  <label class="form-check-label" for="is-gk">I am a goalkeeper</label>
+                </div>
+                <div id="gk-sizes" class="mt-2 d-none">
+                  <label class="form-label">Gloves size</label>
+                  <input id="sz-gloves" class="form-control form-control-sm" placeholder="e.g., 8, 9, 10"/>
+                </div>
+              </div>
+
+              <div class="col-12">
+                <div class="small text-muted mt-1">
+                  Tip: US sizes often feel larger than EU sizes. If you’re between sizes, consider going one size up.
+                </div>
+              </div>
+
+              <div class="col-12 d-flex gap-2 mt-2">
+                <div class="form-check">
+                  <input id="sizes-confirm" class="form-check-input" type="checkbox">
+                  <label class="form-check-label" for="sizes-confirm">My sizes are correct</label>
+                </div>
+                <button type="button" id="btn-save-sizes" class="btn btn-primary btn-sm ms-auto">Save</button>
+                <button type="button" id="btn-sizes-summary" class="btn btn-light btn-sm">Show summary</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card mb-3" id="prep-provided-card">
+          <div class="card-header">Provided by Eture</div>
+          <div class="card-body">
+            <ul class="mb-0">
+              <li>Training kit: T-shirt, shorts, socks</li>
+              <li>Cap, board shorts, polo, bag (one size)</li>
+              <li>Team hoodie and jacket (by size)</li>
+              <li class="text-danger">Bring your own personal towel (VERY IMPORTANT)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card mb-3" id="prep-packing-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Packing List</span>
+            <span class="small text-muted" id="pack-counter">Progress: 0 / 0 items packed</span>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-6">
+                <div class="fw-semibold bg-light border-top py-1 px-2 mb-2">Clothing</div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="underwear" type="checkbox" id="pack-underwear"><label class="form-check-label" for="pack-underwear">Underwear</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="pajamas" type="checkbox" id="pack-pajamas"><label class="form-check-label" for="pack-pajamas">Pajamas</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="slippers" type="checkbox" id="pack-slippers"><label class="form-check-label" for="pack-slippers">Slippers</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="casual" type="checkbox" id="pack-casual"><label class="form-check-label" for="pack-casual">Casual/formal clothing</label></div>
+
+                <div class="fw-semibold bg-light border-top py-1 px-2 mt-3 mb-2">Toiletries &amp; Sun</div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="personal-towel" type="checkbox" id="pack-personal-towel"><label class="form-check-label" for="pack-personal-towel">Personal towel – VERY IMPORTANT</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="hygiene" type="checkbox" id="pack-hygiene"><label class="form-check-label" for="pack-hygiene">Personal hygiene</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="swimsuit" type="checkbox" id="pack-swimsuit"><label class="form-check-label" for="pack-swimsuit">Swimsuit</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="beach-towel" type="checkbox" id="pack-beach-towel"><label class="form-check-label" for="pack-beach-towel">Beach towel</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="sun-cream" type="checkbox" id="pack-sun-cream"><label class="form-check-label" for="pack-sun-cream">Sun cream</label></div>
+              </div>
+              <div class="col-6">
+                <div class="fw-semibold bg-light border-top py-1 px-2 mb-2">Footwear</div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="cleats-grass" type="checkbox" id="pack-cleats-grass"><label class="form-check-label" for="pack-cleats-grass">Natural grass field cleats</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="cleats-turf" type="checkbox" id="pack-cleats-turf"><label class="form-check-label" for="pack-cleats-turf">Turf field cleats (AG)</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="runners" type="checkbox" id="pack-runners"><label class="form-check-label" for="pack-runners">Runners</label></div>
+
+                <div class="fw-semibold bg-light border-top py-1 px-2 mt-3 mb-2">Football gear</div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="shinguards" type="checkbox" id="pack-shinguards"><label class="form-check-label" for="pack-shinguards">Shin guards</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="socks-extra" type="checkbox" id="pack-socks-extra"><label class="form-check-label" for="pack-socks-extra">Extra training socks</label></div>
+                <div class="form-check"><input class="form-check-input pack-item" data-id="outdoor" type="checkbox" id="pack-outdoor"><label class="form-check-label" for="pack-outdoor">Outdoor sports clothing</label></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal fade" id="prep-summary-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Trip Preparation Summary</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <section class="mb-4">
+                  <h6 class="text-uppercase small text-muted mb-2">Training Kit Sizes</h6>
+                  <ul class="list-unstyled mb-0" id="prep-summary-sizes"></ul>
+                </section>
+                <section>
+                  <h6 class="text-uppercase small text-muted mb-2">Packing Progress</h6>
+                  <p class="mb-2" id="prep-summary-progress"></p>
+                  <ul class="list-unstyled mb-0" id="prep-summary-packed"></ul>
+                </section>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="prep-summary-print">Print</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Modals ===== -->
+<div class="modal fade" id="modal-contracts" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Program Contracts (demo)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">This is a demo viewer. In production, a PDF will be shown here.</p>
+        <div class="border rounded p-3 bg-light">[PDF preview placeholder]</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary fw-semibold">Download</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-insurance" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Insurance Card (demo)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">This is a demo viewer. In production, a PDF will be shown here.</p>
+        <div class="border rounded p-3 bg-light">[PDF preview placeholder]</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary fw-semibold">Download</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Acknowledge modals -->
+<div class="modal fade" id="modal-conduct" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Code of Conduct (demo)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Example only.</strong> This modal shows how the acknowledgement flow will look like.</p>
+        <p>Lorem ipsum — sample text explaining expected behavior, etiquette, and disciplinary process…</p>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="ack-conduct-check">
+          <label class="form-check-label" for="ack-conduct-check">I have read and agree</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary fw-semibold" data-action="ack" data-key="ack-conduct">Acknowledge</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-safety" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Safety Protocol (demo)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Example only.</strong> Fire, medical, and evacuation procedures…</p>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="ack-safety-check">
+          <label class="form-check-label" for="ack-safety-check">I have read and agree</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary fw-semibold" data-action="ack" data-key="ack-safety">Acknowledge</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-rules" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Program Rules (demo)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Example only.</strong> Attendance, curfew, guest policy, facility usage…</p>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="ack-rules-check">
+          <label class="form-check-label" for="ack-rules-check">I have read and agree</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary fw-semibold" data-action="ack" data-key="ack-rules">Acknowledge</button>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+  <div id="trip-saved-toast" class="toast align-items-center text-bg-success border-0" role="status" aria-live="polite" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">Trip saved</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Helpers -->
+<script>
+(function () {
+  // estilos sutiles
+  const style = document.createElement('style');
+  style.textContent = `
+    .btn-outline-primary { border-width: 2px; }
+    [data-badge^="ack-"] { background:#198754; }
+    .eture-hover { transition: box-shadow .15s ease; }
+    .eture-hover:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.08); }
+  `;
+  document.head.appendChild(style);
+
+  // Acknowledge -> guarda y cierra SIEMPRE el modal
+  function refreshBadges() {
+    ['ack-conduct','ack-safety','ack-rules'].forEach(key=>{
+      const ok = localStorage.getItem(key)==='1';
+      const badge = document.querySelector(`[data-badge="${key}"]`);
+      if (badge) badge.classList.toggle('d-none', !ok);
+    });
+  }
+  refreshBadges();
+
+  document.querySelectorAll('[data-action="ack"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const key = btn.getAttribute('data-key');
+      const chk = document.getElementById(key+'-check');
+      if (!chk || !chk.checked) { alert('Please read and check the agreement box first.'); return; }
+      localStorage.setItem(key,'1');
+      refreshBadges();
+      const modalEl = btn.closest('.modal');
+      if (modalEl) {
+        // cierre robusto: crea o recupera instancia y oculta
+        const inst = bootstrap.Modal.getOrCreateInstance(modalEl);
+        inst.hide();
+      }
+    });
+  });
+
+  // Travel: mostrar/ocultar "Other location"
+  const travelPanel = document.getElementById('panel-travel');
+  const initTravelOtherToggle = ()=>{
+    const sel = document.getElementById('trip-location');
+    const otherWrap = document.getElementById('trip-location-other-wrap');
+    if (!sel || !otherWrap) return;
+    const toggle = ()=> otherWrap.classList.toggle('d-none', sel.value !== 'other');
+    sel.addEventListener('change', toggle);
+    toggle(); // estado inicial
+  };
+  // inicializa ahora…
+  initTravelOtherToggle();
+  // …y también cuando se muestra la tab Travel (por si el DOM cambia de estado)
+  document.getElementById('tab-travel')?.addEventListener('shown.bs.tab', initTravelOtherToggle);
+
+  // Deep-link visual (no router avanzado)
+  document.querySelectorAll('[data-deeplink="true"]').forEach(a=>{
+    a.addEventListener('click', (e)=>{ e.preventDefault(); location.hash = '#my-visa-trip'; });
+  });
+})();
+</script>
+
+
+
+<!-- Integration Notes:
+ - “Download” unificado en todos los modales.
+ - Acknowledge usa getOrCreateInstance(...).hide() para cerrar el modal sí o sí.
+ - Travel: opción Other usa value="other"; mostramos/ocultamos al cambiar y también al abrir la tab.
+-->

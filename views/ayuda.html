@@ -1,9 +1,117 @@
 
-      <div class="fade-in">
-           <h1 class="h2 fw-bold mb-2">Help Center</h1>
-           <p class="text-muted mb-4">Find answers to frequently asked questions.</p>
-           <div class="accordion" id="ayuda-accordion">
-              <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q1">What are the additional costs?</button></h2><div id="q1" class="accordion-collapse collapse" data-bs-parent="#ayuda-accordion"><div class="accordion-body">In addition to our fees, you must consider the costs of exams (TOEFL, SAT), university application fees, the SEVIS fee, the visa fee, and flights to the U.S.</div></div></div>
-              <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">What happens if my grades drop?</button></h2><div id="q2" class="accordion-collapse collapse" data-bs-parent="#ayuda-accordion"><div class="accordion-body">It is crucial to maintain your academic performance. A significant drop could affect your eligibility.</div></div></div>
+<div id="help-center">
+  <div class="fade-in" id="help-center-root">
+    <h1 class="h2 fw-bold mb-2 help-title">Help Center</h1>
+    <p class="text-muted fst-italic mb-4 help-subtitle">Frequently Asked Questions (FAQ)</p>
+
+    <div class="input-group mb-3">
+      <span class="input-group-text" id="help-search-icon">
+        <i class="bi bi-search"></i>
+      </span>
+      <input id="help-search" type="search" class="form-control" placeholder="Search for a question..." aria-describedby="help-search-icon">
+    </div>
+
+    <div id="help-no-results" class="alert alert-light border d-none" role="status">
+      No results found. You can ask your question below 👇
+    </div>
+
+    <div class="accordion" id="help-accordion">
+      <h5 class="mt-4 border-bottom pb-1 faq-section-title" data-category-heading="program">
+        <span class="emoji">🎓</span><span>My Program &amp; Campus</span>
+      </h5>
+      <div data-category-list="program"></div>
+
+      <h5 class="mt-4 border-bottom pb-1 faq-section-title" data-category-heading="visa">
+        <span class="emoji">✈️</span><span>Visa &amp; Travel</span>
+      </h5>
+      <div data-category-list="visa"></div>
+
+      <h5 class="mt-4 border-bottom pb-1 faq-section-title" data-category-heading="payments">
+        <span class="emoji">💰</span><span>Payments &amp; Scholarships</span>
+      </h5>
+      <div data-category-list="payments"></div>
+
+      <h5 class="mt-4 border-bottom pb-1 faq-section-title" data-category-heading="football">
+        <span class="emoji">⚽</span><span>Football &amp; Training</span>
+      </h5>
+      <div data-category-list="football"></div>
+    </div>
+
+    <div class="card mt-5" id="help-question-card">
+      <div class="card-header fw-semibold">Didn’t find what you need? Ask a question</div>
+      <div class="card-body">
+        <form id="help-question-form" class="row gy-3" novalidate>
+          <div class="col-md-4">
+            <label for="help-question-category" class="form-label">Category</label>
+            <select id="help-question-category" class="form-select" required>
+              <option value="" selected disabled>Choose a category</option>
+              <option value="program">🎓 My Program &amp; Campus</option>
+              <option value="visa">✈️ Visa &amp; Travel</option>
+              <option value="payments">💰 Payments &amp; Scholarships</option>
+              <option value="football">⚽ Football &amp; Training</option>
+            </select>
+            <div class="invalid-feedback">Please pick a category.</div>
           </div>
+          <div class="col-md-8">
+            <label for="help-question-text" class="form-label">Your question</label>
+            <input id="help-question-text" type="text" class="form-control" required minlength="8" maxlength="100" placeholder="Write your question here">
+            <div class="invalid-feedback">Question must be between 8 and 100 characters.</div>
+          </div>
+          <div class="col-12">
+            <label for="help-question-details" class="form-label">Additional details (optional)</label>
+            <textarea id="help-question-details" class="form-control" rows="3" maxlength="500" placeholder="Add any context that helps our team"></textarea>
+            <div class="form-text">Max 500 characters.</div>
+          </div>
+          <div class="col-md-6">
+            <label for="help-question-email" class="form-label">Email (optional)</label>
+            <input id="help-question-email" type="email" class="form-control" placeholder="you@example.com">
+            <div class="invalid-feedback">Please enter a valid email address.</div>
+          </div>
+          <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary" id="help-question-submit">Send</button>
+          </div>
+        </form>
+        <div id="help-form-feedback" class="alert alert-success d-none mt-3 mb-0" role="alert"></div>
       </div>
+    </div>
+
+    <div class="mt-4" id="help-questions-list"></div>
+  </div>
+
+  <div id="help-toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080"></div>
+</div>
+
+<style>
+  #help-center h1,
+  #help-center .help-title {
+    font-family: 'NeuePower', 'Neue Power', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+
+  #help-center .help-subtitle,
+  #help-center .faq-section-title {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+  }
+
+  #help-center .accordion-button {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  #help-center .accordion-body {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 400;
+    font-size: 15.5px;
+    line-height: 1.55;
+  }
+
+  #help-center .faq-section-title .emoji,
+  #help-center .faq-section-title i,
+  #help-center .faq-section-title svg {
+    margin-right: 0.5rem;
+  }
+</style>

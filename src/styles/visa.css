@@ -1,4 +1,4 @@
-// File: src/styles/visa.css — Build: 2025-10-14T14:20Z
+/* File: src/styles/visa.css — Build: 2025-10-14T14:20Z */
 
 /* Checklist compact progress — looks like a “battery” bar with % inside */
 #visa-checklist-progress-wrap {
@@ -22,15 +22,15 @@
 }
 
 /* % label inside the bar, taken from aria-valuenow (no JS changes needed) */
-#visa-checklist-progress-wrap::after {
-  content: '';
+#visa-checklist-progress-bar::after {
+  content: attr(aria-valuenow) '%';
   position: absolute;
-  top: 2px;
-  right: -6px;
-  width: 5px;
-  height: 8px;
-  background-color: var(--bs-gray-400, #adb5bd);
-  border-radius: 2px;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #fff;
+  pointer-events: none;
 }
 
 /* Optional: when very low %, keep label readable (fallback color) */

@@ -4124,10 +4124,20 @@ function inferActionType(task) {
 }
 
 // --- HELPERS ---
-function toISODate(dateString) { // DD/MM/YYYY -> YYYY-MM-DD
-    if (!dateString || !/^\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4}$/.test(dateString)) return '';
-    const parts = dateString.replace(/\s/g, '').split('/');
-    return `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`;
+function toISODate(value) {
+  if (value instanceof Date) {
+    return value.toISOString().slice(0, 10);
+  }
+  const str = typeof value === 'string' ? value.trim() : '';
+  if (!str) return '';
+  if (str.includes('/')) {
+    const compact = str.replace(/\s/g, '');
+    const parts = compact.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${String(parts[1]).padStart(2, '0')}-${String(parts[0]).padStart(2, '0')}`;
+    }
+  }
+  return str.slice(0, 10);
 }
 function toSpanishDate(dateString) { // YYYY-MM-DD -> DD/MM/YYYY
     if (!dateString) return '';
@@ -4145,10 +4155,10 @@ const pages = {
   proceso: 'views/proceso.html',
   tareas: 'views/tareas.html',
   documentos: 'views/documentos.html',
-  finanzas: 'views/finanzas.html',
+  finanzas: 'views/us/myfinancials.html',
   chat: 'views/chat.html',
   ayuda: 'views/ayuda.html',
-  'my-program': 'src/views/my-program.html',
+  'my-program': 'views/my-program.html', // My Program view lives under /views, not /src/views
   visa: 'views/my-visa.html'    // ← ESTA LÍNEA con coma arriba
 };
 const perfilSubPages = {
@@ -4517,6 +4527,29 @@ async function saveProfileData(formId) {
   console.log("--- ✅ FIN DEL GUARDADO ---");
 }
 
+async function executeInlineModules(container) {
+  if (!container) return;
+  const scripts = Array.from(container.querySelectorAll('script[type="module"]'));
+  if (scripts.length === 0) return;
+
+  await Promise.all(scripts.map((original) => new Promise((resolve) => {
+    const replacement = document.createElement('script');
+    replacement.type = original.type || 'module';
+    Array.from(original.attributes).forEach((attr) => {
+      if (attr.name === 'type') return;
+      replacement.setAttribute(attr.name, attr.value);
+    });
+    replacement.textContent = original.textContent || '';
+    replacement.addEventListener('load', resolve, { once: true });
+    replacement.addEventListener('error', () => resolve(), { once: true });
+    original.parentNode?.replaceChild(replacement, original);
+    if (!replacement.src) {
+      // Inline modules execute immediately; microtask ensures completion.
+      queueMicrotask(resolve);
+    }
+  })));
+}
+
 // REEMPLAZA TU FUNCIÓN renderPage ENTERA POR ESTA VERSIÓN FINAL
 async function renderPage(pageId) {
   const contentDiv = document.getElementById(`${pageId}-content`);
@@ -4533,6 +4566,16 @@ async function renderPage(pageId) {
       contentDiv.innerHTML = html;
     } else {
       contentDiv.innerHTML = pageSource;
+    }
+
+    await executeInlineModules(contentDiv);
+    if (pageId === 'finanzas') {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      try {
+        window.initMyFinancials?.(contentDiv);
+      } catch (error) {
+        console.error('Unable to initialize My Financials view', error);
+      }
     }
 
     // --- My Visa (inicialización de Overview y eventos) ---
@@ -4628,6 +4671,9 @@ async function renderPage(pageId) {
     if (pageId === 'my-program') {
       initMyProgramView(contentDiv);
     }
+    if (pageId === 'ayuda') {
+      initHelpCenter(contentDiv);
+    }
     if (pageId === 'tareas') {
       if (auth.currentUser) {
         await initTasksFeature(auth.currentUser);
@@ -4710,6 +4756,160 @@ function initMyProgramView(contentRoot) {
   // TODO: Wire CTAs to backend (rides/driver) later
 }
 
+function waitForElement(sel, { timeout = 3000, root = document } = {}) {
+  if (typeof document === 'undefined') {
+    return Promise.reject(new Error('waitForElement requires a DOM'));
+  }
+
+  const container = root && typeof root.querySelector === 'function' ? root : document;
+
+  return new Promise((resolve, reject) => {
+    const immediate = container.querySelector(sel);
+    if (immediate) {
+      resolve(immediate);
+      return;
+    }
+
+    let settled = false;
+    const stop = (callback) => {
+      if (settled) return;
+      settled = true;
+      observer.disconnect();
+      clearTimeout(timerId);
+      callback();
+    };
+
+    const observer = new MutationObserver(() => {
+      const candidate = container.querySelector(sel);
+      if (candidate) {
+        stop(() => resolve(candidate));
+      }
+    });
+
+    observer.observe(container, { childList: true, subtree: true });
+
+    const timerId = setTimeout(() => {
+      stop(() => reject(new Error('waitForElement timeout: ' + sel)));
+    }, timeout);
+  });
+}
+
+async function activateBootstrapTabForElement(el) {
+  if (!el || typeof document === 'undefined') return;
+  const pane = el.closest('.tab-pane');
+  if (!pane) return;
+  const controlId = pane.getAttribute('aria-labelledby');
+  if (!controlId) return;
+  const control = document.getElementById(controlId);
+  if (!control) return;
+
+  try {
+    const Tab = window.bootstrap?.Tab;
+    if (Tab?.getOrCreateInstance) {
+      Tab.getOrCreateInstance(control).show();
+    } else if (Tab) {
+      new Tab(control).show();
+    } else if (typeof control.click === 'function') {
+      control.click();
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  } catch (_) {
+    try {
+      control.click?.();
+    } catch (_) {}
+  }
+}
+
+let myVisaTripNavigationPromise = null;
+async function handleDeepLinkMyVisaTrip() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (myVisaTripNavigationPromise) return myVisaTripNavigationPromise;
+
+  myVisaTripNavigationPromise = (async () => {
+    const currentHash = window.location.hash || '';
+    let shouldRestoreAnchor = false;
+
+    if (currentHash === '#my-visa-trip') {
+      shouldRestoreAnchor = true;
+      try {
+        window.history.replaceState(null, '', '#visa');
+      } catch (_) {
+        window.location.hash = '#visa';
+      }
+    } else if (currentHash !== '#visa' && !currentHash.startsWith('#my-visa-trip')) {
+      shouldRestoreAnchor = true;
+      window.location.hash = '#visa';
+    }
+
+    const visaNavLink = document.querySelector('#main-nav a[href="#visa"]');
+    if (visaNavLink) {
+      try {
+        const Tab = window.bootstrap?.Tab;
+        if (Tab?.getOrCreateInstance) {
+          Tab.getOrCreateInstance(visaNavLink).show();
+        } else if (Tab) {
+          new Tab(visaNavLink).show();
+        } else {
+          visaNavLink.click();
+        }
+      } catch (_) {
+        visaNavLink.click?.();
+      }
+    }
+
+    await waitForElement('#visa-content');
+    const anchor = await waitForElement('#my-visa-trip');
+    await activateBootstrapTabForElement(anchor);
+
+    const pane = anchor.closest('.tab-pane');
+    if (pane) {
+      const isPaneVisible = () => {
+        if (pane.hidden === false) return true;
+        if (pane.classList.contains('show') || pane.classList.contains('active')) return true;
+        const ariaHidden = pane.getAttribute('aria-hidden');
+        return ariaHidden === null || ariaHidden === 'false';
+      };
+
+      if (!isPaneVisible()) {
+        await new Promise((resolve) => {
+          const observer = new MutationObserver(() => {
+            if (isPaneVisible()) {
+              observer.disconnect();
+              resolve();
+            }
+          });
+          observer.observe(pane, { attributes: true, attributeFilter: ['class', 'aria-hidden', 'hidden'] });
+          setTimeout(() => {
+            observer.disconnect();
+            resolve();
+          }, 500);
+        });
+      }
+    }
+
+    anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    if (shouldRestoreAnchor) {
+      try {
+        window.history.replaceState(null, '', '#my-visa-trip');
+      } catch (_) {
+        if (window.location.hash !== '#my-visa-trip') {
+          window.location.hash = '#my-visa-trip';
+        }
+      }
+    }
+  })()
+    .catch((error) => {
+      console.warn('handleDeepLinkMyVisaTrip failed', error);
+      throw error;
+    })
+    .finally(() => {
+      myVisaTripNavigationPromise = null;
+    });
+
+  return myVisaTripNavigationPromise;
+}
+
 function handleHashNavigation() {
   if (typeof window === 'undefined') {
     return;
@@ -4747,7 +4947,33 @@ function handleHashNavigation() {
   renderPage('my-program');
 }
 
-window.addEventListener('hashchange', handleHashNavigation);
+function handleAppHashChange(event) {
+  if (typeof window === 'undefined') return;
+
+  if (window.location.hash === '#my-visa-trip') {
+    event?.preventDefault?.();
+    handleDeepLinkMyVisaTrip().catch(console.warn);
+    return;
+  }
+
+  handleHashNavigation(event);
+}
+
+window.addEventListener('hashchange', handleAppHashChange);
+
+if (typeof document !== 'undefined') {
+  const tryHandleVisaTripDeepLink = () => {
+    if (window.location.hash === '#my-visa-trip') {
+      handleDeepLinkMyVisaTrip().catch(console.warn);
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryHandleVisaTripDeepLink, { once: true });
+  } else {
+    tryHandleVisaTripDeepLink();
+  }
+}
 
 // Pinta el bloque de "Tasks pendientes" del INICIO usando la caché de tasks.js
 function renderHomeTasksSnapshot(rootEl) {
@@ -9004,14 +9230,11 @@ document.body.addEventListener('click', (e) => {
   signOut(auth)
     .then(() => {
       console.log('✅ Signed out');
-      // Si tienes login.html, puedes redirigir:
-      // window.location.href = 'login.html';
-      // Si no, recarga y tu handleAuthState ya te mandará al login:
-      window.location.reload();
+      window.location.href = 'login.html';
     })
     .catch((err) => {
       console.error('Error signing out:', err);
-      alert('Could not sign out. Please try again.');
+      window.location.href = 'login.html';
     });
 });
 
@@ -9125,3 +9348,3665 @@ document.addEventListener('click', (ev) => {
 // - handleHashNavigation exits early for unknown hashes so existing routes keep control.
 // - Bootstrap.Tab usage stays vanilla; no jQuery layer was introduced.
 handleAuthState(initApp);
+
+// === My Program: initializer ===
+(function myProgramBootstrap() {
+  const TRIP_STORAGE_KEY = 'myTrips';
+  let tripToastInstance = null;
+  const HOUSING_DEMO = window.HOUSING_DEMO || {
+    building: 'Residence Vinaròs — North Building',
+    floor: '3',
+    room: '305B',
+    roommates: [
+      { name: 'John Miller', country: 'United States', flag: '🇺🇸' },
+      { name: 'Diego Pérez', country: 'Mexico',        flag: '🇲🇽' }
+    ]
+  };
+  const LS = Object.assign({
+    DINING_NOTES: 'housing-dining-notes',
+    DINING_NOTES_LIST: 'housing-dining-notes-list',
+    ACK_RULES: 'housing-ack-rules',
+    ACK_RULES_AT: 'housing-ack-rules-at',
+    ACK_CLEAN: 'housing-ack-cleaning',
+    ACK_CLEAN_AT: 'housing-ack-cleaning-at'
+  }, (window.LS || {}));
+
+  try {
+    if (localStorage.getItem('housing-cleaning-ack') === '1' && !localStorage.getItem(LS.ACK_CLEAN)) {
+      localStorage.setItem(LS.ACK_CLEAN, '1');
+      localStorage.setItem(LS.ACK_CLEAN_AT, new Date().toISOString());
+    }
+  } catch (e) {
+    // ignore storage access issues
+  }
+
+  function qs(sel, root = document) {
+    return root.querySelector(sel);
+  }
+
+  function qsa(sel, root = document) {
+    return Array.from(root.querySelectorAll(sel));
+  }
+
+  function norm(value) {
+    return (value || '').trim();
+  }
+
+  function openMapsUrl(addrOrUrl) {
+    const u = norm(addrOrUrl);
+    if (!u) return '#';
+    if (/^(https?:)?\/\/(maps\.google|goo\.gl)\/|^https?:\/\//i.test(u)) return u;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(u)}`;
+  }
+
+  function copyText(text) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return copyToClipboard(text);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  function setText(sel, v) {
+    const el = qs(sel);
+    if (el) el.textContent = v ?? '—';
+  }
+
+  function fillList(listEl, items) {
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    (items || []).forEach((rm) => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex align-items-center justify-content-between';
+      const flag = rm.flag ? `${rm.flag}&thinsp;` : '';
+      const contactHref = rm.contactHref || '#';
+      const contactTitle = rm.contactTitle || 'PENDING';
+      li.innerHTML = `<span>${flag}${rm.name}</span><a href="${contactHref}" class="small text-decoration-none" title="${contactTitle}">Contact</a>`;
+      listEl.appendChild(li);
+    });
+  }
+
+  function fmtTime(value) {
+    try {
+      const date = new Date(value);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function updateAckBadges() {
+    const hasRules = localStorage.getItem(LS.ACK_RULES) === '1';
+    const hasClean = localStorage.getItem(LS.ACK_CLEAN) === '1';
+    const badgeRules = qs('#badge-ack-rules');
+    const badgeClean = qs('#badge-ack-cleaning');
+    const msgRulesFooter = qs('#ack-housing-rules-msg');
+    const msgCleanFooter = qs('#ack-cleaning-code-msg');
+    const msgRulesInline = qs('#ack-housing-rules-inline');
+    const msgCleanInline = qs('#ack-cleaning-code-inline');
+
+    const atRules = localStorage.getItem(LS.ACK_RULES_AT);
+    const atClean = localStorage.getItem(LS.ACK_CLEAN_AT);
+    const lineRules = hasRules && atRules ? `Acknowledged ✓ at ${fmtTime(atRules)}` : '';
+    const lineClean = hasClean && atClean ? `Acknowledged ✓ at ${fmtTime(atClean)}` : '';
+
+    if (badgeRules) {
+      badgeRules.classList.toggle('d-none', !hasRules);
+      if (atRules) {
+        badgeRules.title = `Acknowledged at ${fmtTime(atRules)}`;
+      } else {
+        badgeRules.removeAttribute('title');
+      }
+    }
+    if (badgeClean) {
+      badgeClean.classList.toggle('d-none', !hasClean);
+      if (atClean) {
+        badgeClean.title = `Acknowledged at ${fmtTime(atClean)}`;
+      } else {
+        badgeClean.removeAttribute('title');
+      }
+    }
+    if (msgRulesFooter) msgRulesFooter.textContent = lineRules;
+    if (msgCleanFooter) msgCleanFooter.textContent = lineClean;
+    if (msgRulesInline) msgRulesInline.textContent = lineRules;
+    if (msgCleanInline) msgCleanInline.textContent = lineClean;
+  }
+
+  function ensureDemoAcks() {
+    if (localStorage.getItem(LS.ACK_RULES) !== '1') {
+      localStorage.setItem(LS.ACK_RULES, '1');
+      localStorage.setItem(LS.ACK_RULES_AT, new Date().toISOString());
+    }
+    if (localStorage.getItem(LS.ACK_CLEAN) !== '1') {
+      localStorage.setItem(LS.ACK_CLEAN, '1');
+      localStorage.setItem(LS.ACK_CLEAN_AT, new Date().toISOString());
+    }
+    const badgeRules = qs('#badge-ack-rules');
+    const badgeClean = qs('#badge-ack-cleaning');
+    if (badgeRules) badgeRules.classList.remove('d-none');
+    if (badgeClean) badgeClean.classList.remove('d-none');
+    updateAckBadges();
+  }
+
+  function wireCopyRoomInfo() {
+    const link = qs('#link-copy-roominfo');
+    if (!link || link.dataset.copyBound === 'true') return;
+    const msg = qs('#copy-roominfo-msg');
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      const building = qs('#res-building')?.textContent?.trim() || '';
+      const floor = qs('#res-floor')?.textContent?.trim() || '';
+      const room = qs('#res-room')?.textContent?.trim() || '';
+      const text = `${building} · Floor ${floor} · Room ${room}`;
+      const maybePromise = navigator.clipboard?.writeText
+        ? navigator.clipboard.writeText(text)
+        : copyToClipboard(text);
+      Promise.resolve(maybePromise)
+        .then(() => {
+          if (msg) {
+            msg.classList.remove('d-none');
+            setTimeout(() => msg.classList.add('d-none'), 1200);
+          }
+        })
+        .catch(() => {});
+    });
+    link.dataset.copyBound = 'true';
+  }
+
+  function downloadText(filename, text) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+      link.remove();
+    }, 0);
+  }
+
+  function copyToClipboard(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  function debounce(fn, delay) {
+    let t = null;
+    return function debounced(...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), delay);
+    };
+  }
+
+  function normText(value) {
+    return (value || '').trim();
+  }
+
+  function getFullAddressText() {
+    const el = document.getElementById('full-address-text');
+    if (!el) return '';
+    const source = el.innerText || el.textContent || '';
+    return source.replace(/\n+/g, ', ').replace(/\s+/g, ' ').trim();
+  }
+
+  function openMapsUrlFromAddress(addr) {
+    try {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+    } catch (_) {
+      return '#';
+    }
+  }
+
+  function toKey(value) {
+    return normText(value).toLowerCase();
+  }
+
+  function getNotesList() {
+    try {
+      const raw = localStorage.getItem(LS.DINING_NOTES_LIST);
+      return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function setNotesList(arr) {
+    localStorage.setItem(LS.DINING_NOTES_LIST, JSON.stringify(Array.isArray(arr) ? arr : []));
+  }
+
+  function migrateNotesIfNeeded() {
+    const list = getNotesList();
+    const legacy = normText(localStorage.getItem(LS.DINING_NOTES) || '');
+    if (!list.length && legacy) {
+      setNotesList([legacy]);
+    }
+  }
+
+  function showSavedStamp() {
+    const savedMsg = qs('#dining-saved-msg');
+    const shared = qs('#dining-shared');
+    const list = getNotesList();
+    if (savedMsg) {
+      savedMsg.textContent = `Saved ✓  Last saved at ${fmtTime(new Date())}`;
+    }
+    if (shared) {
+      shared.textContent = list.length
+        ? `Shared with kitchen: “${list.join(', ')}”`
+        : 'Shared with kitchen: —';
+    }
+  }
+
+  function renderNotesUI() {
+    const listEl = qs('#dining-notes-list');
+    if (!listEl) return;
+
+    const list = getNotesList();
+    listEl.innerHTML = '';
+    list.forEach((note, idx) => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex align-items-center justify-content-between';
+      li.innerHTML = `<span>${note}</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-remove="${idx}" aria-label="Remove ${note}">×</button>`;
+      listEl.appendChild(li);
+    });
+
+    listEl.querySelectorAll('button[data-remove]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number.parseInt(btn.getAttribute('data-remove') || '-1', 10);
+        if (Number.isNaN(idx)) return;
+        const current = getNotesList();
+        if (idx < 0 || idx >= current.length) return;
+        current.splice(idx, 1);
+        setNotesList(current);
+        showSavedStamp();
+        renderNotesUI();
+      });
+    });
+  }
+
+  function addNoteFromInput() {
+    const input = qs('#dining-note-input');
+    const hint = qs('#dining-input-hint');
+    if (!input) return;
+    const value = normText(input.value);
+    if (!value) {
+      if (hint) hint.textContent = 'Please enter a note before adding.';
+      return;
+    }
+
+    const list = getNotesList();
+    const existing = new Set(list.map(toKey));
+    if (existing.has(toKey(value))) {
+      if (hint) hint.textContent = 'This note is already in the list.';
+      return;
+    }
+
+    list.push(value);
+    setNotesList(list);
+    input.value = '';
+    if (hint) hint.textContent = '';
+    showSavedStamp();
+    renderNotesUI();
+  }
+
+  function bindDiningNotes(panelBound) {
+    migrateNotesIfNeeded();
+    renderNotesUI();
+
+    if (!panelBound) {
+      const btnAdd = qs('#btn-add-note');
+      const input = qs('#dining-note-input');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', addNoteFromInput);
+      }
+      if (input) {
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            addNoteFromInput();
+          }
+        });
+      }
+    }
+  }
+
+  function bindAddressModal() {
+    const modalEl = document.getElementById('modal-full-address');
+    const copyBtn = document.getElementById('btn-copy-address');
+    const mapsLink = document.getElementById('link-open-maps');
+    if (modalEl && !modalEl.dataset.bound) {
+      modalEl.addEventListener('shown.bs.modal', () => {
+        const addr = getFullAddressText();
+        if (mapsLink) {
+          mapsLink.href = openMapsUrlFromAddress(addr);
+        }
+      });
+      modalEl.dataset.bound = 'true';
+    }
+
+    if (copyBtn && !copyBtn.dataset.bound) {
+      copyBtn.addEventListener('click', () => {
+        const addr = getFullAddressText();
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(addr).catch(() => {});
+        }
+      });
+      copyBtn.dataset.bound = 'true';
+    }
+  }
+
+  function refreshAckBadges() {
+    ['ack-conduct', 'ack-safety', 'ack-rules'].forEach(key => {
+      const ok = localStorage.getItem(key) === '1';
+      const badge = document.querySelector(`[data-badge="${key}"]`);
+      if (badge) badge.classList.toggle('d-none', !ok);
+    });
+  }
+
+  function bindAcknowledge() {
+    document.querySelectorAll('[data-action="ack"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-key');
+        const chk = document.getElementById(key + '-check');
+        if (!chk || !chk.checked) {
+          alert('Please read and check the agreement box first.');
+          return;
+        }
+        localStorage.setItem(key, '1');
+        refreshAckBadges();
+
+        // Close modal robustly
+        const modalEl = btn.closest('.modal');
+        if (modalEl) {
+          try {
+            // BS5 global
+            const inst = (window.bootstrap && window.bootstrap.Modal)
+              ? window.bootstrap.Modal.getOrCreateInstance(modalEl)
+              : null;
+            if (inst) {
+              inst.hide();
+              return;
+            }
+          } catch (_) { /* ignore */ }
+          // Fallback: manual hide
+          modalEl.classList.remove('show');
+          modalEl.setAttribute('aria-hidden', 'true');
+          modalEl.style.display = 'none';
+          document.body.classList.remove('modal-open');
+          document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        }
+      }, { once: false });
+    });
+  }
+
+  function bindTravelOther() {
+    const sel = document.getElementById('trip-location');
+    const wrap = document.getElementById('trip-location-other-wrap');
+    if (!sel || !wrap) return;
+    const toggle = () => wrap.classList.toggle('d-none', sel.value !== 'other');
+    sel.addEventListener('change', toggle);
+    toggle();
+    // Re-bind when Travel tab is shown (ensures correct state after switching tabs)
+    const travelTab = document.getElementById('tab-travel');
+    if (travelTab) {
+      travelTab.addEventListener('shown.bs.tab', toggle, { once: false });
+    }
+  }
+
+  function bindShipmentsList() {
+    const addBtn = document.getElementById('btn-add-tracking');
+    const list = document.getElementById('trk-list');
+    const carrier = document.getElementById('trk-carrier');
+    const number = document.getElementById('trk-number');
+    if (!addBtn || !list || !carrier || !number) return;
+
+    addBtn.addEventListener('click', () => {
+      const c = carrier.value.trim();
+      const n = number.value.trim();
+      if (!c && !n) return;
+      const empty = list.querySelector('[data-empty="true"]');
+      if (empty) empty.remove();
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-center';
+      li.innerHTML = `<span>${c || '—'} — ${n || '—'}</span>
+                      <button class="btn btn-sm btn-outline-secondary">Remove</button>`;
+      li.querySelector('button').addEventListener('click', () => li.remove());
+      list.appendChild(li);
+      carrier.value = '';
+      number.value = '';
+      carrier.focus();
+    });
+  }
+
+  // === City Guide ===
+  const CG = {
+    ACTIVE_CITY_KEY: 'city-guide:active-city',
+    ACTIVE_SECTION_KEY: 'city-guide:active-section',
+    stateKey(city) {
+      return `city-guide:${city}:v1`;
+    }
+  };
+
+  function cgLoad(city) {
+    try {
+      const raw = localStorage.getItem(CG.stateKey(city));
+      return raw ? JSON.parse(raw) : { accommodation: [], restaurants: [], cultural: [], airports: [] };
+    } catch (_) {
+      return { accommodation: [], restaurants: [], cultural: [], airports: [] };
+    }
+  }
+
+  function cgSave(city, state) {
+    try {
+      localStorage.setItem(CG.stateKey(city), JSON.stringify(state));
+    } catch (_) {
+      // noop — storage might be unavailable (private mode, etc.)
+    }
+  }
+
+  function cgGetActiveCity() {
+    try {
+      return localStorage.getItem(CG.ACTIVE_CITY_KEY) || 'Vinaròs';
+    } catch (_) {
+      return 'Vinaròs';
+    }
+  }
+
+  function cgSetActiveCity(city) {
+    try {
+      localStorage.setItem(CG.ACTIVE_CITY_KEY, city);
+    } catch (_) {
+      // ignore storage issues
+    }
+  }
+
+  function cgGetActiveSection() {
+    try {
+      return localStorage.getItem(CG.ACTIVE_SECTION_KEY) || 'accommodation';
+    } catch (_) {
+      return 'accommodation';
+    }
+  }
+
+  function cgSetActiveSection(section) {
+    try {
+      localStorage.setItem(CG.ACTIVE_SECTION_KEY, section);
+    } catch (_) {
+      // ignore storage issues
+    }
+  }
+
+  function cgRenderPills() {
+    const city = cgGetActiveCity();
+    const sec = cgGetActiveSection();
+    qsa('#cg-city-pills .nav-link').forEach((link) => {
+      link.classList.toggle('active', link.dataset.city === city);
+    });
+    qsa('#cg-section-pills .nav-link').forEach((link) => {
+      link.classList.toggle('active', link.dataset.section === sec);
+    });
+  }
+
+  function cgBadgeReco(val) {
+    const v = (val || '').toLowerCase();
+    if (v === 'recommended') return '<span class="badge bg-success">Recommended</span>';
+    if (v === 'alternative') return '<span class="badge bg-secondary">Alternative</span>';
+    return val || '';
+  }
+
+  function cgEmptyRow(colspan, msg) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="text-muted" colspan="${colspan}">${msg}</td>`;
+    return tr;
+  }
+
+  function cgNormalizeLink(u) {
+    let s = (u || '').trim().toLowerCase();
+    if (!s) return '';
+    s = s.replace(/[\/\s]+$/, '');
+    s = s.replace(/(\?|#).*$/, '');
+    return s;
+  }
+
+  function cgDedupe(list, keyFn) {
+    const seen = new Set(); const out = [];
+    for (const x of list) {
+      const k = keyFn(x);
+      if (!seen.has(k)) { seen.add(k); out.push(x); }
+    }
+    return out;
+  }
+
+  function cgRender() {
+    const city = cgGetActiveCity();
+    const sec = cgGetActiveSection();
+    const state = cgLoad(city);
+    cgRenderPills();
+
+    ['accommodation', 'restaurants', 'cultural', 'airports'].forEach((sectionKey) => {
+      const sectionEl = qs(`#cg-section-${sectionKey}`);
+      if (sectionEl) {
+        sectionEl.classList.toggle('d-none', sectionKey !== sec);
+      }
+    });
+
+    const safe = (value) => escapeHtml(value || '');
+
+    if (sec === 'accommodation') {
+      const tbody = qs('#cg-acc-tbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        const rows = Array.isArray(state.accommodation) ? state.accommodation : [];
+        rows.forEach((item, index) => {
+          const tr = document.createElement('tr');
+          const mapUrl = escapeHtml(openMapsUrl(item.address || item.link));
+          const webUrl = escapeHtml(item.link || '#');
+          const copyVal = escapeHtml(norm(item.address || item.name));
+          tr.innerHTML = `
+            <td>${safe(item.name)}</td>
+            <td>${safe(item.type)}</td>
+            <td class="small">
+              <a class="me-2" href="${mapUrl}" target="_blank" rel="noopener">Map</a>
+              <a class="me-2" href="${webUrl}" target="_blank" rel="noopener">Web</a>
+              <a class="me-2" href="#" data-cgcopy="${copyVal}">Copy</a>
+              <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+              <a class="text-danger" href="#" data-cgdel="${index}">Delete</a>
+            </td>
+            <td>${safe(item.notes)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    if (sec === 'restaurants') {
+      const tbody = qs('#cg-rest-tbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        const rows = Array.isArray(state.restaurants) ? state.restaurants : [];
+        rows.forEach((item, index) => {
+          const tr = document.createElement('tr');
+          const mapUrl = escapeHtml(openMapsUrl(item.address || item.link));
+          const webUrl = escapeHtml(item.link || '#');
+          const copyVal = escapeHtml(norm(item.address || item.name));
+          tr.innerHTML = `
+            <td>${safe(item.name)}</td>
+            <td>${safe(item.area)}</td>
+            <td class="small">
+              <a class="me-2" href="${mapUrl}" target="_blank" rel="noopener">Map</a>
+              <a class="me-2" href="${webUrl}" target="_blank" rel="noopener">Web</a>
+              <a class="me-2" href="#" data-cgcopy="${copyVal}">Copy</a>
+              <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+              <a class="text-danger" href="#" data-cgdel="${index}">Delete</a>
+            </td>
+            <td>${safe(item.notes)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    if (sec === 'cultural') {
+      const tbody = qs('#cg-cul-tbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        const rows = Array.isArray(state.cultural) ? state.cultural : [];
+        rows.forEach((item, index) => {
+          const tr = document.createElement('tr');
+          const mapUrl = escapeHtml(openMapsUrl(item.address || item.link));
+          const webUrl = escapeHtml(item.link || '#');
+          const copyVal = escapeHtml(norm(item.address || item.name));
+          const notesHours = [norm(item.notes), norm(item.hours)].filter(Boolean).join(' · ');
+          tr.innerHTML = `
+            <td>${safe(item.section)}</td>
+            <td>${safe(item.name)}</td>
+            <td>${safe(item.area)}</td>
+            <td class="small">
+              <a class="me-2" href="${mapUrl}" target="_blank" rel="noopener">Map</a>
+              <a class="me-2" href="${webUrl}" target="_blank" rel="noopener">Web</a>
+              <a class="me-2" href="#" data-cgcopy="${copyVal}">Copy</a>
+              <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+              <a class="text-danger" href="#" data-cgdel="${index}">Delete</a>
+            </td>
+            <td>${safe(notesHours)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    if (sec === 'airports') {
+      const tbody = qs('#cg-air-tbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        const rows = Array.isArray(state.airports) ? state.airports : [];
+        rows.forEach((item, index) => {
+          const tr = document.createElement('tr');
+          const mapUrl = escapeHtml(openMapsUrl(item.address || item.link));
+          const webUrl = escapeHtml(item.link || '#');
+          const copyVal = escapeHtml(norm(item.address || item.airport));
+          tr.innerHTML = `
+            <td>${safe(item.iata)}</td>
+            <td>${safe(item.airport)}</td>
+            <td>${safe(item.recommendation)}</td>
+            <td>${safe(item.distanceTime)}</td>
+            <td class="small">
+              <a class="me-2" href="${mapUrl}" target="_blank" rel="noopener">Map</a>
+              <a class="me-2" href="${webUrl}" target="_blank" rel="noopener">Web</a>
+              <a class="me-2" href="#" data-cgcopy="${copyVal}">Copy</a>
+              <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+              <a class="text-danger" href="#" data-cgdel="${index}">Delete</a>
+            </td>
+            <td>${safe(item.notes)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    qsa('[data-cgcopy]').forEach((anchor) => {
+      anchor.onclick = (event) => {
+        event.preventDefault();
+        const txt = anchor.getAttribute('data-cgcopy') || '';
+        copyText(txt);
+      };
+    });
+    qsa('[data-cgedit]').forEach((anchor) => {
+      anchor.onclick = (event) => {
+        event.preventDefault();
+        const idx = Number(anchor.getAttribute('data-cgedit') || '-1');
+        if (!Number.isNaN(idx)) {
+          cgOpenModal('edit', idx);
+        }
+      };
+    });
+    qsa('[data-cgdel]').forEach((anchor) => {
+      anchor.onclick = (event) => {
+        event.preventDefault();
+        const idx = Number(anchor.getAttribute('data-cgdel') || '-1');
+        if (!Number.isNaN(idx)) {
+          cgDelete(idx);
+        }
+      };
+    });
+  }
+
+  const _cgRenderOrig = typeof cgRender === 'function' ? cgRender : null;
+  if (_cgRenderOrig) {
+    cgRender = function () {
+      const city = cgGetActiveCity();
+      const sec = cgGetActiveSection();
+      const st = cgLoad(city);
+      cgRenderPills();
+
+      const btnImp = document.getElementById('cg-btn-import');
+      if (btnImp) {
+        const pack = (CG_SAMPLES?.[city]?.[sec]) || [];
+        const has = Array.isArray(pack) && pack.length > 0;
+        btnImp.disabled = !has;
+        btnImp.title = has ? 'Import sample' : 'No sample for this section (yet)';
+      }
+
+      ['accommodation', 'restaurants', 'cultural', 'airports'].forEach((sectionKey) => {
+        const panel = qs('#cg-section-' + sectionKey);
+        if (panel) {
+          panel.classList.toggle('d-none', sectionKey !== sec);
+        }
+      });
+
+      if (sec === 'accommodation') {
+        const tbody = qs('#cg-acc-tbody');
+        if (tbody) {
+          tbody.innerHTML = '';
+          const arr = Array.isArray(st.accommodation)
+            ? st.accommodation.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
+            : [];
+          if (!arr.length) {
+            tbody.appendChild(cgEmptyRow(4, 'No places yet - click "Add place".'));
+          } else {
+            arr.forEach((item, index) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${item.name || ''}</td>
+                <td>${item.type || ''}</td>
+                <td class="small">
+                  <a class="me-2" href="${openMapsUrl(item.address || item.link)}" target="_blank" rel="noopener">Map</a>
+                  <a class="me-2" href="${item.link || '#'}" target="_blank" rel="noopener">Web</a>
+                  <a class="me-3" href="#" data-cgcopy="${norm(item.address || item.name)}">Copy</a>
+                  <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+                  <a class="ms-1 text-danger" href="#" data-cgdel="${index}">Delete</a>
+                </td>
+                <td>${item.notes || ''}</td>`;
+              tbody.appendChild(tr);
+            });
+          }
+        }
+      }
+
+      if (sec === 'restaurants') {
+        const tbody = qs('#cg-rest-tbody');
+        if (tbody) {
+          tbody.innerHTML = '';
+          const arr = Array.isArray(st.restaurants)
+            ? st.restaurants.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
+            : [];
+          if (!arr.length) {
+            tbody.appendChild(cgEmptyRow(4, 'No places yet - click "Add place".'));
+          } else {
+            arr.forEach((item, index) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${item.name || ''}</td>
+                <td>${item.area || ''}</td>
+                <td class="small">
+                  <a class="me-2" href="${openMapsUrl(item.address || item.link)}" target="_blank" rel="noopener">Map</a>
+                  <a class="me-2" href="${item.link || '#'}" target="_blank" rel="noopener">Web</a>
+                  <a class="me-3" href="#" data-cgcopy="${norm(item.address || item.name)}">Copy</a>
+                  <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+                  <a class="ms-1 text-danger" href="#" data-cgdel="${index}">Delete</a>
+                </td>
+                <td>${item.notes || ''}</td>`;
+              tbody.appendChild(tr);
+            });
+          }
+        }
+      }
+
+      if (sec === 'cultural') {
+        const tbody = qs('#cg-cul-tbody');
+        if (tbody) {
+          tbody.innerHTML = '';
+          const arr = Array.isArray(st.cultural)
+            ? st.cultural.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
+            : [];
+          if (!arr.length) {
+            tbody.appendChild(cgEmptyRow(5, 'No places yet - click "Add place".'));
+          } else {
+            arr.forEach((item, index) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${item.section || ''}</td>
+                <td>${item.name || ''}</td>
+                <td>${item.area || ''}</td>
+                <td class="small">
+                  <a class="me-2" href="${openMapsUrl(item.address || item.link)}" target="_blank" rel="noopener">Map</a>
+                  <a class="me-2" href="${item.link || '#'}" target="_blank" rel="noopener">Web</a>
+                  <a class="me-3" href="#" data-cgcopy="${norm(item.address || item.name)}">Copy</a>
+                  <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+                  <a class="ms-1 text-danger" href="#" data-cgdel="${index}">Delete</a>
+                </td>
+                <td>${[item.notes || '', item.hours || ''].filter(Boolean).join(' · ')}</td>`;
+              tbody.appendChild(tr);
+            });
+          }
+        }
+      }
+
+      if (sec === 'airports') {
+        const tbody = qs('#cg-air-tbody');
+        if (tbody) {
+          tbody.innerHTML = '';
+          const arr = Array.isArray(st.airports)
+            ? st.airports.slice().sort((a, b) => (a.airport || '').localeCompare(b.airport || '', undefined, { sensitivity: 'base' }))
+            : [];
+          if (!arr.length) {
+            tbody.appendChild(cgEmptyRow(6, 'No airports yet - click "Add place".'));
+          } else {
+            arr.forEach((item, index) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${item.iata || ''}</td>
+                <td>${item.airport || ''}</td>
+                <td>${cgBadgeReco(item.recommendation)}</td>
+                <td>${item.distanceTime || ''}</td>
+                <td class="small">
+                  <a class="me-2" href="${openMapsUrl(item.address || item.link)}" target="_blank" rel="noopener">Map</a>
+                  <a class="me-2" href="${item.link || '#'}" target="_blank" rel="noopener">Web</a>
+                  <a class="me-3" href="#" data-cgcopy="${norm(item.address || item.airport)}">Copy</a>
+                  <a class="me-2" href="#" data-cgedit="${index}">Edit</a>
+                  <a class="ms-1 text-danger" href="#" data-cgdel="${index}">Delete</a>
+                </td>
+                <td>${item.notes || ''}</td>`;
+              tbody.appendChild(tr);
+            });
+          }
+        }
+      }
+
+      qsa('[data-cgcopy]').forEach((anchor) => {
+        anchor.onclick = (event) => {
+          event.preventDefault();
+          const txt = anchor.getAttribute('data-cgcopy') || '';
+          copyText(txt);
+        };
+      });
+      qsa('[data-cgedit]').forEach((anchor) => {
+        anchor.onclick = (event) => {
+          event.preventDefault();
+          const idx = Number(anchor.getAttribute('data-cgedit') || '-1');
+          if (!Number.isNaN(idx)) {
+            cgOpenModal('edit', idx);
+          }
+        };
+      });
+      qsa('[data-cgdel]').forEach((anchor) => {
+        anchor.onclick = (event) => {
+          event.preventDefault();
+          const idx = Number(anchor.getAttribute('data-cgdel') || '-1');
+          if (!Number.isNaN(idx)) {
+            cgDelete(idx);
+          }
+        };
+      });
+    };
+  }
+
+  function cgIsPresent() {
+    return !!document.getElementById('cg-filters');
+  }
+
+  function cgBootOnce() {
+    if (!cgIsPresent()) return;
+    if (window.__cgBooted) return;
+    window.__cgBooted = true;
+    try {
+      if (!localStorage.getItem(CG.ACTIVE_CITY_KEY)) {
+        localStorage.setItem(CG.ACTIVE_CITY_KEY, 'Vinaròs');
+      }
+      if (!localStorage.getItem(CG.ACTIVE_SECTION_KEY)) {
+        localStorage.setItem(CG.ACTIVE_SECTION_KEY, 'accommodation');
+      }
+    } catch (_) {
+      // ignore storage access issues
+    }
+    if (typeof cgRenderPills === 'function') cgRenderPills();
+    if (typeof cgRender === 'function') cgRender();
+  }
+
+  const CG_SAMPLES = {
+    'Vinaròs': {
+      accommodation: [
+        { name: 'Hotel RH Vinaròs Aura', type: 'Hotel', link: 'https://goo.gl/maps/xxx', address: 'Av. Sebastià, Vinaròs', notes: 'Near beach' },
+        { name: 'Airbnb Centro', type: 'Airbnb', link: 'https://airbnb.com/rooms/xxx', address: 'Carrer Major, Vinaròs', notes: '' }
+      ],
+      restaurants: [
+        { name: 'Restaurante Bergantín', area: 'Vinaròs', link: 'https://goo.gl/maps/xxx', notes: 'Seafood' },
+        { name: 'Casa Lina', area: 'Peñíscola', link: 'https://goo.gl/maps/xxx', notes: '' }
+      ],
+      cultural: [
+        { section: 'Trip', name: 'Castillo de Peñíscola', area: 'Peñíscola', link: 'https://goo.gl/maps/xxx', hours: 'Daily', notes: '' },
+        { section: 'Trip', name: 'Morella (ciudad amurallada)', area: 'Morella', link: 'https://goo.gl/maps/xxx', notes: '' }
+      ],
+      airports: [
+        { iata: 'CDT', airport: 'Castellón–Costa Azahar', recommendation: 'Recommended', distanceTime: '60 km / 45 min', link: 'https://goo.gl/maps/xxx', notes: '' },
+        { iata: 'VLC', airport: 'Valencia', recommendation: 'Alternative', distanceTime: '160 km / 1h45', link: 'https://goo.gl/maps/xxx', notes: '' }
+      ]
+    },
+    'Valencia': {
+      accommodation: [
+        { name: 'Hotel Barceló Valencia', type: 'Hotel', link: 'https://goo.gl/maps/xxx', address: 'Av. de França, Valencia', notes: '' }
+      ],
+      restaurants: [
+        { name: 'Casa Carmela', area: 'Valencia', link: 'https://goo.gl/maps/xxx', notes: 'Paella' }
+      ],
+      cultural: [
+        { section: 'Museum', name: 'Ciutat de les Arts i les Ciències', area: 'Valencia', link: 'https://goo.gl/maps/xxx', hours: '10:00–19:00', notes: '' }
+      ],
+      airports: [
+        { iata: 'VLC', airport: 'Valencia', recommendation: 'Recommended', distanceTime: '10 km / 20 min', link: 'https://goo.gl/maps/xxx', notes: '' }
+      ]
+    },
+    'Madrid': {
+      accommodation: [
+        { name: 'Hotel Riu Plaza España', type: 'Hotel', link: 'https://goo.gl/maps/xxxRiu', address: 'C/ Gran Vía 84, Madrid', notes: '' }
+      ],
+      restaurants: [
+        { name: 'Restaurante Botín', area: 'Centro', link: 'https://goo.gl/maps/xxxBotin', notes: 'Cochinillo' },
+        { name: 'Mercado de San Miguel', area: 'Centro', link: 'https://goo.gl/maps/xxxSanMiguel', notes: '' }
+      ],
+      cultural: [
+        { section: 'Museum', name: 'Museo del Prado', area: 'Recoletos', link: 'https://goo.gl/maps/xxxPrado', hours: '10:00–20:00', notes: '' },
+        { section: 'Park', name: 'Parque del Retiro', area: 'Retiro', link: 'https://goo.gl/maps/xxxRetiro', notes: '' },
+        { section: 'Trip', name: 'Toledo (day trip)', area: 'Toledo', link: 'https://goo.gl/maps/xxxToledo', notes: '' }
+      ],
+      airports: [
+        { iata: 'MAD', airport: 'Adolfo Suárez Madrid-Barajas', recommendation: 'Recommended', distanceTime: '—', link: 'https://goo.gl/maps/xxxMAD' }
+      ]
+    },
+    'Barcelona': {
+      accommodation: [
+        { name: 'Hotel Jazz', type: 'Hotel', link: 'https://goo.gl/maps/xxxJazz', address: 'C/ Pelai 3, Barcelona', notes: '' }
+      ],
+      restaurants: [
+        { name: 'Can Culleretes', area: 'Gòtic', link: 'https://goo.gl/maps/xxxCulleretes', notes: '' },
+        { name: 'La Paradeta', area: 'Eixample', link: 'https://goo.gl/maps/xxxParadeta', notes: 'Seafood' }
+      ],
+      cultural: [
+        { section: 'Monument', name: 'Sagrada Família', area: 'Eixample', link: 'https://goo.gl/maps/xxxSagrada', notes: '' },
+        { section: 'Park', name: 'Park Güell', area: 'Gràcia', link: 'https://goo.gl/maps/xxxGuell', notes: '' },
+        { section: 'Trip', name: 'Montserrat (day trip)', area: 'Montserrat', link: 'https://goo.gl/maps/xxxMontserrat', notes: '' }
+      ],
+      airports: [
+        { iata: 'BCN', airport: 'Barcelona–El Prat', recommendation: 'Recommended', distanceTime: '—', link: 'https://goo.gl/maps/xxxBCN' }
+      ]
+    }
+  };
+
+  function cgImportSample() {
+    const city = cgGetActiveCity();
+    const section = cgGetActiveSection();
+    const pack = CG_SAMPLES[city]?.[section] || [];
+    if (!pack.length) return;
+    const state = cgLoad(city);
+    const additions = pack.map((item) => ({ ...item }));
+    const next = (state[section] || []).concat(additions);
+    state[section] = next;
+    cgSave(city, state);
+    cgRender();
+  }
+
+  const _cgImportSampleOrig = (typeof cgImportSample === 'function') ? cgImportSample : null;
+  cgImportSample = function () {
+    const city = cgGetActiveCity();
+    const sec = cgGetActiveSection();
+    const st = cgLoad(city);
+    const pack = (CG_SAMPLES?.[city]?.[sec]) || [];
+    const curr = Array.isArray(st[sec]) ? st[sec] : [];
+    const merged = cgDedupe(curr.concat(pack), (x) => ((x.name || '').trim().toLowerCase() + '|' + cgNormalizeLink(x.link)));
+    st[sec] = merged;
+    cgSave(city, st);
+    if (typeof cgRender === 'function') cgRender();
+
+    // Tiny notice next to the Import button
+    const btn = document.getElementById('cg-btn-import');
+    if (btn) {
+      let badge = document.getElementById('cg-imported-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'cg-imported-badge';
+        badge.className = 'ms-2 text-success small';
+        btn.parentElement.appendChild(badge);
+      }
+      badge.textContent = 'Imported ✓';
+      setTimeout(() => { if (badge) badge.textContent = ''; }, 1500);
+    }
+  };
+
+  function cgUpdateModalMapsLink() {
+    const addressEl = qs('#cg-f-address');
+    const linkEl = qs('#cg-f-link');
+    const anchor = qs('#cg-f-openmaps');
+    if (!anchor) return;
+    const addr = addressEl ? norm(addressEl.value) : '';
+    const link = linkEl ? norm(linkEl.value) : '';
+    anchor.href = openMapsUrl(addr || link);
+  }
+
+  function cgValidateModal() {
+    const section = cgGetActiveSection();
+    const nameEl = qs('#cg-f-name');
+    const linkEl = qs('#cg-f-link');
+    const iataEl = qs('#cg-f-iata');
+    const airportEl = qs('#cg-f-airport');
+    const saveBtn = qs('#cg-f-save');
+    let ok = !!(nameEl && norm(nameEl.value)) && !!(linkEl && norm(linkEl.value));
+    if (section === 'airports') {
+      ok = ok && !!(iataEl && norm(iataEl.value)) && !!(airportEl && norm(airportEl.value));
+    }
+    if (saveBtn) saveBtn.disabled = !ok;
+    return ok;
+  }
+
+  function cgDelete(index) {
+    const city = cgGetActiveCity();
+    const section = cgGetActiveSection();
+    if (!window.confirm('Delete this item?')) return;
+    const state = cgLoad(city);
+    if (!Array.isArray(state[section])) return;
+    state[section].splice(index, 1);
+    cgSave(city, state);
+    cgRender();
+  }
+
+  function cgOpenModal(mode, index) {
+    const section = cgGetActiveSection();
+    const city = cgGetActiveCity();
+    const state = cgLoad(city);
+    const modalEl = qs('#cg-modal');
+    const ModalCtor = window.bootstrap?.Modal;
+    if (!modalEl || !ModalCtor) return;
+    const modal = ModalCtor.getOrCreateInstance(modalEl);
+    const titleEl = qs('#cgModalLabel');
+    const fieldSelectors = [
+      '#cg-f-name',
+      '#cg-f-type',
+      '#cg-f-area',
+      '#cg-f-section',
+      '#cg-f-iata',
+      '#cg-f-airport',
+      '#cg-f-link',
+      '#cg-f-address',
+      '#cg-f-reco',
+      '#cg-f-dist',
+      '#cg-f-hours',
+      '#cg-f-notes'
+    ];
+    fieldSelectors.forEach((selector) => {
+      const el = qs(selector);
+      if (el) el.value = '';
+    });
+
+    qsa('.cg-f-only-acc').forEach((el) => el.classList.toggle('d-none', section !== 'accommodation'));
+    qsa('.cg-f-only-rest').forEach((el) => el.classList.toggle('d-none', section !== 'restaurants'));
+    qsa('.cg-f-only-cul').forEach((el) => el.classList.toggle('d-none', section !== 'cultural'));
+    qsa('.cg-f-only-air').forEach((el) => el.classList.toggle('d-none', section !== 'airports'));
+
+    let current = null;
+    if (mode === 'edit') {
+      current = state[section]?.[index];
+      if (current) {
+        const set = (sel, val) => {
+          const el = qs(sel);
+          if (el) el.value = val || '';
+        };
+        set('#cg-f-name', current.name);
+        if (section === 'accommodation') set('#cg-f-type', current.type);
+        if (section === 'restaurants') set('#cg-f-area', current.area);
+        if (section === 'cultural') {
+          set('#cg-f-section', current.section);
+          set('#cg-f-area', current.area);
+          set('#cg-f-hours', current.hours);
+        }
+        if (section === 'airports') {
+          set('#cg-f-iata', current.iata);
+          set('#cg-f-airport', current.airport);
+          set('#cg-f-reco', current.recommendation);
+          set('#cg-f-dist', current.distanceTime);
+        }
+        set('#cg-f-link', current.link);
+        set('#cg-f-address', current.address);
+        set('#cg-f-notes', current.notes);
+      }
+    }
+
+    if (titleEl) {
+      const prettySection = section.charAt(0).toUpperCase() + section.slice(1);
+      titleEl.textContent = `${mode === 'edit' ? 'Edit' : 'Add'} — ${prettySection}`;
+    }
+
+    const nameInput = qs('#cg-f-name');
+    const linkInput = qs('#cg-f-link');
+    const addressInput = qs('#cg-f-address');
+    const copyBtn = qs('#cg-f-copyaddr');
+    const mapBtn = qs('#cg-f-openmaps');
+    const saveBtn = qs('#cg-f-save');
+
+    const refreshMapLink = () => {
+      if (mapBtn) {
+        const addrOrLink = addressInput?.value || linkInput?.value;
+        mapBtn.href = openMapsUrl(addrOrLink);
+      }
+    };
+
+    if (linkInput) {
+      linkInput.oninput = refreshMapLink;
+    }
+    if (addressInput) {
+      addressInput.oninput = refreshMapLink;
+    }
+    refreshMapLink();
+
+    if (nameInput) {
+      setTimeout(() => nameInput.focus(), 50);
+    }
+
+    if (copyBtn) {
+      copyBtn.onclick = () => copyText(addressInput?.value || '');
+    }
+    if (mapBtn) {
+      mapBtn.target = '_blank';
+      mapBtn.rel = 'noopener';
+    }
+
+    const formEl = qs('#cg-form');
+    if (formEl && saveBtn) {
+      if (formEl.__cgEnterHandler) {
+        formEl.removeEventListener('keydown', formEl.__cgEnterHandler);
+      }
+      const handler = (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+          const tag = (ev.target?.tagName || '').toLowerCase();
+          if (tag !== 'textarea') {
+            ev.preventDefault();
+            if (!saveBtn.disabled) saveBtn.click();
+          }
+        }
+      };
+      formEl.addEventListener('keydown', handler);
+      formEl.__cgEnterHandler = handler;
+    }
+
+    if (saveBtn) {
+      saveBtn.onclick = () => {
+        const name = norm(nameInput?.value);
+        const link = norm(linkInput?.value);
+        if (!name) {
+          alert('Name is required');
+          return;
+        }
+        if (!link) {
+          alert('Link is required');
+          return;
+        }
+        const notes = norm(qs('#cg-f-notes')?.value);
+        const address = norm(addressInput?.value);
+        const record = { name, link, address, notes };
+        if (section === 'accommodation') {
+          record.type = qs('#cg-f-type')?.value || '';
+        } else if (section === 'restaurants') {
+          record.area = norm(qs('#cg-f-area')?.value);
+        } else if (section === 'cultural') {
+          record.section = qs('#cg-f-section')?.value || '';
+          record.area = norm(qs('#cg-f-area')?.value);
+          record.hours = norm(qs('#cg-f-hours')?.value);
+        } else if (section === 'airports') {
+          record.iata = norm(qs('#cg-f-iata')?.value);
+          record.airport = norm(qs('#cg-f-airport')?.value);
+          record.recommendation = qs('#cg-f-reco')?.value || '';
+          record.distanceTime = norm(qs('#cg-f-dist')?.value);
+        }
+        const freshState = cgLoad(city);
+        if (!Array.isArray(freshState[section])) {
+          freshState[section] = [];
+        }
+        if (mode === 'edit' && current) {
+          freshState[section][index] = record;
+        } else {
+          freshState[section].push(record);
+        }
+        cgSave(city, freshState);
+        modal.hide();
+        cgRender();
+      };
+    }
+
+    modal.show();
+  }
+
+  const _cgOpenModalOrig = typeof cgOpenModal === 'function' ? cgOpenModal : null;
+  if (_cgOpenModalOrig) {
+    cgOpenModal = function (mode, index) {
+      _cgOpenModalOrig(mode, index);
+
+      const section = cgGetActiveSection();
+      if (section === 'cultural') {
+        const sel = qs('#cg-f-section');
+        if (sel && !sel.value) sel.value = 'Trip';
+      }
+
+      const handleInput = () => {
+        cgUpdateModalMapsLink();
+        cgValidateModal();
+      };
+
+      ['#cg-f-address', '#cg-f-link'].forEach((selector) => {
+        const el = qs(selector);
+        if (el) el.oninput = handleInput;
+      });
+      ['#cg-f-name', '#cg-f-iata', '#cg-f-airport'].forEach((selector) => {
+        const el = qs(selector);
+        if (el) el.oninput = () => cgValidateModal();
+      });
+
+      cgUpdateModalMapsLink();
+      cgValidateModal();
+
+      const saveBtn = qs('#cg-f-save');
+      if (saveBtn) {
+        const originalHandler = saveBtn.onclick;
+        saveBtn.onclick = function (event) {
+          if (!cgValidateModal()) return;
+          if (cgGetActiveSection() === 'airports') {
+            const iataEl = qs('#cg-f-iata');
+            if (iataEl) iataEl.value = norm(iataEl.value).toUpperCase();
+          }
+          if (typeof originalHandler === 'function') {
+            originalHandler.call(this, event);
+          }
+          [
+            '#cg-f-name',
+            '#cg-f-type',
+            '#cg-f-area',
+            '#cg-f-section',
+            '#cg-f-iata',
+            '#cg-f-airport',
+            '#cg-f-link',
+            '#cg-f-address',
+            '#cg-f-reco',
+            '#cg-f-dist',
+            '#cg-f-hours',
+            '#cg-f-notes'
+          ].forEach((selector) => {
+            const el = qs(selector);
+            if (el) {
+              el.value = '';
+            }
+          });
+          cgUpdateModalMapsLink();
+          cgValidateModal();
+        };
+        cgValidateModal();
+      }
+    };
+  }
+
+  let cgBound = false;
+  function bindCityGuide() {
+    const filters = document.getElementById('cg-filters');
+    if (!filters) return;
+    cgRender();
+    if (cgBound) return;
+    cgBound = true;
+
+    qsa('#cg-city-pills .nav-link').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const city = link.dataset.city;
+        if (!city) return;
+        cgSetActiveCity(city);
+        cgRender();
+      });
+    });
+
+    qsa('#cg-section-pills .nav-link').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const section = link.dataset.section;
+        if (!section) return;
+        cgSetActiveSection(section);
+        cgRender();
+      });
+    });
+
+    const btnAdd = qs('#cg-btn-add');
+    if (btnAdd) {
+      btnAdd.addEventListener('click', () => cgOpenModal('add'));
+    }
+    const btnImport = qs('#cg-btn-import');
+    if (btnImport) {
+      btnImport.addEventListener('click', () => cgImportSample());
+    }
+  }
+
+  if (!window.__cgDelegated) {
+    window.__cgDelegated = true;
+    document.addEventListener('click', (e) => {
+      const cityLink = e.target.closest('#cg-city-pills .nav-link');
+      if (cityLink) {
+        e.preventDefault();
+        if (typeof cgSetActiveCity === 'function') cgSetActiveCity(cityLink.dataset.city);
+        if (typeof cgRenderPills === 'function') cgRenderPills();
+        if (typeof cgRender === 'function') cgRender();
+        return;
+      }
+      const secLink = e.target.closest('#cg-section-pills .nav-link');
+      if (secLink) {
+        e.preventDefault();
+        if (typeof cgSetActiveSection === 'function') cgSetActiveSection(secLink.dataset.section);
+        if (typeof cgRenderPills === 'function') cgRenderPills();
+        if (typeof cgRender === 'function') cgRender();
+        return;
+      }
+      const addBtn = e.target.closest('#cg-btn-add');
+      if (addBtn) {
+        e.preventDefault();
+        if (typeof cgOpenModal === 'function') cgOpenModal('add');
+        return;
+      }
+      const impBtn = e.target.closest('#cg-btn-import');
+      if (impBtn) {
+        e.preventDefault();
+        if (typeof cgImportSample === 'function') cgImportSample();
+      }
+    }, true);
+  }
+
+  document.addEventListener('DOMContentLoaded', cgBootOnce);
+  if (typeof MutationObserver !== 'undefined' && !window.__cgMO) {
+    window.__cgMO = new MutationObserver((mutList, mo) => {
+      if (cgIsPresent()) {
+        cgBootOnce();
+        try { mo.disconnect(); } catch (_) {}
+        window.__cgMO = null;
+      }
+    });
+    if (document.body) {
+      window.__cgMO.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+  cgBootOnce();
+
+  function bindHousing() {
+    const panel = document.getElementById('panel-housing');
+    if (!panel) return;
+
+    setText('#res-building', HOUSING_DEMO.building);
+    setText('#res-floor', HOUSING_DEMO.floor);
+    setText('#res-room', HOUSING_DEMO.room);
+    fillList(qs('#res-roommates'), HOUSING_DEMO.roommates);
+
+    ensureDemoAcks();
+    wireCopyRoomInfo();
+    bindAddressModal();
+    document.querySelectorAll('#res-roommates a[title="PENDING"]').forEach((link) => {
+      if (link.dataset.bound === 'true') return;
+      link.addEventListener('click', (event) => event.preventDefault());
+      link.dataset.bound = 'true';
+    });
+
+    const panelBound = panel.dataset.housingBound === 'true';
+    const chkRules = qs('#ack-housing-rules');
+    const chkClean = qs('#ack-cleaning-code');
+    const btnDLRules = qs('#btn-download-housing-rules');
+    const btnDLClean = qs('#btn-download-cleaning-code');
+
+    const rulesAcked = localStorage.getItem(LS.ACK_RULES) === '1';
+    const cleanAcked = localStorage.getItem(LS.ACK_CLEAN) === '1';
+    if (chkRules) chkRules.checked = rulesAcked;
+    if (chkClean) chkClean.checked = cleanAcked;
+    if (btnDLRules) btnDLRules.disabled = !rulesAcked;
+    if (btnDLClean) btnDLClean.disabled = !cleanAcked;
+    updateAckBadges();
+
+    if (!panelBound && chkRules) {
+      chkRules.addEventListener('change', () => {
+        if (chkRules.checked) {
+          localStorage.setItem(LS.ACK_RULES, '1');
+          localStorage.setItem(LS.ACK_RULES_AT, new Date().toISOString());
+          if (btnDLRules) btnDLRules.disabled = false;
+        } else {
+          localStorage.removeItem(LS.ACK_RULES);
+          localStorage.removeItem(LS.ACK_RULES_AT);
+          if (btnDLRules) btnDLRules.disabled = true;
+        }
+        updateAckBadges();
+      });
+    }
+
+    if (!panelBound && chkClean) {
+      chkClean.addEventListener('change', () => {
+        if (chkClean.checked) {
+          localStorage.setItem(LS.ACK_CLEAN, '1');
+          localStorage.setItem(LS.ACK_CLEAN_AT, new Date().toISOString());
+          if (btnDLClean) btnDLClean.disabled = false;
+        } else {
+          localStorage.removeItem(LS.ACK_CLEAN);
+          localStorage.removeItem(LS.ACK_CLEAN_AT);
+          if (btnDLClean) btnDLClean.disabled = true;
+        }
+        updateAckBadges();
+      });
+    }
+
+    if (!panelBound && btnDLRules) {
+      btnDLRules.addEventListener('click', () => {
+        const at = localStorage.getItem(LS.ACK_RULES_AT) || new Date().toISOString();
+        const text = [
+          'ETURE — Housing Rules',
+          '',
+          '1) Quiet hours from 22:00 to 08:00.',
+          '2) No guests after 21:00 without prior permission.',
+          '3) Keep common areas clean and tidy.',
+          '4) Report damages immediately to staff.',
+          '',
+          `Acknowledged at: ${at}`
+        ].join('\n');
+        downloadText('HousingRules.txt', text);
+      });
+    }
+
+    if (!panelBound && btnDLClean) {
+      btnDLClean.addEventListener('click', () => {
+        const at = localStorage.getItem(LS.ACK_CLEAN_AT) || new Date().toISOString();
+        const text = [
+          'ETURE — Cleaning Code',
+          '',
+          '• Daily: make your bed and keep your room organized.',
+          '• Weekly: take out trash and clean surfaces.',
+          '• Bathroom: leave it clean after every use.',
+          '• Kitchen: wash dishes and wipe counters after cooking.',
+          '',
+          `Acknowledged at: ${at}`
+        ].join('\n');
+        downloadText('CleaningCode.txt', text);
+      });
+    }
+
+    bindDiningNotes(panelBound);
+
+    if (!panelBound) {
+      panel.dataset.housingBound = 'true';
+    }
+  }
+
+  function parseISO(d) {
+    if (!d) return null;
+    const parts = d.split('-').map(Number);
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+    const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+const fmtMonth = new Intl.DateTimeFormat('en-US', { month: 'short' });
+const fmtMD = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const fmtY = new Intl.DateTimeFormat('en-US', { year: 'numeric' });
+
+function toYMD(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  const clone = new Date(date.getTime());
+  clone.setHours(12, 0, 0, 0);
+  return clone.toISOString().slice(0, 10);
+}
+
+function ymdToDate(ymd) {
+  if (!ymd || typeof ymd !== 'string') return null;
+  const parts = ymd.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+  return new Date(`${parts[0].toString().padStart(4, '0')}-${String(parts[1]).padStart(2, '0')}-${String(parts[2]).padStart(2, '0')}T12:00:00`);
+}
+
+function dmyToYmd(dmy) {
+  if (!dmy || typeof dmy !== 'string') return '';
+  const [dd = '', mm = '', yy = ''] = dmy.split(/[-\/.]/).map((chunk) => chunk.trim());
+  if (!dd || !mm || !yy) return '';
+  const year = yy.length === 2 ? `20${yy}` : yy.padStart(4, '0');
+  return `${year}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+}
+
+function prettyRange(startYMD, endYMD) {
+  if (!startYMD || !endYMD) return `${startYMD || '—'} – ${endYMD || '—'}`;
+  const partsA = startYMD.split('-').map(Number);
+  const partsB = endYMD.split('-').map(Number);
+    if (partsA.length !== 3 || partsB.length !== 3 || partsA.some(Number.isNaN) || partsB.some(Number.isNaN)) {
+      return `${startYMD} – ${endYMD}`;
+    }
+    const dA = new Date(partsA[0], partsA[1] - 1, partsA[2]);
+    const dB = new Date(partsB[0], partsB[1] - 1, partsB[2]);
+    const fmt = (date, opts) => date.toLocaleDateString(undefined, opts);
+    const sameYear = dA.getFullYear() === dB.getFullYear();
+    const sameMonth = sameYear && dA.getMonth() === dB.getMonth();
+    if (sameMonth) {
+      return `${fmt(dA, { month: 'short', day: 'numeric' })}–${fmt(dB, { day: 'numeric' })}, ${fmt(dA, { year: 'numeric' })}`;
+    }
+    if (sameYear) {
+      return `${fmt(dA, { month: 'short', day: 'numeric' })} – ${fmt(dB, { month: 'short', day: 'numeric' })}, ${fmt(dA, { year: 'numeric' })}`;
+    }
+    return `${fmt(dA, { month: 'short', day: 'numeric', year: 'numeric' })} – ${fmt(dB, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  }
+  function findNextIndex(ranges) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (!Array.isArray(ranges)) return -1;
+    for (let i = 0; i < ranges.length; i += 1) {
+      const item = ranges[i] || {};
+      if (item.date) {
+        const d = parseISO(item.date);
+        if (d && d >= today) return i;
+      } else {
+        const s = parseISO(item.start);
+        const e = parseISO(item.end);
+        if (e && e >= today) return i;
+      }
+    }
+    return -1;
+  }
+
+  window.parseISO = parseISO;
+  window.prettyRange = prettyRange;
+  window.addDaysISO = addDaysISO;
+
+  const CAL_STORAGE_KEY = 'calendar_demo';
+  // TODO: paste the official list of Game Weeks and Breaks here (CSV-to-JSON ok).
+  const CAL_SAMPLE_GAME_WEEKS = [
+    { start: '2025-09-13', end: '2025-09-14', note: 'Jornada 1 – Eture FC vs TBD' },
+    { start: '2025-09-20', end: '2025-09-21', note: 'Jornada 2 – Away' },
+    { start: '2025-09-27', end: '2025-09-28', note: 'Jornada 3 – Home' }
+  ];
+  const CAL_SAMPLE_BREAKS = [
+    { start: '2025-12-21', end: '2026-01-05', note: 'Winter break' },
+    { start: '2026-03-28', end: '2026-03-30', note: 'Easter break' },
+    { start: '2026-05-01', end: '2026-05-03', note: 'Free weekend' }
+  ];
+  const CAL_SAMPLE_CLASSES = [
+    'Spanish class every day 2–3 p.m. at Resi 2'
+  ];
+  // TODO(SHOWCASE): adjust dates/location if edition changes.
+  const CAL_SAMPLE_SHOWCASE = {
+    start: '2026-02-09',
+    end: '2026-02-11',
+    when: 'Feb 9–11, 2026',
+    where: 'Eture Sports Campus, Valencia, Spain',
+    mapsUrl: 'https://maps.google.com/?q=Eture+Sports,Valencia',
+    agenda: [
+      'Mon 9: Coaches reception & hotel check-in',
+      'Mon 9: Inaugural Cocktail 8:30–11:30 PM',
+      'Tue 10: Showcase games 8:00 AM–5:00 PM (lunch on field) • Dinner: MasFerrat',
+      'Wed 11: Showcase games 8:00 AM–5:00 PM (lunch on field)',
+      'Wed 11: Transfer to ETURE FC Stadium 5:00 PM • ETURE FC Game 7:00 PM • Dinner: BBQ',
+      'Thu 12: 1:1 coach meetings 10:30 AM–2:00 PM • Lunch downtown • Meetings continue'
+    ]
+  };
+
+  function emptyShowcase() {
+    return { start: '', end: '', when: '', where: '', mapsUrl: '', agenda: [] };
+  }
+
+  function calDefaults() {
+    return {
+      gameWeeks: [],
+      breaks: [],
+      classes: CAL_SAMPLE_CLASSES.slice(),
+      showcase: emptyShowcase()
+    };
+  }
+
+  let calendarState = calDefaults();
+  let calendarBound = false;
+
+  function sanitizeGameWeeks(list) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const modern = [];
+    const legacy = [];
+
+    list.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      if (typeof item.date === 'string' || typeof item.md === 'number' || item.opponent || item.field) {
+        const date = (item.date || '').trim().slice(0, 10);
+        if (!date) return;
+        const mdVal = Number(item.md);
+        const opponent = typeof item.opponent === 'string' ? item.opponent.trim() : '';
+        const fieldRaw = item.field && typeof item.field === 'object' ? item.field : {};
+        const field = {
+          side: fieldRaw.side === 'Away' ? 'Away' : 'Home',
+          name: typeof fieldRaw.name === 'string' ? fieldRaw.name.trim() : ''
+        };
+        const key = `new|${date}|${field.side}|${field.name}|${opponent}`.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        modern.push({
+          md: Number.isFinite(mdVal) && mdVal > 0 ? mdVal : 0,
+          date,
+          opponent,
+          field
+        });
+      } else {
+        const start = toISODate(item.start || '');
+        const end = toISODate(item.end || '');
+        const note = typeof item.note === 'string' ? item.note.trim() : '';
+        if (!start && !end && !note) return;
+        const key = `legacy|${start}|${end}|${note}`.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        legacy.push({ start, end, note });
+      }
+    });
+
+    if (modern.length) {
+      modern.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      modern.forEach((entry, idx) => {
+        entry.md = idx + 1;
+      });
+      return modern;
+    }
+
+    return legacy;
+  }
+
+  function sanitizeBreaks(list) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const out = [];
+    list.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      const start = toISODate(item.start || '');
+      const end = toISODate(item.end || '');
+      const note = typeof item.note === 'string' ? item.note.trim() : '';
+      const holiday = typeof item.holiday === 'string' ? item.holiday.trim() : '';
+      const label = holiday || note;
+      if (!start && !end && !label) return;
+      const key = `${start}|${end}|${label}`.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({ start, end, holiday: label, note: label });
+    });
+    out.sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    return out;
+  }
+
+  function sanitizeStringList(list) {
+    const seen = new Set();
+    const out = [];
+    if (!Array.isArray(list)) return out;
+    list.forEach((value) => {
+      const str = typeof value === 'string' ? value.trim() : '';
+      if (!str) return;
+      const key = str.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(str);
+    });
+    return out;
+  }
+
+  function sanitizeShowcase(data) {
+    const base = emptyShowcase();
+    if (!data || typeof data !== 'object') return base;
+    base.start = toISODate(data.start || '');
+    base.end = toISODate(data.end || '');
+    base.when = typeof data.when === 'string' ? data.when.trim() : '';
+    base.where = typeof data.where === 'string' ? data.where.trim() : '';
+    base.mapsUrl = typeof data.mapsUrl === 'string' ? data.mapsUrl.trim() : '';
+    base.agenda = sanitizeStringList(data.agenda);
+    return base;
+  }
+
+  function getCal() {
+    try {
+      const raw = localStorage.getItem(CAL_STORAGE_KEY);
+      if (!raw) return calDefaults();
+      const parsed = JSON.parse(raw) || {};
+      const hasClassesProp = Object.prototype.hasOwnProperty.call(parsed, 'classes');
+      return {
+        gameWeeks: sanitizeGameWeeks(parsed.gameWeeks),
+        breaks: sanitizeBreaks(parsed.breaks),
+        classes: hasClassesProp ? sanitizeStringList(parsed.classes) : CAL_SAMPLE_CLASSES.slice(),
+        showcase: sanitizeShowcase(parsed.showcase)
+      };
+    } catch (_) {
+      return calDefaults();
+    }
+  }
+
+  function setCal(next) {
+    const sanitized = {
+      gameWeeks: sanitizeGameWeeks(next && next.gameWeeks),
+      breaks: sanitizeBreaks(next && next.breaks),
+      classes: sanitizeStringList(next && next.classes),
+      showcase: sanitizeShowcase(next && next.showcase)
+    };
+    localStorage.setItem(CAL_STORAGE_KEY, JSON.stringify(sanitized));
+    calendarState = sanitized;
+    return calendarState;
+  }
+
+  function wipeSection(sectionKey) {
+    const next = { ...calendarState };
+    if (sectionKey === 'gameWeeks') {
+      next.gameWeeks = [];
+    } else if (sectionKey === 'breaks') {
+      next.breaks = [];
+    } else if (sectionKey === 'classes') {
+      next.classes = [];
+    } else if (sectionKey === 'showcase') {
+      next.showcase = emptyShowcase();
+    }
+    setCal(next);
+  }
+
+  function formatCalRange(start, end) {
+    if (!start || !end) {
+      const s = (start || '').trim() || '—';
+      const e = (end || '').trim() || '—';
+      return `${s}→${e}`;
+    }
+    return prettyRange(start, end);
+  }
+
+  function yyyymmdd(iso) {
+    const d = parseISO(iso);
+    if (!d) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}${mm}${dd}`;
+  }
+
+  function addDaysISO(iso, n) {
+    const d = parseISO(iso);
+    if (!d) return '';
+    d.setDate(d.getDate() + Number(n || 0));
+    return toISODate(d);
+  }
+
+  function exportShowcaseICS(sc) {
+    if (!sc || !sc.start || !sc.end) {
+      alert('Showcase dates not set');
+      return;
+    }
+    const dtstamp = toISODate(new Date()).replace(/-/g, '') + 'T000000Z';
+    const dtStart = yyyymmdd(sc.start);
+    const dtEndExclusive = yyyymmdd(addDaysISO(sc.end, 1));
+    if (!dtStart || !dtEndExclusive) {
+      alert('Showcase dates not set');
+      return;
+    }
+    const agenda = Array.isArray(sc.agenda) ? sc.agenda : [];
+    const desc = agenda.join(' • ').replace(/\r?\n/g, ' ');
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Eture//Calendar//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `DTSTAMP:${dtstamp}`,
+      `DTSTART;VALUE=DATE:${dtStart}`,
+      `DTEND;VALUE=DATE:${dtEndExclusive}`,
+      'SUMMARY:Eture Showcase',
+      `LOCATION:${sc.where || ''}`,
+      `DESCRIPTION:${desc}`,
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Eture-Showcase.ics';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function makeDeleteButton(index) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-link text-danger';
+    btn.dataset.del = String(index);
+    btn.textContent = 'Delete';
+    return btn;
+  }
+
+  function renderEmptyMessage(listEl, text) {
+    const li = document.createElement('li');
+    li.className = 'text-muted small fst-italic py-1';
+    li.textContent = text;
+    listEl.appendChild(li);
+  }
+
+  function renderGameWeeks() {
+    (function () {
+      const fmtDate = (iso) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return String(iso);
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      };
+      const venueLabel = (side) => {
+        const s = String(side || '').toLowerCase();
+        return s.includes('away') ? '✈️ Away' : '🏠 Home';
+      };
+      const normalizeWeeks = (weeks) => {
+        if (!Array.isArray(weeks)) return [];
+        return weeks.map((w, idx) => {
+          const md = Number.isFinite(Number(w.md)) && Number(w.md) > 0 ? Number(w.md) : (idx + 1);
+          const iso = (w.date || w.start || '').toString();
+          const opp = (w.opponent || '').toString().trim();
+          let side = '';
+          if (w.field && typeof w.field === 'object') side = w.field.side || '';
+          else side = String(w.field || '').toLowerCase();
+          return { md, date: fmtDate(iso), opponent: opp, venue: venueLabel(side) };
+        });
+      };
+
+      const container =
+        document.getElementById('cal-gw-list') ||
+        document.querySelector('#game-weeks') ||
+        document.querySelector('[data-card="game-weeks"]') ||
+        (typeof getGameWeeksContainer === 'function' ? getGameWeeksContainer() : null);
+
+      const state = (typeof getCalSafe === 'function') ? (getCalSafe() || {}) :
+        (typeof calendarState === 'object' ? calendarState : {});
+      const weeks = normalizeWeeks(state.gameWeeks);
+
+      const wrapper =
+        (container && container.querySelector && container.querySelector('.card-body'))
+          ? container.querySelector('.card-body')
+          : container;
+
+      if (!wrapper) return;
+
+      const tableHtml = `
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width:90px;">Matchday</th>
+              <th style="width:170px;">Date</th>
+              <th>Opponent</th>
+              <th style="width:130px;">Venue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              !weeks.length
+                ? `<tr><td colspan="4" class="text-muted small">No items yet.</td></tr>`
+                : weeks.map(r => `
+                    <tr>
+                      <td>${r.md}</td>
+                      <td>${r.date}</td>
+                      <td>${r.opponent || ''}</td>
+                      <td>${r.venue}</td>
+                    </tr>
+                  `).join('')
+            }
+          </tbody>
+        </table>
+      `;
+
+      wrapper.innerHTML = tableHtml;
+    })();
+  }
+
+  function renderBreaks() {
+    (function () {
+      const getState = () => {
+        if (typeof getCalSafe === 'function') return getCalSafe() || {};
+        if (typeof calendarState === 'object' && calendarState) return calendarState;
+        try { return JSON.parse(localStorage.getItem('calendar_demo') || '{}') || {}; } catch { return {}; }
+      };
+      const normalizeBreaks = (list) => {
+        if (!Array.isArray(list)) return [];
+        return list.map(b => ({
+          start: (b.start || '').toString(),
+          end: (b.end || '').toString(),
+          holiday: (b.holiday || b.note || '').toString()
+        }));
+      };
+
+      const container =
+        document.getElementById('cal-breaks-list') ||
+        document.querySelector('#breaks-card') ||
+        document.querySelector('[data-card="breaks"]') ||
+        document.querySelector('#breaks-and-holidays') ||
+        (typeof getBreaksContainer === 'function' ? getBreaksContainer() : null);
+
+      const state = getState();
+      const rows = normalizeBreaks(state.breaks);
+
+      const wrapper = (container && container.querySelector?.('.card-body')) ? container.querySelector('.card-body') : container;
+      if (!wrapper) return;
+
+      const tableHtml = `
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th style="width:170px;">Start</th>
+              <th style="width:170px;">End</th>
+              <th>Holiday</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              !rows.length
+                ? `<tr><td colspan="3" class="text-muted small">No items yet.</td></tr>`
+                : rows.map(r => `
+                  <tr>
+                    <td>${r.start}</td>
+                    <td>${r.end}</td>
+                    <td>${r.holiday}</td>
+                  </tr>
+                `).join('')
+            }
+          </tbody>
+        </table>
+      `;
+      wrapper.innerHTML = tableHtml;
+    })();
+  }
+
+  function renderClasses() {
+    const listEl = document.getElementById('cal-classes-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    const rows = Array.isArray(calendarState.classes) ? calendarState.classes : [];
+    if (!rows.length) {
+      renderEmptyMessage(listEl, 'No class hours saved yet.');
+      return;
+    }
+    rows.forEach((entry, index) => {
+      const li = document.createElement('li');
+      li.className = 'd-flex align-items-center justify-content-between border-bottom py-1';
+      const span = document.createElement('span');
+      span.className = 'flex-grow-1 me-2 text-break';
+      span.textContent = entry;
+      li.appendChild(span);
+      li.appendChild(makeDeleteButton(index));
+      listEl.appendChild(li);
+    });
+  }
+
+  function renderShowcase() {
+    const data = calendarState.showcase || emptyShowcase();
+    const infoEl = document.getElementById('sc-when-where');
+    if (infoEl) {
+      infoEl.innerHTML = '';
+      const autoWhen = (!data.when && data.start && data.end) ? prettyRange(data.start, data.end) : '';
+      const whenText = data.when || autoWhen;
+      const hasWhen = Boolean(whenText);
+      const hasWhere = Boolean(data.where);
+      if (!hasWhen && !hasWhere) {
+        const p = document.createElement('p');
+        p.className = 'text-muted small mb-0';
+        p.textContent = 'No showcase details saved yet.';
+        infoEl.appendChild(p);
+      } else {
+        if (hasWhen) {
+          const whenEl = document.createElement('div');
+          whenEl.className = 'fw-semibold';
+          whenEl.textContent = whenText;
+          infoEl.appendChild(whenEl);
+        }
+        if (hasWhere) {
+          const whereEl = document.createElement('div');
+          whereEl.className = 'text-muted';
+          whereEl.textContent = data.where;
+          infoEl.appendChild(whereEl);
+        }
+      }
+    }
+    const agendaEl = document.getElementById('sc-agenda-list');
+    if (agendaEl) {
+      agendaEl.innerHTML = '';
+      const agenda = Array.isArray(data.agenda) ? data.agenda : [];
+      if (!agenda.length) {
+        const li = document.createElement('li');
+        li.className = 'text-muted small fst-italic';
+        li.textContent = 'Agenda coming soon.';
+        agendaEl.appendChild(li);
+      } else {
+        agenda.forEach((line) => {
+          const li = document.createElement('li');
+          li.textContent = line;
+          agendaEl.appendChild(li);
+        });
+      }
+    }
+    const mapsBtn = document.getElementById('sc-maps-link');
+    if (mapsBtn) {
+      const hasUrl = Boolean(data.mapsUrl);
+      mapsBtn.href = hasUrl ? data.mapsUrl : '#';
+      mapsBtn.classList.toggle('disabled', !hasUrl);
+      mapsBtn.setAttribute('aria-disabled', hasUrl ? 'false' : 'true');
+      mapsBtn.tabIndex = hasUrl ? 0 : -1;
+      mapsBtn.target = hasUrl ? '_blank' : '_self';
+      mapsBtn.title = hasUrl ? 'Open in Google Maps' : 'No showcase location yet.';
+    }
+  }
+
+  function renderCalendarAll() {
+    renderGameWeeks();
+    renderBreaks();
+    renderClasses();
+    renderShowcase();
+  }
+
+  window.renderCalendarAll = function () {
+    calendarState = getCal();
+    renderCalendarAll();
+  };
+  window.renderGameWeeks = function () {
+    calendarState = getCal();
+    renderGameWeeks();
+  };
+  window.renderBreaks = function () {
+    calendarState = getCal();
+    renderBreaks();
+  };
+  window.renderShowcase = function () {
+    calendarState = getCal();
+    renderShowcase();
+  };
+
+  function attachDeleteHandler(listId, sectionKey, renderFn) {
+    const listEl = document.getElementById(listId);
+    if (!listEl || listEl.dataset.calBound === 'true') return;
+    listEl.addEventListener('click', (event) => {
+      const btn = event.target.closest('button[data-del]');
+      if (!btn) return;
+      event.preventDefault();
+      const idx = Number(btn.dataset.del || '-1');
+      if (Number.isNaN(idx)) return;
+      const next = { ...calendarState };
+      const arr = Array.isArray(next[sectionKey]) ? next[sectionKey].slice() : [];
+      if (idx < 0 || idx >= arr.length) return;
+      arr.splice(idx, 1);
+      next[sectionKey] = arr;
+      setCal(next);
+      renderFn();
+    });
+    listEl.dataset.calBound = 'true';
+  }
+
+  function importGameWeeks() {
+    const next = { ...calendarState };
+    next.gameWeeks = sanitizeGameWeeks([...calendarState.gameWeeks, ...CAL_SAMPLE_GAME_WEEKS]);
+    setCal(next);
+    renderGameWeeks();
+  }
+
+  function importBreaks() {
+    const next = { ...calendarState };
+    next.breaks = sanitizeBreaks([...calendarState.breaks, ...CAL_SAMPLE_BREAKS]);
+    setCal(next);
+    renderBreaks();
+  }
+
+  function clearGameWeeks() {
+    wipeSection('gameWeeks');
+    renderGameWeeks();
+  }
+
+  function clearBreaks() {
+    wipeSection('breaks');
+    renderBreaks();
+  }
+
+  function clearClasses() {
+    wipeSection('classes');
+    renderClasses();
+  }
+
+  function addClassEntry() {
+    const input = document.getElementById('cls-text');
+    if (!input) return;
+    const value = (input.value || '').trim();
+    if (!value) {
+      if (typeof markInvalid === 'function') markInvalid(input);
+      return;
+    }
+    const next = { ...calendarState };
+    next.classes = sanitizeStringList([value, ...calendarState.classes]);
+    setCal(next);
+    input.value = '';
+    renderClasses();
+  }
+
+  function importShowcase() {
+    const next = { ...calendarState };
+    next.showcase = sanitizeShowcase(CAL_SAMPLE_SHOWCASE);
+    setCal(next);
+    renderShowcase();
+  }
+
+  function clearShowcase() {
+    wipeSection('showcase');
+    renderShowcase();
+  }
+
+  function bindCalendar() {
+    const panel = document.getElementById('panel-calendar');
+    if (!panel) return;
+    calendarState = getCal();
+    renderCalendarAll();
+
+    if (calendarBound) return;
+
+    const btnGwImport = document.getElementById('btn-gw-import');
+    if (btnGwImport) btnGwImport.addEventListener('click', importGameWeeks);
+    const btnGwClear = document.getElementById('btn-gw-clear');
+    if (btnGwClear) btnGwClear.addEventListener('click', clearGameWeeks);
+
+    const btnBreaksImport = document.getElementById('btn-breaks-import');
+    if (btnBreaksImport) btnBreaksImport.addEventListener('click', importBreaks);
+    const btnBreaksClear = document.getElementById('btn-breaks-clear');
+    if (btnBreaksClear) btnBreaksClear.addEventListener('click', clearBreaks);
+
+    const btnClsAdd = document.getElementById('btn-cls-add');
+    if (btnClsAdd) btnClsAdd.addEventListener('click', addClassEntry);
+    const clsInput = document.getElementById('cls-text');
+    if (clsInput) {
+      clsInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          if (btnClsAdd) {
+            btnClsAdd.click();
+          } else {
+            addClassEntry();
+          }
+        }
+      });
+    }
+    const btnClsClear = document.getElementById('btn-cls-clear');
+    if (btnClsClear) btnClsClear.addEventListener('click', clearClasses);
+
+    const btnScImport = document.getElementById('btn-sc-import');
+    if (btnScImport) btnScImport.addEventListener('click', importShowcase);
+    const btnScIcs = document.getElementById('btn-sc-ics');
+    if (btnScIcs) btnScIcs.addEventListener('click', () => exportShowcaseICS(calendarState.showcase));
+    const btnScClear = document.getElementById('btn-sc-clear');
+    if (btnScClear) btnScClear.addEventListener('click', clearShowcase);
+
+    attachDeleteHandler('cal-gw-list', 'gameWeeks', renderGameWeeks);
+    attachDeleteHandler('cal-breaks-list', 'breaks', renderBreaks);
+    attachDeleteHandler('cal-classes-list', 'classes', renderClasses);
+
+    calendarBound = true;
+
+    if (typeof window.initCalendarImporters === 'function') {
+      window.initCalendarImporters();
+    }
+  }
+
+  function getTrips() {
+    try {
+      const raw = localStorage.getItem(TRIP_STORAGE_KEY) || '[]';
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(item => item && typeof item === 'object' && typeof item.id === 'string');
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function setTrips(arr) {
+    const value = Array.isArray(arr) ? arr : [];
+    localStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(value));
+  }
+
+  function getTripToast() {
+    if (tripToastInstance) return tripToastInstance;
+    const toastEl = document.getElementById('trip-saved-toast');
+    if (!toastEl || !(window.bootstrap && window.bootstrap.Toast)) return null;
+    tripToastInstance = window.bootstrap.Toast.getOrCreateInstance(toastEl);
+    return tripToastInstance;
+  }
+
+  function resolveLocation(value, otherText) {
+    switch (value) {
+      case 'cdt':
+        return 'CDT';
+      case 'vlc':
+        return 'VLC';
+      case 'bcn-t1':
+        return 'BCN T1';
+      case 'bcn-t2':
+        return 'BCN T2';
+      case 'vln-train':
+        return 'Valencia Train';
+      case 'other':
+        return otherText.trim() || 'Other';
+      default:
+        return value || 'Other';
+    }
+  }
+
+  function normalizeTimestamp(dateISO, time) {
+    const date = dateISO || '';
+    const t = time || '00:00';
+    const candidate = Date.parse(`${date}T${t}`);
+    return Number.isFinite(candidate) ? candidate : Date.now();
+  }
+
+  function fmtMMDDYYYY(ts) {
+    const numericTs = Number(ts);
+    const base = Number.isFinite(numericTs) ? new Date(numericTs) : new Date();
+    const validDate = Number.isNaN(base.getTime()) ? new Date() : base;
+    const mm = String(validDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(validDate.getDate()).padStart(2, '0');
+    const yyyy = validDate.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  }
+
+  function renderTripList(listEl, trips, { emptyText = 'No trips yet — saved trips will appear here.', disableRide = false } = {}) {
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    if (!trips.length) {
+      const empty = document.createElement('li');
+      empty.className = 'list-group-item text-muted small';
+      empty.textContent = emptyText;
+      listEl.appendChild(empty);
+      return;
+    }
+
+    trips.forEach(trip => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between align-items-start gap-3';
+
+      const left = document.createElement('div');
+
+      const badgeRow = document.createElement('div');
+      badgeRow.className = 'mb-1';
+
+      const typeBadge = document.createElement('span');
+      typeBadge.className = 'badge bg-primary me-1 text-capitalize';
+      typeBadge.textContent = trip.type || 'arrival';
+      badgeRow.appendChild(typeBadge);
+
+      const locationBadge = document.createElement('span');
+      locationBadge.className = 'badge bg-secondary';
+      locationBadge.textContent = trip.location || '—';
+      badgeRow.appendChild(locationBadge);
+
+      left.appendChild(badgeRow);
+
+      const summary = document.createElement('div');
+      const summaryStrong = document.createElement('strong');
+      const dateLabel = fmtMMDDYYYY(trip.ts);
+      const timeLabel = trip.time || '';
+      summaryStrong.textContent = timeLabel ? `${dateLabel} ${timeLabel}` : dateLabel;
+      summary.appendChild(summaryStrong);
+      summary.append(' · ');
+      summary.append(trip.number ? trip.number : '—');
+
+      left.appendChild(summary);
+
+      const actions = document.createElement('div');
+      actions.className = 'd-flex flex-column gap-1';
+
+      const rideBtn = document.createElement('button');
+      rideBtn.className = 'btn btn-sm btn-outline-primary w-100';
+      rideBtn.type = 'button';
+      rideBtn.dataset.act = 'ride';
+      rideBtn.dataset.id = trip.id;
+      if (disableRide) {
+        rideBtn.textContent = 'Request Ride';
+        rideBtn.disabled = true;
+        rideBtn.title = 'Not available for past trips';
+      } else {
+        const rideRequested = Boolean(trip.rideRequested);
+        rideBtn.textContent = rideRequested ? 'Ride Requested' : 'Request Ride';
+        if (rideRequested) {
+          rideBtn.disabled = true;
+        }
+      }
+
+      const msgBtn = document.createElement('button');
+      msgBtn.className = 'btn btn-sm btn-outline-secondary w-100';
+      msgBtn.type = 'button';
+      msgBtn.dataset.act = 'msg';
+      msgBtn.dataset.id = trip.id;
+      msgBtn.disabled = true;
+      msgBtn.title = 'Driver not assigned yet';
+      msgBtn.textContent = 'Message Driver';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'btn btn-sm btn-outline-danger w-100';
+      removeBtn.type = 'button';
+      removeBtn.dataset.act = 'remove';
+      removeBtn.dataset.id = trip.id;
+      removeBtn.textContent = 'Remove';
+
+      actions.appendChild(rideBtn);
+      actions.appendChild(msgBtn);
+      actions.appendChild(removeBtn);
+
+      li.appendChild(left);
+      li.appendChild(actions);
+
+      listEl.appendChild(li);
+    });
+  }
+
+  function renderTrips() {
+    const upcomingList = document.getElementById('trips-upcoming-list');
+    const pastList = document.getElementById('trips-past-list');
+    if (!upcomingList && !pastList) return;
+
+    const trips = getTrips().map(trip => {
+      const numericTs = Number(trip.ts);
+      return {
+        id: trip.id,
+        type: trip.type === 'departure' ? 'departure' : 'arrival',
+        location: trip.location || '—',
+        dateISO: trip.dateISO || '',
+        time: trip.time || '',
+        number: trip.number || '',
+        ts: Number.isFinite(numericTs) ? numericTs : normalizeTimestamp(trip.dateISO, trip.time),
+        rideRequested: Boolean(trip.rideRequested),
+        driverAssigned: Boolean(trip.driverAssigned)
+      };
+    });
+
+    const now = Date.now();
+    const upcoming = [];
+    const past = [];
+
+    trips.forEach(trip => {
+      if ((trip.ts || 0) >= now) {
+        upcoming.push(trip);
+      } else {
+        past.push(trip);
+      }
+    });
+
+    upcoming.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    past.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+    if (upcomingList) {
+      renderTripList(upcomingList, upcoming, {
+        emptyText: 'No trips yet — saved trips will appear here.'
+      });
+    }
+    if (pastList) {
+      renderTripList(pastList, past, {
+        emptyText: 'No past trips.',
+        disableRide: true
+      });
+    }
+  }
+
+  function markInvalid(el) {
+    if (!el) return;
+    el.classList.add('is-invalid');
+    window.setTimeout(() => el.classList.remove('is-invalid'), 2000);
+  }
+
+  function saveTripFromForm() {
+    const typeSel = document.getElementById('trip-type');
+    const locationSel = document.getElementById('trip-location');
+    const otherInput = document.getElementById('trip-location-other');
+    const dateInput = document.getElementById('trip-date');
+    const timeInput = document.getElementById('trip-time');
+    const numberInput = document.getElementById('trip-number');
+
+    if (!typeSel || !locationSel || !dateInput || !timeInput || !numberInput) return;
+
+    const type = typeSel.value === 'departure' ? 'departure' : 'arrival';
+    const locationValue = locationSel.value || '';
+    const otherValue = otherInput ? otherInput.value : '';
+    const dateISO = dateInput.value || '';
+    const time = timeInput.value || '';
+    const number = numberInput.value ? numberInput.value.trim() : '';
+
+    let hasError = false;
+    if (!dateISO) {
+      markInvalid(dateInput);
+      hasError = true;
+    }
+    if (!time) {
+      markInvalid(timeInput);
+      hasError = true;
+    }
+    if (!locationValue) {
+      markInvalid(locationSel);
+      hasError = true;
+    }
+
+    if (hasError) {
+      alert('Please select date, time, and location.');
+      return;
+    }
+
+    const location = resolveLocation(locationValue, otherValue || '');
+    const ts = normalizeTimestamp(dateISO, time);
+    const newTrip = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      type,
+      location,
+      dateISO,
+      time,
+      number,
+      ts,
+      rideRequested: false,
+      driverAssigned: false
+    };
+
+    const trips = getTrips();
+    trips.push(newTrip);
+    setTrips(trips);
+    renderTrips();
+
+    const toast = getTripToast();
+    if (toast) toast.show();
+
+    dateInput.value = '';
+    timeInput.value = '';
+    numberInput.value = '';
+    numberInput.focus();
+  }
+
+  function hideExtraTripButtons() {
+    const form = document.getElementById('future-trip-form');
+    if (!form) return;
+    form.querySelectorAll('button').forEach(btn => {
+      if (btn.id !== 'btn-save-trip') {
+        btn.style.display = 'none';
+      }
+    });
+  }
+
+  function bindTripForm() {
+    const saveBtn = document.getElementById('btn-save-trip');
+    if (!saveBtn) return;
+    saveBtn.addEventListener('click', saveTripFromForm);
+  }
+
+  function handleTripsClick(ev) {
+    const btn = ev.target.closest('button[data-act][data-id]');
+    if (!btn || btn.disabled) return;
+    const id = btn.dataset.id;
+    if (!id) return;
+
+    const action = btn.dataset.act;
+    if (action === 'msg') {
+      ev.preventDefault();
+      return;
+    }
+
+    const trips = getTrips();
+    const idx = trips.findIndex(item => item && item.id === id);
+    if (idx === -1) return;
+
+    if (action === 'remove') {
+      trips.splice(idx, 1);
+      setTrips(trips);
+      renderTrips();
+      return;
+    }
+
+    if (action === 'ride') {
+      if (!trips[idx].rideRequested) {
+        trips[idx].rideRequested = true;
+        setTrips(trips);
+        renderTrips();
+      }
+    }
+  }
+
+  function bindTripActions() {
+    const upcomingList = document.getElementById('trips-upcoming-list');
+    const pastList = document.getElementById('trips-past-list');
+    if (upcomingList) {
+      upcomingList.addEventListener('click', handleTripsClick);
+    }
+    if (pastList) {
+      pastList.addEventListener('click', handleTripsClick);
+    }
+  }
+
+  function updateInitialArrivalBanner() {
+    const banner = document.getElementById('travel-initial-banner');
+    if (!banner) return;
+    const infoContainer = banner.querySelector('.d-flex.align-items-center.gap-2 span');
+    const button = banner.querySelector('a');
+    if (!infoContainer || !button) return;
+
+    const done = localStorage.getItem('initialArrivalDone') === '1';
+    const info = localStorage.getItem('initialArrivalInfo');
+
+    if (done && info) {
+      infoContainer.innerHTML = '';
+      const strong = document.createElement('strong');
+      strong.textContent = 'Initial arrival saved —';
+      infoContainer.appendChild(strong);
+      infoContainer.append(' ');
+      infoContainer.append(info);
+      button.textContent = 'View in My Visa';
+    } else {
+      infoContainer.innerHTML = '';
+      const strong = document.createElement('strong');
+      strong.textContent = 'Initial arrival:';
+      infoContainer.appendChild(strong);
+      infoContainer.append(' Set your first trip in ');
+      const em = document.createElement('em');
+      em.textContent = 'My Visa';
+      infoContainer.appendChild(em);
+      infoContainer.append(' (no duplication here).');
+      button.textContent = 'Edit in My Visa';
+    }
+  }
+
+  // --- Prepare Your Trip (Sizes + Packing) ---
+  const PREP_SIZES_KEY = 'prepare_trip_sizes';
+  const PREP_PACK_KEY = 'prepare_trip_checklist';
+  const prep$ = (sel) => document.querySelector(sel);
+  const prepAll = (sel) => Array.from(document.querySelectorAll(sel));
+
+  function prepGetSizes() {
+    try {
+      return JSON.parse(localStorage.getItem(PREP_SIZES_KEY) || '{}') || {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function prepSaveSizes(obj) {
+    localStorage.setItem(PREP_SIZES_KEY, JSON.stringify(obj || {}));
+  }
+
+  function prepGetPack() {
+    try {
+      return JSON.parse(localStorage.getItem(PREP_PACK_KEY) || '{}') || {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function prepSavePack(obj) {
+    localStorage.setItem(PREP_PACK_KEY, JSON.stringify(obj || {}));
+    prepUpdatePackCounter();
+  }
+
+  function prepToggleGK() {
+    const box = prep$('#is-gk');
+    const wrap = prep$('#gk-sizes');
+    if (wrap) wrap.classList.toggle('d-none', !box?.checked);
+  }
+
+  function prepFillSizesForm() {
+    const state = prepGetSizes();
+    const setSelect = (sel, value) => {
+      const el = prep$(sel);
+      if (el && value) el.value = value;
+    };
+    setSelect('#sz-shirt', state.shirt);
+    setSelect('#sz-shorts', state.shorts);
+    setSelect('#sz-pants', state.pants);
+    setSelect('#sz-socks', state.socks);
+    setSelect('#sz-hoodie', state.hoodie);
+    setSelect('#sz-jacket', state.jacket);
+    const shoes = prep$('#sz-shoes');
+    if (shoes) shoes.value = state.shoes || '';
+    const gk = prep$('#is-gk');
+    if (gk) gk.checked = Boolean(state.isGK);
+    const gloves = prep$('#sz-gloves');
+    if (gloves) gloves.value = state.gloves || '';
+    const confirm = prep$('#sizes-confirm');
+    if (confirm) confirm.checked = Boolean(state.confirm);
+    prepToggleGK();
+  }
+
+  function prepBindSizes() {
+    const form = prep$('#prep-sizes-form');
+    if (!form || form.dataset.prepBound === 'true') return;
+    form.dataset.prepBound = 'true';
+
+    prep$('#is-gk')?.addEventListener('change', prepToggleGK);
+    prep$('#btn-save-sizes')?.addEventListener('click', () => {
+      const next = {
+        shirt: prep$('#sz-shirt')?.value || '',
+        shorts: prep$('#sz-shorts')?.value || '',
+        pants: prep$('#sz-pants')?.value || '',
+        socks: prep$('#sz-socks')?.value || '',
+        hoodie: prep$('#sz-hoodie')?.value || '',
+        jacket: prep$('#sz-jacket')?.value || '',
+        shoes: prep$('#sz-shoes')?.value || '',
+        isGK: Boolean(prep$('#is-gk')?.checked),
+        gloves: prep$('#sz-gloves')?.value || '',
+        confirm: Boolean(prep$('#sizes-confirm')?.checked)
+      };
+      prepSaveSizes(next);
+      alert('Sizes saved');
+    });
+    prep$('#btn-sizes-summary')?.addEventListener('click', () => {
+      prepShowSummary();
+    });
+  }
+
+  function prepComputePackProgress() {
+    const items = prepAll('.pack-item');
+    const labels = [];
+    let checked = 0;
+    items.forEach((cb) => {
+      const labelEl = cb.nextElementSibling;
+      const labelText = labelEl ? labelEl.textContent.trim() : (cb.dataset.id || '');
+      if (cb.checked) {
+        checked += 1;
+        if (labelText) labels.push(labelText);
+      }
+    });
+    return { total: items.length, checked, labels };
+  }
+
+  function prepUpdatePackCounter() {
+    const counter = prep$('#pack-counter');
+    if (!counter) return;
+    const { total, checked } = prepComputePackProgress();
+    counter.textContent = `Progress: ${checked} / ${total} items packed`;
+  }
+
+  function prepBindPacking() {
+    const items = prepAll('.pack-item');
+    if (!items.length) return;
+    const data = prepGetPack();
+    items.forEach((cb) => {
+      const id = cb.dataset.id;
+      if (id) {
+        cb.checked = Boolean(data[id]);
+      }
+      if (cb.dataset.prepBound === 'true') return;
+      cb.dataset.prepBound = 'true';
+      cb.addEventListener('change', () => {
+        const next = prepGetPack();
+        if (id) {
+          next[id] = cb.checked;
+        }
+        prepSavePack(next);
+      });
+    });
+    prepUpdatePackCounter();
+  }
+
+  function prepRenderSummary() {
+    const sizesList = prep$('#prep-summary-sizes');
+    const progressText = prep$('#prep-summary-progress');
+    const packedList = prep$('#prep-summary-packed');
+    if (sizesList) {
+      sizesList.innerHTML = '';
+      const sizes = prepGetSizes();
+      const entries = [
+        { label: 'Training T-shirt size', value: sizes.shirt || '-' },
+        { label: 'Training Shorts size', value: sizes.shorts || '-' },
+        { label: 'Sweatpants size', value: sizes.pants || '-' },
+        { label: 'Socks size', value: sizes.socks || '-' },
+        { label: 'Hoodie size', value: sizes.hoodie || '-' },
+        { label: 'Jacket size', value: sizes.jacket || '-' },
+        { label: 'Shoe size (US/EU)', value: sizes.shoes || '-' },
+        { label: 'Goalkeeper', value: sizes.isGK ? 'Yes' : 'No' }
+      ];
+      if (sizes.isGK) {
+        entries.push({ label: 'Gloves size', value: sizes.gloves || '-' });
+      }
+      entries.push({ label: 'Sizes confirmed', value: sizes.confirm ? 'Yes' : 'No' });
+
+      entries.forEach(({ label, value }) => {
+        const li = document.createElement('li');
+        li.className = 'mb-1';
+        li.innerHTML = `<strong>${label}:</strong> ${value || '-'}`;
+        sizesList.appendChild(li);
+      });
+    }
+    const { total, checked, labels } = prepComputePackProgress();
+    if (progressText) {
+      progressText.textContent = `Progress: ${checked} / ${total} items packed`;
+    }
+    if (packedList) {
+      packedList.innerHTML = '';
+      if (labels.length) {
+        labels.forEach((label) => {
+          const li = document.createElement('li');
+          li.textContent = label;
+          packedList.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.className = 'text-muted small';
+        li.textContent = 'No items packed yet.';
+        packedList.appendChild(li);
+      }
+    }
+  }
+
+  function prepShowSummary() {
+    prepRenderSummary();
+    const modalEl = prep$('#prep-summary-modal');
+    if (!modalEl) return;
+    if (window.bootstrap?.Modal) {
+      window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      return;
+    }
+    modalEl.classList.add('show');
+    modalEl.style.display = 'block';
+    modalEl.setAttribute('aria-hidden', 'false');
+  }
+
+  function prepBindSummaryModal() {
+    const modal = prep$('#prep-summary-modal');
+    if (!modal || modal.dataset.prepBound === 'true') return;
+    modal.dataset.prepBound = 'true';
+    const printBtn = prep$('#prep-summary-print');
+    if (printBtn) {
+      printBtn.addEventListener('click', () => window.print());
+    }
+    if (!window.bootstrap?.Modal) {
+      modal.querySelectorAll('[data-bs-dismiss="modal"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          modal.classList.remove('show');
+          modal.style.display = '';
+          modal.setAttribute('aria-hidden', 'true');
+        });
+      });
+    }
+  }
+
+  function renderPrepareTrip() {
+    prepFillSizesForm();
+    prepBindSizes();
+    prepBindPacking();
+    prepBindSummaryModal();
+  }
+
+  function initMyProgramOnce() {
+    if (window.__myProgramInit) return;
+    const view = document.getElementById('my-program');
+    if (!view) return;
+    window.__myProgramInit = true;
+    refreshAckBadges();
+    bindAcknowledge();
+    bindTravelOther();
+    bindShipmentsList();
+    hideExtraTripButtons();
+    bindTripForm();
+    bindTripActions();
+    updateInitialArrivalBanner();
+    renderTrips();
+    bindCityGuide();
+    bindHousing();
+    bindCalendar();
+    const housingTab = document.getElementById('tab-housing');
+    if (housingTab) {
+      housingTab.addEventListener('shown.bs.tab', bindHousing);
+    }
+    const guideTab = document.getElementById('tab-guide');
+    if (guideTab) {
+      guideTab.addEventListener('shown.bs.tab', bindCityGuide);
+    }
+    const calendarTab = document.getElementById('tab-calendar');
+    if (calendarTab) {
+      calendarTab.addEventListener('shown.bs.tab', bindCalendar);
+      if (calendarTab.classList.contains('active')) {
+        bindCalendar();
+      }
+    }
+    const prepareTab = document.getElementById('tab-prepare-trip');
+    if (prepareTab) {
+      prepareTab.addEventListener('shown.bs.tab', renderPrepareTrip);
+      if (!window.bootstrap?.Tab) {
+        prepareTab.addEventListener('click', () => window.setTimeout(renderPrepareTrip, 0));
+      }
+      if (prepareTab.classList.contains('active')) {
+        renderPrepareTrip();
+      }
+    }
+    const preparePanel = document.getElementById('panel-prepare-trip');
+    if (preparePanel && preparePanel.classList.contains('show')) {
+      renderPrepareTrip();
+    }
+    // Optional: simple deeplink visual
+    document.querySelectorAll('[data-deeplink="true"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        location.hash = '#my-visa-trip';
+      });
+    });
+  }
+
+  // Run now if present
+  if (document.getElementById('my-program')) initMyProgramOnce();
+
+  // Observe future injections (innerHTML render)
+  const mo = new MutationObserver(() => {
+    if (document.getElementById('my-program')) {
+      initMyProgramOnce();
+    }
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+})();
+
+// === Help Center (FAQ, search, ask form) ===
+(() => {
+  const STORAGE_KEY = 'help_questions';
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const CATEGORY_ORDER = [
+    { id: 'program', label: 'My Program & Campus' },
+    { id: 'visa', label: 'Visa & Travel' },
+    { id: 'payments', label: 'Payments & Scholarships' },
+    { id: 'football', label: 'Football & Training' }
+  ];
+  const BASE_FAQS = [
+    {
+      id: 'program-1',
+      category: 'program',
+      question: 'What are the additional costs?',
+      answer: 'Plan for visa fees, flights, insurance upgrades, and personal expenses such as laundry, phone plans, and weekend activities.'
+    },
+    {
+      id: 'program-2',
+      category: 'program',
+      question: 'What happens if my grades drop?',
+      answer: 'Your academic advisor will reach out immediately. You will be placed on an improvement plan and risk losing playing time if progress is not shown.'
+    },
+    {
+      id: 'visa-1',
+      category: 'visa',
+      question: 'When should I apply for my visa?',
+      answer: 'Submit your visa application as soon as you receive your admission letter. Embassy appointments can fill up fast, so we recommend applying 90 days before departure.'
+    },
+    {
+      id: 'visa-2',
+      category: 'visa',
+      question: 'What happens if my flight is delayed?',
+      answer: 'Notify the travel hotline listed in My Program. We will track your new arrival time and coordinate housing and transport adjustments.'
+    },
+    {
+      id: 'payments-1',
+      category: 'payments',
+      question: 'How do I pay tuition fees?',
+      answer: 'You can pay securely through the Finance portal using bank transfer or card. Payment links and due dates are listed in your Finance dashboard.'
+    },
+    {
+      id: 'payments-2',
+      category: 'payments',
+      question: 'Are scholarships deducted automatically?',
+      answer: 'Yes. Approved scholarships appear as credits in your payment plan and reduce the remaining balance before each installment is due.'
+    },
+    {
+      id: 'football-1',
+      category: 'football',
+      question: 'Can I bring my own cleats?',
+      answer: 'Absolutely. Bring both natural grass and AG/turf cleats. We recommend labeling your gear and packing additional insoles if you prefer them.'
+    },
+    {
+      id: 'football-2',
+      category: 'football',
+      question: 'How many training sessions per week?',
+      answer: 'Expect 5 structured training sessions plus recovery and strength blocks. Match weeks can add a sixth session for tactical preparation.'
+    }
+  ];
+
+  const state = {
+    root: null,
+    accordion: null,
+    search: null,
+    noResults: null,
+    form: null,
+    feedback: null,
+    questionsList: null,
+    categoryContainers: {},
+    categoryHeadings: {},
+    items: [],
+    currentQuery: '',
+    questions: [],
+    adminMode: false,
+    feedbackTimer: null
+  };
+
+  function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function applyHighlight(target, text, query) {
+    if (!target) return;
+    target.textContent = '';
+    const trimmed = (query || '').trim();
+    if (!trimmed) {
+      target.textContent = text;
+      return;
+    }
+    const regex = new RegExp(escapeRegExp(trimmed), 'ig');
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const before = text.slice(lastIndex, match.index);
+      if (before) target.appendChild(document.createTextNode(before));
+      const mark = document.createElement('mark');
+      mark.textContent = match[0];
+      target.appendChild(mark);
+      lastIndex = match.index + match[0].length;
+    }
+    const after = text.slice(lastIndex);
+    if (after) target.appendChild(document.createTextNode(after));
+    if (!target.firstChild) target.textContent = text;
+  }
+
+  function buildFaqItem(entry) {
+    const item = document.createElement('div');
+    item.className = 'accordion-item';
+    item.dataset.category = entry.category;
+    item.dataset.originalQuestion = entry.question;
+    item.dataset.originalAnswer = entry.answer;
+    const idBase = `help-faq-${entry.id || Math.random().toString(16).slice(2)}`;
+    const headerId = `${idBase}-header`;
+    const collapseId = `${idBase}-collapse`;
+
+    const header = document.createElement('h2');
+    header.className = 'accordion-header';
+    header.id = headerId;
+
+    const button = document.createElement('button');
+    button.className = 'accordion-button collapsed';
+    button.type = 'button';
+    button.setAttribute('data-bs-toggle', 'collapse');
+    button.setAttribute('data-bs-target', `#${collapseId}`);
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', collapseId);
+
+    const questionSpan = document.createElement('span');
+    questionSpan.dataset.role = 'question';
+    button.appendChild(questionSpan);
+    header.appendChild(button);
+
+    const collapse = document.createElement('div');
+    collapse.id = collapseId;
+    collapse.className = 'accordion-collapse collapse';
+    collapse.setAttribute('data-bs-parent', '#help-accordion');
+    collapse.setAttribute('aria-labelledby', headerId);
+
+    const body = document.createElement('div');
+    body.className = 'accordion-body';
+    const answerWrap = document.createElement('div');
+    answerWrap.dataset.role = 'answer';
+    body.appendChild(answerWrap);
+    collapse.appendChild(body);
+
+    item.appendChild(header);
+    item.appendChild(collapse);
+
+    applyHighlight(questionSpan, entry.question, state.currentQuery);
+    applyHighlight(answerWrap, entry.answer, state.currentQuery);
+
+    return item;
+  }
+
+  function addFaqItem(entry, { prepend = false } = {}) {
+    const container = state.categoryContainers[entry.category];
+    if (!container) return null;
+    const item = buildFaqItem(entry);
+    if (prepend && container.firstChild) {
+      container.insertBefore(item, container.firstChild);
+    } else {
+      container.appendChild(item);
+    }
+    state.items.push(item);
+    return item;
+  }
+
+  function filterFaqs(query) {
+    state.currentQuery = query || '';
+    const normalized = state.currentQuery.trim().toLowerCase();
+    let visibleCount = 0;
+
+    state.items.forEach((item) => {
+      const question = item.dataset.originalQuestion || '';
+      const answer = item.dataset.originalAnswer || '';
+      const haystack = `${question} ${answer}`.toLowerCase();
+      const matches = !normalized || haystack.includes(normalized);
+      item.classList.toggle('d-none', !matches);
+      applyHighlight(item.querySelector('[data-role="question"]'), question, state.currentQuery);
+      applyHighlight(item.querySelector('[data-role="answer"]'), answer, state.currentQuery);
+      if (matches) visibleCount += 1;
+    });
+
+    CATEGORY_ORDER.forEach(({ id }) => {
+      const heading = state.categoryHeadings[id];
+      if (!heading) return;
+      const hasVisible = state.items.some(
+        (item) => item.dataset.category === id && !item.classList.contains('d-none')
+      );
+      heading.classList.toggle('d-none', !hasVisible);
+    });
+
+    if (state.accordion) {
+      state.accordion.classList.toggle('d-none', visibleCount === 0);
+    }
+    if (state.noResults) {
+      state.noResults.classList.toggle('d-none', visibleCount !== 0);
+    }
+  }
+
+  function loadStoredQuestions() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveStoredQuestions(list) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list || []));
+    } catch (_) {
+      /* ignore quota issues */
+    }
+  }
+
+  function showFeedback(message, type = 'success') {
+    if (!state.feedback) return;
+    window.clearTimeout(state.feedbackTimer);
+    state.feedback.textContent = message;
+    state.feedback.className = `alert alert-${type} mt-3 mb-0`;
+    state.feedback.classList.remove('d-none');
+    state.feedbackTimer = window.setTimeout(() => {
+      state.feedback?.classList.add('d-none');
+    }, 3000);
+  }
+
+  function showHelpToast(message) {
+    const cont = document.getElementById('help-toast-container');
+    if (!cont || !window.bootstrap?.Toast) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'toast align-items-center text-bg-primary border-0';
+    wrapper.setAttribute('role', 'status');
+    wrapper.setAttribute('aria-live', 'polite');
+    wrapper.setAttribute('aria-atomic', 'true');
+    wrapper.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>`;
+    cont.appendChild(wrapper);
+    const toast = bootstrap.Toast.getOrCreateInstance(wrapper, { autohide: true, delay: 3500 });
+    toast.show();
+    wrapper.addEventListener('hidden.bs.toast', () => wrapper.remove());
+  }
+
+  function setFieldValidity(field, isValid) {
+    if (!field) return;
+    field.classList.toggle('is-invalid', !isValid);
+  }
+
+  function renderStoredQuestions() {
+    const host = state.questionsList;
+    if (!host) return;
+    host.innerHTML = '';
+    if (!state.questions.length) {
+      host.innerHTML = '<p class="text-muted small mb-0">No questions submitted yet.</p>';
+      return;
+    }
+
+    const heading = document.createElement('h5');
+    heading.className = 'mt-4 border-bottom pb-1';
+    heading.textContent = 'Recent questions from students';
+    host.appendChild(heading);
+
+    const list = document.createElement('div');
+    list.className = 'list-group';
+    state.questions.forEach((entry, index) => {
+      const item = document.createElement('div');
+      item.className = 'list-group-item';
+
+      const topRow = document.createElement('div');
+      topRow.className = 'd-flex align-items-center justify-content-between';
+      const title = document.createElement('div');
+      title.className = 'fw-semibold';
+      title.textContent = entry.question;
+      topRow.appendChild(title);
+
+      if (state.adminMode) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-outline-primary';
+        btn.textContent = 'Promote to FAQ';
+        btn.setAttribute('data-action', 'promote');
+        btn.setAttribute('data-index', String(index));
+        topRow.appendChild(btn);
+      }
+
+      item.appendChild(topRow);
+
+      const meta = document.createElement('div');
+      meta.className = 'text-muted small mb-2';
+      const categoryLabel = CATEGORY_ORDER.find((cat) => cat.id === entry.category)?.label || 'General';
+      const createdAt = entry.createdAt ? new Date(entry.createdAt) : null;
+      const when = createdAt && !Number.isNaN(createdAt.valueOf())
+        ? createdAt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+        : '';
+      meta.textContent = when ? `${categoryLabel} • ${when}` : categoryLabel;
+      item.appendChild(meta);
+
+      if (entry.details) {
+        const details = document.createElement('p');
+        details.className = 'mb-2';
+        details.textContent = entry.details;
+        item.appendChild(details);
+      }
+
+      if (entry.email) {
+        const emailLine = document.createElement('p');
+        emailLine.className = 'mb-0 small text-muted';
+        emailLine.textContent = `Reply to: ${entry.email}`;
+        item.appendChild(emailLine);
+      }
+
+      list.appendChild(item);
+    });
+
+    host.appendChild(list);
+  }
+
+  function promoteQuestion(index) {
+    const entry = state.questions[index];
+    if (!entry) return;
+    const answer = entry.details
+      ? entry.details
+      : 'Thanks for your question. Our staff will add a full answer shortly.';
+    addFaqItem({
+      id: `user-${index}-${Date.now()}`,
+      category: entry.category,
+      question: entry.question,
+      answer
+    });
+    filterFaqs(state.currentQuery);
+    showFeedback('Question promoted to the FAQ (demo).');
+  }
+
+  function handleQuestionsListClick(event) {
+    if (!state.adminMode) return;
+    const btn = event.target.closest('[data-action="promote"]');
+    if (!btn) return;
+    const idx = Number(btn.getAttribute('data-index'));
+    if (Number.isNaN(idx)) return;
+    promoteQuestion(idx);
+  }
+
+  function setupForm(container) {
+    const form = container.querySelector('#help-question-form');
+    if (!form) return;
+    state.form = form;
+
+    const catInput = form.querySelector('#help-question-category');
+    const questionInput = form.querySelector('#help-question-text');
+    const detailsInput = form.querySelector('#help-question-details');
+    const emailInput = form.querySelector('#help-question-email');
+
+    const clearInvalidOnInput = (field) => field?.addEventListener('input', () => setFieldValidity(field, true));
+    clearInvalidOnInput(catInput);
+    clearInvalidOnInput(questionInput);
+    clearInvalidOnInput(detailsInput);
+    clearInvalidOnInput(emailInput);
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const category = catInput?.value || '';
+      const question = (questionInput?.value || '').trim();
+      const details = (detailsInput?.value || '').trim();
+      const email = (emailInput?.value || '').trim();
+
+      let valid = true;
+      if (!category) {
+        setFieldValidity(catInput, false);
+        valid = false;
+      } else {
+        setFieldValidity(catInput, true);
+      }
+
+      if (question.length < 8 || question.length > 100) {
+        setFieldValidity(questionInput, false);
+        valid = false;
+      } else {
+        setFieldValidity(questionInput, true);
+      }
+
+      if (details.length > 500) {
+        setFieldValidity(detailsInput, false);
+        valid = false;
+      } else {
+        setFieldValidity(detailsInput, true);
+      }
+
+      if (email && !EMAIL_RE.test(email)) {
+        setFieldValidity(emailInput, false);
+        valid = false;
+      } else {
+        setFieldValidity(emailInput, true);
+      }
+
+      if (!valid) {
+        showFeedback('Please review the highlighted fields.', 'danger');
+        return;
+      }
+
+      const entry = {
+        category,
+        question,
+        details,
+        email,
+        createdAt: new Date().toISOString()
+      };
+
+      state.questions.unshift(entry);
+      saveStoredQuestions(state.questions);
+      renderStoredQuestions();
+      showFeedback('Thanks! We’ll get back to you soon.');
+      showHelpToast('Thanks! Your question has been received.');
+      form.reset();
+      setFieldValidity(catInput, true);
+      setFieldValidity(questionInput, true);
+      setFieldValidity(detailsInput, true);
+      setFieldValidity(emailInput, true);
+    });
+  }
+
+  function setupSearch(container) {
+    const searchInput = container.querySelector('#help-search');
+    state.search = searchInput;
+    if (!searchInput) return;
+    searchInput.addEventListener('input', () => {
+      filterFaqs(searchInput.value || '');
+    });
+  }
+
+  function renderBaseFaqs() {
+    BASE_FAQS.forEach((faq) => addFaqItem(faq));
+  }
+
+  function initHelpCenter(root) {
+    const host = root?.querySelector?.('#help-center-root') || document.getElementById('help-center-root');
+    if (!host || host.dataset.helpReady === 'true') return;
+    host.dataset.helpReady = 'true';
+
+    state.root = host;
+    state.accordion = host.querySelector('#help-accordion');
+    state.noResults = host.querySelector('#help-no-results');
+    state.feedback = host.querySelector('#help-form-feedback');
+    state.questionsList = host.querySelector('#help-questions-list');
+    state.items = [];
+    state.categoryContainers = {};
+    state.categoryHeadings = {};
+    state.currentQuery = '';
+    state.questions = loadStoredQuestions();
+    state.adminMode = new URLSearchParams(window.location.search).get('admin') === '1';
+
+    CATEGORY_ORDER.forEach(({ id }) => {
+      state.categoryContainers[id] = host.querySelector(`[data-category-list="${id}"]`);
+      state.categoryHeadings[id] = host.querySelector(`[data-category-heading="${id}"]`);
+    });
+
+    renderBaseFaqs();
+    setupSearch(host);
+    setupForm(host);
+    if (state.questionsList) {
+      state.questionsList.addEventListener('click', handleQuestionsListClick);
+    }
+    renderStoredQuestions();
+    filterFaqs('');
+  }
+
+  window.initHelpCenter = initHelpCenter;
+})();
+
+
+// === Calendar Editors & Showcase ===
+(function () {
+  const $ = (sel) => document.querySelector(sel);
+  const hasBootstrap = Boolean(window.bootstrap && window.bootstrap.Modal);
+  let wired = false;
+
+  document.addEventListener('click', (ev) => {
+    const t = ev.target;
+    if (t && (t.id === 'ffcv-open' || t.getAttribute?.('data-action') === 'import-ffcv')) {
+      ev.preventDefault();
+      alert('Coming soon');
+    }
+  });
+
+  const CAL_KEY =
+    (typeof window.CALENDAR_LOCAL_KEY === 'string' && window.CALENDAR_LOCAL_KEY) ||
+    (typeof window.CALENDAR_KEY === 'string' && window.CALENDAR_KEY) ||
+    'calendar_demo';
+
+  const getCalSafe = () => {
+    if (typeof getCal === 'function') return getCal();
+    if (typeof getCalendarState === 'function') return getCalendarState();
+    try {
+      const stored = JSON.parse(localStorage.getItem(CAL_KEY) || '{}') || {};
+      const result = {
+        gameWeeks: sanitizeGameWeeks(stored.gameWeeks),
+        breaks: sanitizeBreaks(stored.breaks),
+        classes: Array.isArray(stored.classes) ? sanitizeStringList(stored.classes) : [],
+        showcase: sanitizeShowcase(stored.showcase)
+      };
+      return result;
+    } catch (err) {
+      return { gameWeeks: [], breaks: [], classes: [], showcase: { agenda: [] } };
+    }
+  };
+
+  const setCalSafe = (state) => {
+    if (typeof setCal === 'function') return setCal(state);
+    localStorage.setItem(CAL_KEY, JSON.stringify(state));
+    return state;
+  };
+
+  const openModal = (sel) => {
+    const el = typeof sel === 'string' ? $(sel) : sel;
+    if (!el) return;
+    if (hasBootstrap) {
+      window.bootstrap.Modal.getOrCreateInstance(el).show();
+    } else {
+      el.style.display = 'block';
+    }
+  };
+
+  const closeModal = (sel) => {
+    const el = typeof sel === 'string' ? $(sel) : sel;
+    if (!el) return;
+    if (hasBootstrap) {
+      const instance = window.bootstrap.Modal.getOrCreateInstance(el);
+      if (instance) instance.hide();
+    } else {
+      el.style.display = 'none';
+    }
+  };
+
+  function safeRerender() {
+    if (typeof window.renderCalendarAll === 'function') {
+      window.renderCalendarAll();
+      return;
+    }
+    const hasRenderers =
+      typeof window.renderGameWeeks === 'function' ||
+      typeof window.renderBreaks === 'function' ||
+      typeof window.renderShowcase === 'function';
+    if (hasRenderers) {
+      if (typeof window.renderGameWeeks === 'function') window.renderGameWeeks();
+      if (typeof window.renderBreaks === 'function') window.renderBreaks();
+      if (typeof window.renderShowcase === 'function') window.renderShowcase();
+    } else {
+      window.location.reload();
+    }
+  }
+
+  function openShowcaseEditor() {
+    const cal = getCalSafe();
+    const sc = cal.showcase || {};
+    const startInput = document.querySelector('#sc-start');
+    const endInput = document.querySelector('#sc-end');
+    const whereInput = document.querySelector('#sc-where');
+    const mapsInput = document.querySelector('#sc-maps');
+    const agendaInput = document.querySelector('#sc-agenda');
+    if (startInput) startInput.value = sc.start || '';
+    if (endInput) endInput.value = sc.end || '';
+    if (whereInput) whereInput.value = sc.where || '';
+    if (mapsInput) mapsInput.value = sc.mapsUrl || '';
+    if (agendaInput) agendaInput.value = Array.isArray(sc.agenda) ? sc.agenda.join('\n') : '';
+    const msg = $('#sc-msg');
+    if (msg) {
+      msg.textContent = 'Update showcase details and click Save.';
+      msg.classList.remove('text-danger', 'text-success');
+      msg.classList.add('text-muted');
+    }
+    openModal('#scEditModal');
+  }
+
+  function saveShowcaseFromModal() {
+    const start = (document.querySelector('#sc-start')?.value || '').trim();
+    const end = (document.querySelector('#sc-end')?.value || '').trim();
+    const where = (document.querySelector('#sc-where')?.value || '').trim();
+    const maps = (document.querySelector('#sc-maps')?.value || '').trim();
+    const agendaRaw = (document.querySelector('#sc-agenda')?.value || '').trim();
+    const agenda = agendaRaw ? agendaRaw.split('\n').map((line) => line.trim()).filter(Boolean) : [];
+    const reYMD = /^\d{4}-\d{2}-\d{2}$/;
+    if (!reYMD.test(start) || !reYMD.test(end)) {
+      alert('Please use YYYY-MM-DD for Start and End.');
+      return;
+    }
+    const existing = getCalSafe() || {};
+    const next = { ...existing };
+    if (!Array.isArray(next.gameWeeks)) next.gameWeeks = [];
+    if (!Array.isArray(next.breaks)) next.breaks = [];
+    if (!Array.isArray(next.classes)) next.classes = [];
+    next.showcase = { start, end, where, mapsUrl: maps, agenda };
+    if (typeof sanitizeShowcase === 'function') {
+      next.showcase = sanitizeShowcase(next.showcase);
+    }
+    const stored = setCalSafe(next);
+    const updatedState = stored || getCalSafe() || next;
+    if (typeof getCal === 'function') {
+      calendarState = getCal();
+    } else if (typeof sanitizeShowcase === 'function') {
+      calendarState = { ...updatedState, showcase: sanitizeShowcase(updatedState.showcase) };
+    } else {
+      calendarState = updatedState;
+    }
+    closeModal('#scEditModal');
+    if (typeof renderShowcase === 'function') {
+      renderShowcase();
+    } else if (typeof safeRerender === 'function') {
+      safeRerender();
+    } else {
+      window.location.reload();
+    }
+  }
+
+  window.initCalendarImporters = function () {
+    if (wired) return;
+    wired = true;
+
+    const btnEditShowcase = $('#btn-sc-edit');
+    if (btnEditShowcase) btnEditShowcase.addEventListener('click', openShowcaseEditor);
+
+    const btnSaveShowcase = $('#sc-save');
+    if (btnSaveShowcase) btnSaveShowcase.addEventListener('click', saveShowcaseFromModal);
+  };
+
+  // --- Auto render Calendar when the page (re)enters or gains focus ---
+  window.renderCalendarAll = function () {
+    if (typeof window.renderGameWeeks === 'function') window.renderGameWeeks();
+    if (typeof window.renderBreaks === 'function') window.renderBreaks();
+    if (typeof window.renderShowcase === 'function') window.renderShowcase();
+  };
+
+  // Initial paint on load / SPA restores / tab refocus
+  document.addEventListener('DOMContentLoaded', window.renderCalendarAll);
+  window.addEventListener('pageshow', window.renderCalendarAll); // bfcache/back/forward
+  window.addEventListener('focus', window.renderCalendarAll);
+
+  // Repaint when user clicks the Calendar tab/link
+  document.addEventListener('click', (ev) => {
+    const hit = ev.target?.closest?.('[data-tab="calendar"], [data-section="calendar"], a[href*="Calendar"], a[href*="#calendar"]');
+    if (hit) setTimeout(window.renderCalendarAll, 0);
+  });
+})();
+
+// File: app.js — Append-only MyFinance Step 1 — Build: 2025-10-30T12:50:00Z
+(() => {
+  // Helpers
+  const toCents = (eur) => Math.round((Number(eur) || 0) * 100);
+  const fromCents = (c) => (c || 0) / 100;
+  const fmtEUR = (c) => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(fromCents(c));
+  const fmtUSD = (c, fx) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fromCents(c) * (fx || 0));
+  const byId  = (id) => document.getElementById(id);
+  const setTxt = (id, v) => { const el = byId(id); if (el) el.textContent = v; };
+  const show   = (el, v) => el && el.classList.toggle('d-none', !v);
+  const today  = () => new Date(new Date().toDateString());
+  const dstr   = (d) => new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: '2-digit' });
+
+  // Demo due dates
+  const Y = new Date().getFullYear();
+  const dueDates = {
+    deposit:   new Date(Date.now() - 86400000), // yesterday
+    prearrival:new Date(Y, 5, 15),  // 15-Jun
+    november:  new Date(Y,10, 15),  // 15-Nov
+    december:  new Date(Y,11, 15),  // 15-Dec
+    january:   new Date(Y+1,0, 15), // 15-Jan next year
+  };
+
+  // Demo state (42k) + fixed USD rate
+  const state = {
+    fx: 1.1655,                       // 1 EUR = 1.1655 USD (fixed demo)
+    tuition: toCents(42000),
+    fees: [], scholarships: [], payments: [],
+    plan: [
+      { id:'deposit',    label:'Deposit',         baseline:toCents(6000), paid:0, due:dueDates.deposit },
+      { id:'prearrival', label:'Pre-arrival',     baseline:toCents(9000), paid:0, due:dueDates.prearrival },
+      { id:'november',   label:'November',        baseline:toCents(9000), paid:0, due:dueDates.november },
+      { id:'december',   label:'December',        baseline:toCents(9000), paid:0, due:dueDates.december },
+      { id:'january',    label:'January (Final)', baseline:toCents(9000), paid:0, due:dueDates.january },
+    ],
+  };
+
+  // Math helpers
+  const sum = (arr, key) => arr.reduce((a, it) => a + (key ? (it[key] || 0) : (it || 0)), 0);
+
+  function computeSummary(s){
+    const fees = sum(s.fees, 'amount');
+    const sch  = sum(s.scholarships, 'amount');
+    const paid = sum(s.payments, 'amount');
+    const outstanding = Math.max(0, s.tuition + fees - sch - paid);
+    return { fees, sch, paid, outstanding };
+  }
+
+  function projectedPlan(s){
+    const proj = s.plan.map(p => ({ ...p, amount:p.baseline, status:'due' }));
+    const now = today();
+    for (const p of proj) {
+      if (p.amount === 0) p.status = 'paid';
+      else if (p.due && new Date(p.due) < now) p.status = 'overdue';
+      else p.status = 'due';
+    }
+    return proj;
+  }
+
+  function amountToPayNow(s, includeNext7){
+    const proj = projectedPlan(s);
+    const now = today();
+    const limit = new Date(now.getTime() + (includeNext7 ? 7 : 0) * 86400000);
+    return proj
+      .filter(p => p.status !== 'paid' && p.due && new Date(p.due) <= limit)
+      .reduce((a, p) => a + p.amount, 0);
+  }
+
+  // Summary + pill + USD
+  function renderSummary(s){
+    const S = computeSummary(s);
+    setTxt('sum-tuition-eur', fmtEUR(s.tuition));
+    setTxt('sum-fees-eur', fmtEUR(S.fees));
+    setTxt('sum-scholarships-eur', fmtEUR(-S.sch)); // show as negative using formatter
+    setTxt('sum-paid-eur', fmtEUR(S.paid));
+    setTxt('sum-outstanding-eur', fmtEUR(S.outstanding));
+
+    [['sum-tuition-usd', s.tuition],
+     ['sum-fees-usd', S.fees],
+     ['sum-scholarships-usd', -S.sch],
+     ['sum-paid-usd', S.paid],
+     ['sum-outstanding-usd', S.outstanding]]
+     .forEach(([id, c]) => { const el = byId(id); if (el) { show(el, true); el.textContent = '≈ ' + fmtUSD(c, state.fx); } });
+
+    const include7 = byId('toggle-next7') ? byId('toggle-next7').checked : true;
+    const nowC = amountToPayNow(s, include7);
+    setTxt('amount-now-eur', fmtEUR(nowC));
+    setTxt('amount-now-eur-small', fmtEUR(nowC));
+    const pillUsd = byId('amount-now-usd'); if (pillUsd) pillUsd.textContent = '≈ ' + fmtUSD(nowC, state.fx);
+  }
+
+  // Plan rows
+  function renderPlan(s){
+    const proj = projectedPlan(s);
+    const map = {
+      deposit:    { amtE:'amt-deposit-eur',    amtU:'amt-deposit-usd',    due:'due-deposit',    st:'status-deposit' },
+      prearrival: { amtE:'amt-prearrival-eur', amtU:'amt-prearrival-usd', due:'due-prearrival', st:'status-prearrival' },
+      november:   { amtE:'amt-november-eur',   amtU:'amt-november-usd',   due:'due-november',   st:'status-november' },
+      december:   { amtE:'amt-december-eur',   amtU:'amt-december-usd',   due:'due-december',   st:'status-december' },
+      january:    { amtE:'amt-january-eur',    amtU:'amt-january-usd',    due:'due-january',    st:'status-january' },
+    };
+    proj.forEach(p => {
+      const ids = map[p.id]; if (!ids) return;
+      setTxt(ids.amtE, fmtEUR(p.amount));
+      const usdEl = byId(ids.amtU); if (usdEl) usdEl.textContent = '≈ ' + fmtUSD(p.amount, state.fx);
+      setTxt(ids.due, dstr(p.due));
+      const st = byId(ids.st);
+      if (st) {
+        st.textContent = (p.status === 'paid') ? 'Paid' : (p.status === 'overdue' ? 'Overdue' : 'Due');
+        st.className = 'badge ' + (p.status === 'paid' ? 'bg-success' : p.status === 'overdue' ? 'bg-danger' : 'bg-secondary');
+      }
+    });
+  }
+
+  // Donut (clean rebuild)
+  let donut = null;
+  function renderDonut(s){
+    const S = computeSummary(s);
+    const ctx = document.getElementById('financial-chart')?.getContext('2d');
+    if (!ctx) return;
+    if (donut) { try { donut.destroy(); } catch(e){} }
+    donut = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: ['Paid','Pending'], datasets: [{ data:[fromCents(S.paid), fromCents(S.outstanding)], backgroundColor:['#28a745','#dc3545'] }] },
+      options: { plugins:{ legend:{ display:false } }, cutout:'60%' }
+    });
+    const include7 = byId('toggle-next7') ? byId('toggle-next7').checked : true;
+    setTxt('amount-now-eur-small', fmtEUR(amountToPayNow(s, include7)));
+  }
+
+  // Minimal ledger (will expand later)
+  function renderLedger(s){
+    const S = computeSummary(s);
+    setTxt('ledger-tuition-eur', fmtEUR(s.tuition));
+    setTxt('ledger-fees-eur', fmtEUR(S.fees));
+    setTxt('ledger-scholarships-eur', fmtEUR(-S.sch));
+    setTxt('ledger-subtotal-eur', fmtEUR(s.tuition + S.fees - S.sch));
+    setTxt('ledger-paid-eur', fmtEUR(S.paid));
+    setTxt('ledger-outstanding-eur', fmtEUR(S.outstanding));
+    setTxt('ledger-outofpocket-eur', fmtEUR(S.outstanding));
+    if (byId('ledger-tuition-usd')) setTxt('ledger-tuition-usd', fmtUSD(s.tuition, state.fx));
+    if (byId('ledger-fees-usd')) setTxt('ledger-fees-usd', fmtUSD(S.fees, state.fx));
+    if (byId('ledger-scholarships-usd')) setTxt('ledger-scholarships-usd', fmtUSD(-S.sch, state.fx));
+    if (byId('ledger-paid-usd')) setTxt('ledger-paid-usd', fmtUSD(S.paid, state.fx));
+    const include7 = byId('toggle-next7') ? byId('toggle-next7').checked : true;
+    setTxt('ledger-amount-now-eur', fmtEUR(amountToPayNow(s, include7)));
+  }
+
+  function renderAll(){
+    renderSummary(state);
+    renderPlan(state);
+    renderDonut(state);
+    if (!byId('view-ledger')?.classList.contains('d-none')) renderLedger(state);
+  }
+
+  // Delegated wiring
+  function wire(){
+    document.addEventListener('click', (ev) => {
+      const t = ev.target;
+      if (t.id === 'btn-view-summary') {
+        byId('btn-view-summary')?.classList.add('active');
+        byId('btn-view-ledger')?.classList.remove('active');
+        byId('view-summary')?.classList.remove('d-none');
+        byId('view-ledger')?.classList.add('d-none');
+      }
+      if (t.id === 'btn-view-ledger') {
+        byId('btn-view-ledger')?.classList.add('active');
+        byId('btn-view-summary')?.classList.remove('active');
+        byId('view-ledger')?.classList.remove('d-none');
+        byId('view-summary')?.classList.add('d-none');
+        renderLedger(state);
+      }
+      if (t.classList?.contains('pay-installment')) {
+        const id = t.getAttribute('data-plan');
+        const map = { deposit:'amt-deposit-eur', prearrival:'amt-prearrival-eur', november:'amt-november-eur', december:'amt-december-eur', january:'amt-january-eur' };
+        const txt = byId(map[id])?.textContent || '€0.00';
+        const num = Number(txt.replace(/[^0-9.]/g,'')) || 0;
+        state.payments.push({ id:'p'+(state.payments.length+1), amount:toCents(num), method:'card', createdAt:new Date().toISOString() });
+        const p = state.plan.find(x => x.id === id); if (p) p.paid = p.baseline; // demo visual only
+        renderAll();
+      }
+      if (t.id === 'btn-pay-remaining') {
+        const S = computeSummary(state);
+        if (S.outstanding > 0) {
+          state.payments.push({ id:'p'+(state.payments.length+1), amount:S.outstanding, method:'card', createdAt:new Date().toISOString() });
+          state.plan.forEach(p => p.paid = p.baseline); // demo: mark all paid
+          renderAll();
+        }
+      }
+    });
+    const tog = byId('toggle-next7'); if (tog) tog.addEventListener('change', renderAll);
+  }
+
+  // SPA hook
+  window.renderFinancialChart = function () {
+    wire();
+    renderAll();
+  };
+})();

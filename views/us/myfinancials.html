@@ -1,0 +1,1881 @@
+<!-- My Financials view (CLIENTS US) -->
+<div id="my-financials-view" class="my-financials-view fade-in">
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h1 class="h2 fw-bold mb-2">My Financials</h1>
+      <p class="text-muted mb-0">Track your payments, scholarships, and outstanding balance.</p>
+    </div>
+    <div class="text-end">
+      <div class="mb-2">
+        <span class="badge rounded-pill bg-light border text-dark px-3 py-2">
+          Amount to pay now:
+          €<span id="amount-to-pay-now">0.00</span>
+          <span class="text-muted ms-1">≈ $<span id="amount-to-pay-now-usd">0.00</span></span>
+        </span>
+      </div>
+      <div class="form-check form-switch d-inline-flex align-items-center justify-content-end w-100 mb-2">
+        <input class="form-check-input" type="checkbox" id="toggle-next7">
+        <label class="form-check-label ms-2" for="toggle-next7">Include next 7 days</label>
+      </div>
+      <button class="btn btn-primary" id="btn-make-payment">Make a Payment</button>
+    </div>
+  </div>
+
+  <div class="d-flex gap-3 align-items-start flex-nowrap">
+    <div class="d-flex flex-column gap-3" style="flex: 0 0 28%;">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="text-uppercase small text-muted fw-semibold">Tuition (EUR)</div>
+          <div class="h4 fw-bold mb-1" id="card-tuition">€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-tuition-usd">0.00</span></div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="text-uppercase small text-muted fw-semibold">Additional Fees (EUR)</div>
+          <div class="h4 fw-bold mb-1" id="card-fees">€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-fees-usd">0.00</span></div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="text-uppercase small text-muted fw-semibold">Total Cost (Before Scholarships)</div>
+          <div class="h4 fw-bold mb-1" id="card-total-before">€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-total-before-usd">0.00</span></div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="text-uppercase small text-muted fw-semibold">Scholarships (EUR)</div>
+          <div class="h4 fw-bold mb-1 text-primary" id="card-scholarships">-€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-scholarships-usd">0.00</span></div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <div class="text-uppercase small text-muted fw-semibold">Out-of-Pocket (Total Student Cost)</div>
+          <div class="h4 fw-bold mb-1" id="card-student-cost">€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-student-cost-usd">0.00</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex flex-column gap-3" style="flex: 0 0 24%;">
+      <div class="card shadow-sm border-0">
+        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center py-5">
+          <div class="text-uppercase small text-muted fw-semibold mb-2">Paid (EUR)</div>
+          <div class="display-6 fw-bold text-success mb-2" id="card-paid">€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-paid-usd">0.00</span></div>
+        </div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center py-5">
+          <div class="text-uppercase small text-muted fw-semibold mb-2">Outstanding (EUR)</div>
+          <div class="display-5 fw-bold text-danger mb-2" id="card-outstanding">€0.00</div>
+          <div class="small text-muted" style="font-size: 0.85em;">≈ $<span id="card-outstanding-usd">0.00</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm border-0 flex-grow-1">
+      <div class="card-body">
+        <div id="financial-donut" class="position-relative mx-auto mb-4" style="width: 280px; height: 280px;"></div>
+        <div class="small text-muted">
+          <div class="d-flex justify-content-between align-items-center py-1">
+            <span>Total Program Cost</span>
+            <span id="sum-total-program">€0.00</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center py-1">
+            <span>Scholarships</span>
+            <span id="sum-scholarships">-€0.00</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center py-1">
+            <span>Paid</span>
+            <span id="sum-paid">€0.00</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center py-1">
+            <span>Outstanding</span>
+            <span id="sum-outstanding">€0.00</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center py-1">
+            <span>Registration Fee</span>
+            <span id="sum-registration-fee">€0.00</span>
+          </div>
+        </div>
+        <div id="overpaid-caption" class="text-center small fw-semibold text-success mt-2 d-none">Overpaid €<span id="overpaid-eur">0.00</span></div>
+        <div id="visa-status" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-3 align-items-stretch mt-3">
+    <div class="card shadow-sm border-0" style="flex: 0 0 52%;">
+      <div class="card-body d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+        <div>
+          <h2 class="h6 text-uppercase text-muted fw-semibold mb-2">Next Payment</h2>
+          <div class="fw-semibold">Amount due now: <span id="next-due-eur">€0.00</span> <span class="text-muted" style="font-size: 0.85em;">≈ <span id="next-due-usd">$0.00</span></span></div>
+          <div class="text-muted small mt-1" id="next-due-label"></div>
+        </div>
+        <button class="btn btn-primary" id="btn-next-payment">Make Next Payment</button>
+      </div>
+    </div>
+    <div class="flex-grow-1"></div>
+  </div>
+
+  <div class="d-flex gap-3 align-items-start mt-4">
+    <div class="card shadow-sm border-0" style="flex: 0 0 60%;">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h5 mb-0">Payment Plan</h2>
+        <button class="btn btn-sm btn-outline-primary" id="btn-pay-remaining" title="Simulates payment of all remaining balance (prototype)">Pay remaining balance</button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0" id="tbl-payment-plan">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">Label</th>
+                <th scope="col">Due</th>
+                <th scope="col">Amount Due (EUR)</th>
+                <th scope="col">Amount Paid (EUR)</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex flex-column gap-3 flex-grow-1">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h2 class="h6 mb-0">Scholarships</h2>
+          <button class="btn btn-sm btn-outline-success" id="btn-add-scholarship">+ Add Scholarship</button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" id="tbl-scholarships">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Label</th>
+                  <th scope="col">Amount (EUR)</th>
+                  <th scope="col">≈ USD</th>
+                  <th scope="col" class="text-end"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="px-3 py-2 border-top border-light small text-muted" id="subtotal-scholarships">Subtotal: -€0.00</div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h2 class="h6 mb-0">Additional Fees</h2>
+          <button class="btn btn-sm btn-outline-secondary" id="btn-add-fee">+ Add Fee</button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" id="tbl-fees">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Label</th>
+                  <th scope="col">Amount (EUR)</th>
+                  <th scope="col">≈ USD</th>
+                  <th scope="col" class="text-end"></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="px-3 py-2 border-top border-light small text-muted" id="subtotal-fees">Subtotal: €0.00</div>
+      </div>
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+          <h2 class="h6 mb-0">Payment History &amp; Receipts</h2>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" id="tbl-history">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col" class="text-nowrap">
+                    Date
+                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="toggle-history-sort" title="Toggle sort order">
+                      <span id="history-sort-indicator">↓</span>
+                    </button>
+                  </th>
+                  <th scope="col">Method</th>
+                  <th scope="col">Amount (EUR)</th>
+                  <th scope="col">≈ USD</th>
+                  <th scope="col">Receipt</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="financial-payment-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Record a Payment</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="financial-payment-form">
+          <div class="modal-body">
+            <div id="payment-target-info" class="alert alert-info d-none small mb-3"></div>
+            <div class="mb-3">
+              <label for="payment-amount" class="form-label">Amount (EUR)</label>
+              <input type="number" class="form-control" id="payment-amount" min="0" step="0.01" required>
+            </div>
+            <div class="mb-3">
+              <label for="payment-method" class="form-label">Method</label>
+              <select class="form-select" id="payment-method">
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Wire">Wire</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="mb-0">
+              <label for="payment-notes" class="form-label">Notes (optional)</label>
+              <textarea class="form-control" id="payment-notes" rows="2" placeholder="Reference, confirmation, etc."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Apply Payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <a
+    href="#"
+    id="financial-reset-link"
+    title="Reset seeded financial data"
+    aria-label="Reset seeded financial data (developer shortcut)"
+    style="position: fixed; left: 8px; bottom: 8px; opacity: 0.12; font-size: 0.75rem; text-decoration: none; color: inherit;"
+  >reset</a>
+</div>
+
+<div class="modal fade" id="financial-edit-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Installment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="financial-edit-form">
+        <div class="modal-body">
+          <div id="edit-coherence-warning" class="alert alert-warning d-none small mb-3">
+            ⚠️ Totals were adjusted to remain consistent with your program cost and scholarships. Redistribution applied to unlocked installments.
+          </div>
+          <div class="mb-3">
+            <label for="edit-label" class="form-label">Label</label>
+            <input type="text" class="form-control" id="edit-label" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-note" class="form-label">Note</label>
+            <input type="text" class="form-control" id="edit-note" placeholder="Optional note for this installment">
+          </div>
+          <div class="mb-3">
+            <label for="edit-due-date" class="form-label">Due date</label>
+            <input type="date" class="form-control" id="edit-due-date">
+          </div>
+          <div class="mb-3">
+            <label for="edit-amount-due" class="form-label">Amount due (EUR)</label>
+            <input type="number" class="form-control" id="edit-amount-due" min="0" step="0.01" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-amount-paid" class="form-label">Amount paid (EUR)</label>
+            <input type="number" class="form-control" id="edit-amount-paid" min="0" step="0.01">
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="edit-locked">
+            <label class="form-check-label" for="edit-locked">Lock this installment (ignore scholarship redistributions)</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+const fxRate = 1.07;
+const PROTOTYPE_TODAY = '2025-03-20';
+
+// TODO: Replace static prototype data with Firestore read/write when available.
+const DEFAULT_TUITION = 42000;
+const DEFAULT_ADDITIONAL_FEES = 6200;
+const DEFAULT_REGISTRATION_AMOUNT = 6800;
+const DEFAULT_PLAN_ROWS = [
+  {
+    label: 'Registration payment',
+    note: 'due commitment',
+    dueDate: '2025-01-06',
+    amountDue: DEFAULT_REGISTRATION_AMOUNT,
+    amountPaid: 0,
+    type: 'registration',
+    locked: true
+  },
+  {
+    label: 'First tuition payment',
+    note: 'due on 06/01/25',
+    dueDate: '2025-01-06',
+    amountDue: 9000,
+    amountPaid: 0,
+    type: 'tuition',
+    locked: false
+  },
+  {
+    label: 'Second tuition payment',
+    note: 'due on 08/01/25',
+    dueDate: '2025-01-08',
+    amountDue: 9000,
+    amountPaid: 0,
+    type: 'tuition',
+    locked: false
+  },
+  {
+    label: 'Third tuition payment',
+    note: 'due on 11/01/25',
+    dueDate: '2025-11-01',
+    amountDue: 9000,
+    amountPaid: 0,
+    type: 'tuition',
+    locked: false
+  },
+  {
+    label: 'Fourth tuition payment',
+    note: 'due on 01/02/26',
+    dueDate: '2026-02-01',
+    amountDue: 9000,
+    amountPaid: 0,
+    type: 'tuition',
+    locked: false
+  }
+];
+
+function reseedDefaults() {
+  const seedTime = todayISO();
+  return {
+    tuition: DEFAULT_TUITION,
+    additionalFees: DEFAULT_ADDITIONAL_FEES,
+    additionalFeeItems: [],
+    scholarships: [],
+    registrationFee: DEFAULT_REGISTRATION_AMOUNT,
+    paymentPlan: DEFAULT_PLAN_ROWS.map((row) => ({
+      ...row,
+      amountDue: toCurrency(row.amountDue),
+      amountPaid: toCurrency(row.amountPaid),
+      amountDueBase: toCurrency(row.amountDue),
+      locked: row.type === 'registration' ? true : Boolean(row.locked)
+    })),
+    paymentsHistory: [],
+    extraPaid: 0,
+    originalDue: DEFAULT_PLAN_ROWS.map((row) => toCurrency(row.amountDue)),
+    __seedVersion: 1,
+    __seededAt: seedTime,
+    __seededRegistrationPaid: false
+  };
+}
+
+let financials = null;
+
+function seedPaymentPlanIfNeeded(targetState = null) {
+  const current = targetState || financials || getState();
+  if (!targetState && current !== financials) {
+    financials = current;
+  }
+  if (!Array.isArray(current.paymentPlan) || current.paymentPlan.length !== DEFAULT_PLAN_ROWS.length) {
+    const seeded = reseedDefaults();
+    Object.assign(current, seeded);
+    window.__financialsState = current;
+  }
+  financials = current;
+}
+
+function getState() {
+  if (!window.__financialsState) {
+    window.__financialsState = reseedDefaults();
+  }
+  const state = window.__financialsState;
+  const totalsZero = (!state.paymentPlan || state.paymentPlan.length === 0)
+    || state.paymentPlan.every((row) => !row || (!row.amountDue && !row.amountPaid));
+  if (totalsZero) {
+    window.__financialsState = reseedDefaults();
+  }
+  const fresh = window.__financialsState;
+  fresh.paymentPlan = (fresh.paymentPlan || []).slice(0, DEFAULT_PLAN_ROWS.length).map((row, index) => ({
+    ...DEFAULT_PLAN_ROWS[index],
+    ...row,
+    amountDue: toCurrency(row.amountDue != null ? row.amountDue : DEFAULT_PLAN_ROWS[index].amountDue),
+    amountPaid: toCurrency(row.amountPaid != null ? row.amountPaid : 0),
+    amountDueBase: toCurrency(row.amountDueBase != null ? row.amountDueBase : DEFAULT_PLAN_ROWS[index].amountDue),
+    locked: index === 0 ? true : Boolean(row.locked)
+  }));
+  if (fresh.paymentPlan.length < DEFAULT_PLAN_ROWS.length) {
+    window.__financialsState = reseedDefaults();
+    financials = window.__financialsState;
+    return getState();
+  }
+  fresh.tuition = toCurrency(fresh.tuition || DEFAULT_TUITION);
+  fresh.additionalFees = toCurrency(fresh.additionalFees || DEFAULT_ADDITIONAL_FEES);
+  fresh.registrationFee = toCurrency(fresh.registrationFee || DEFAULT_REGISTRATION_AMOUNT);
+  if (!Array.isArray(fresh.scholarships)) fresh.scholarships = [];
+  if (!Array.isArray(fresh.additionalFeeItems)) fresh.additionalFeeItems = [];
+  if (!Array.isArray(fresh.paymentsHistory)) fresh.paymentsHistory = [];
+  if (!fresh.__seedVersion) fresh.__seedVersion = 1;
+  if (!fresh.__seededAt) fresh.__seededAt = todayISO();
+  if (!fresh.originalDue || !Array.isArray(fresh.originalDue) || fresh.originalDue.length !== fresh.paymentPlan.length) {
+    fresh.originalDue = fresh.paymentPlan.map((row) => toCurrency(row.amountDueBase ?? row.amountDue));
+  }
+  financials = fresh;
+  return fresh;
+}
+
+financials = getState();
+
+const state = {
+  root: null,
+  fxRate,
+  includeNext7: false,
+  paymentTarget: null,
+  paymentModal: null,
+  derived: null,
+  planView: [],
+  today: null,
+  historySortAscending: false,
+  editModal: null,
+  editTarget: null,
+  nextPaymentIndex: null,
+  originalDue: []
+};
+
+const EUR_FORMATTER = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+const USD_FORMATTER = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const plainNumberFormatters = {};
+
+function getPlainFormatter(locale = 'en-IE') {
+  if (!plainNumberFormatters[locale]) {
+    plainNumberFormatters[locale] = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+  return plainNumberFormatters[locale];
+}
+
+function formatPlain(value, locale = 'en-IE') {
+  const numeric = Number.isFinite(value) ? value : 0;
+  return getPlainFormatter(locale).format(roundCurrency(numeric));
+}
+
+function formatEUR(value) {
+  const numeric = Number.isFinite(value) ? value : 0;
+  return EUR_FORMATTER.format(roundCurrency(numeric));
+}
+
+function formatUSD(value) {
+  const numeric = Number.isFinite(value) ? value : 0;
+  return USD_FORMATTER.format(roundCurrency(numeric));
+}
+
+function approxUSD(value, rate = fxRate) {
+  const base = Number.isFinite(value) ? value : 0;
+  const computed = base * (Number.isFinite(rate) ? rate : fxRate);
+  return roundCurrency(computed);
+}
+
+function toCurrency(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return roundCurrency(numeric);
+}
+
+function parseISODate(value) {
+  if (!value) return null;
+  const parts = value.split('-');
+  if (parts.length !== 3) return null;
+  const [year, month, day] = parts.map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function startOfToday() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function roundCurrency(value) {
+  return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+}
+
+function calculateAdditionalFeesTotal() {
+  const financials = getState();
+  const base = toCurrency(financials.additionalFees);
+  const extras = Array.isArray(financials.additionalFeeItems)
+    ? financials.additionalFeeItems.reduce((acc, item) => acc + toCurrency(item.amount), 0)
+    : 0;
+  return roundCurrency(base + extras);
+}
+
+function calculateProgramCost() {
+  const financials = getState();
+  const tuition = toCurrency(financials.tuition);
+  const totalAdditionalFees = calculateAdditionalFeesTotal();
+  return roundCurrency(tuition + totalAdditionalFees);
+}
+
+function clamp(value, min, max) {
+  const numeric = Number.isFinite(Number(value)) ? Number(value) : 0;
+  const lower = Number.isFinite(min) ? min : Number.NEGATIVE_INFINITY;
+  const upper = Number.isFinite(max) ? max : Number.POSITIVE_INFINITY;
+  return Math.min(Math.max(numeric, lower), upper);
+}
+
+function normalizePercents(values) {
+  if (!Array.isArray(values) || !values.length) return [];
+  const safe = values.map((value) => Math.max(0, Number.isFinite(value) ? value : 0));
+  const sum = safe.reduce((acc, value) => acc + value, 0);
+  if (sum <= 0) return safe.map(() => 0);
+  const rounded = safe.map((value) => Math.round((value / sum) * 100));
+  const total = rounded.reduce((acc, value) => acc + value, 0);
+  const diff = 100 - total;
+  if (diff !== 0) {
+    const largestIndex = safe.indexOf(Math.max(...safe));
+    if (largestIndex >= 0) {
+      rounded[largestIndex] = Math.max(0, rounded[largestIndex] + diff);
+    }
+  }
+  return rounded;
+}
+
+function todayISO() {
+  const now = new Date();
+  return now.toISOString().slice(0, 10);
+}
+
+function enforceInvariants(stateObj = null) {
+  const data = stateObj || getState();
+  if (!data || !Array.isArray(data.paymentPlan) || !data.paymentPlan.length) return;
+  const registration = data.paymentPlan[0];
+  if (!registration) return;
+  registration.label = registration.label || 'Registration payment';
+  registration.type = 'registration';
+  registration.locked = true;
+  registration.amountDueBase = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+  registration.amountDue = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+  if (registration.amountPaid < 0) registration.amountPaid = 0;
+  if (registration.amountPaid > registration.amountDue) {
+    registration.amountPaid = toCurrency(registration.amountDue);
+  }
+  if (Array.isArray(data.originalDue) && data.originalDue.length) {
+    data.originalDue[0] = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+  }
+}
+
+function recomputeDerived() {
+  const derived = computeDerived();
+  state.derived = derived;
+  return derived;
+}
+
+function renderDonutAndLedger() {
+  renderSummaryPanel();
+  renderDonut();
+}
+
+function renderAmountToPayPill() {
+  renderAmountToPay();
+}
+
+function renderFeesTable() {
+  renderFees();
+}
+
+function refreshFinancialSummaries(stateObj = null) {
+  const data = stateObj || getState();
+  enforceInvariants(data);
+  recomputeDerived();
+  state.planView = buildPlanView();
+  renderCards();
+  renderDonutAndLedger();
+  renderAmountToPayPill();
+  renderNextPayment();
+  renderFeesTable();
+}
+
+function applyPaymentToRow(stateObj, rowIndex, amount) {
+  const data = stateObj || getState();
+  if (!data || !Array.isArray(data.paymentPlan)) return { applied: 0, remaining: toCurrency(amount) };
+  const plan = data.paymentPlan;
+  const safeIndex = Number.isInteger(rowIndex) && rowIndex >= 0 && rowIndex < plan.length ? rowIndex : 0;
+  const payment = Math.max(toCurrency(amount), 0);
+  if (payment <= 0) return { applied: 0, remaining: 0 };
+
+  let remaining = payment;
+  let applied = 0;
+  const primary = plan[safeIndex];
+  if (!primary) return { applied: 0, remaining: payment };
+
+  const primaryRemaining = Math.max(roundCurrency(primary.amountDue - primary.amountPaid), 0);
+  const usedPrimary = Math.min(primaryRemaining, remaining);
+  if (usedPrimary > 0) {
+    primary.amountPaid = toCurrency(primary.amountPaid + usedPrimary);
+    applied = roundCurrency(applied + usedPrimary);
+    remaining = roundCurrency(remaining - usedPrimary);
+  }
+
+  if (remaining > 0) {
+    for (let i = safeIndex + 1; i < plan.length && remaining > 0; i += 1) {
+      const row = plan[i];
+      if (!row) continue;
+      const rowRemaining = Math.max(roundCurrency(row.amountDue - row.amountPaid), 0);
+      if (rowRemaining <= 0) continue;
+      const used = Math.min(rowRemaining, remaining);
+      if (used > 0) {
+        row.amountPaid = toCurrency(row.amountPaid + used);
+        applied = roundCurrency(applied + used);
+        remaining = roundCurrency(remaining - used);
+      }
+    }
+  }
+
+  return { applied: roundCurrency(applied), remaining: roundCurrency(remaining) };
+}
+
+function rowStatus(row, todayDate) {
+  const today = todayDate || startOfToday();
+  const due = parseISODate(row.dueDate);
+  const remaining = Math.max(roundCurrency(toCurrency(row.amountDue) - toCurrency(row.amountPaid)), 0);
+  if (remaining <= 0.01) return 'paid';
+  if (toCurrency(row.amountPaid) > 0 && remaining > 0.01) return 'partial';
+  if (toCurrency(row.amountPaid) <= 0.01 && due && due < today) return 'overdue';
+  return 'pending';
+}
+
+function hasPaymentForLabel(stateObj, label) {
+  if (!label) return false;
+  const entries = Array.isArray(stateObj?.paymentsHistory) ? stateObj.paymentsHistory : [];
+  return entries.some((entry) => {
+    if (!entry || entry.kind === 'Adjustment') return false;
+    return entry.label === label && toCurrency(entry.amount) > 0;
+  });
+}
+
+function hasRegistrationPayment(stateObj) {
+  const entries = Array.isArray(stateObj?.paymentsHistory) ? stateObj.paymentsHistory : [];
+  return entries.some((entry) => {
+    if (!entry || entry.kind === 'Adjustment') return false;
+    const labelMatch = entry.label === 'Registration payment';
+    return labelMatch && toCurrency(entry.amount) >= DEFAULT_REGISTRATION_AMOUNT;
+  });
+}
+
+function fixStateIntegrity(stateObj) {
+  const data = stateObj || getState();
+  if (!data || !Array.isArray(data.paymentPlan) || !data.paymentPlan.length) return;
+  const plan = data.paymentPlan;
+  const registration = plan[0];
+  if (registration) {
+    registration.label = registration.label || 'Registration payment';
+    registration.type = 'registration';
+    registration.locked = true;
+    registration.amountDue = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+    registration.amountDueBase = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+    const hasHistory = hasRegistrationPayment(data);
+     if (hasHistory) {
+      data.__seededRegistrationPaid = true;
+    }
+    if (hasHistory || data.__seededRegistrationPaid) {
+      registration.amountPaid = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+    }
+  }
+
+  for (let i = 1; i < plan.length; i += 1) {
+    const row = plan[i];
+    if (!row) continue;
+    row.type = row.type || 'tuition';
+    if (toCurrency(row.amountPaid) > 0 && !hasPaymentForLabel(data, row.label)) {
+      row.amountPaid = 0;
+    }
+  }
+
+  if (registration) {
+    if (toCurrency(registration.amountPaid) >= DEFAULT_REGISTRATION_AMOUNT) {
+      data.__seededRegistrationPaid = true;
+      if (!hasRegistrationPayment(data)) {
+        data.paymentsHistory = Array.isArray(data.paymentsHistory) ? data.paymentsHistory : [];
+        data.paymentsHistory.unshift({
+          date: todayISO(),
+          method: 'Bank Transfer',
+          amount: DEFAULT_REGISTRATION_AMOUNT,
+          notes: '',
+          label: 'Registration payment',
+          kind: 'Payment',
+          receiptUrl: ''
+        });
+      }
+      registration.amountPaid = toCurrency(DEFAULT_REGISTRATION_AMOUNT);
+    }
+  }
+
+  ensureOriginalDueSnapshot(data);
+}
+
+function ensurePlanDefaults() {
+  financials = getState();
+  if (!Array.isArray(financials.paymentPlan) || financials.paymentPlan.length < DEFAULT_PLAN_ROWS.length) {
+    Object.assign(financials, reseedDefaults());
+  }
+  seedPaymentPlanIfNeeded(financials);
+  if (!Array.isArray(financials.paymentPlan)) {
+    financials.paymentPlan = [];
+  }
+  financials.paymentPlan.forEach((row, index) => {
+    const defaults = DEFAULT_PLAN_ROWS[index];
+    row.amountDueBase = toCurrency(row.amountDueBase ?? row.amountDue ?? defaults?.amountDue ?? 0);
+    row.amountDue = Math.max(toCurrency(row.amountDue), 0);
+    row.amountPaid = Math.max(toCurrency(row.amountPaid), 0);
+    row.type = index === 0 ? 'registration' : (row.type || 'tuition');
+    row.locked = row.type === 'registration' ? true : Boolean(row.locked);
+    row.note = row.note ?? defaults?.note ?? '';
+  });
+  if (!Array.isArray(financials.scholarships)) {
+    financials.scholarships = [];
+  }
+  if (!Array.isArray(financials.additionalFeeItems)) {
+    financials.additionalFeeItems = [];
+  }
+  if (!Array.isArray(financials.paymentsHistory)) {
+    financials.paymentsHistory = [];
+  }
+  if (!financials.__seedVersion) financials.__seedVersion = 1;
+  if (!financials.__seededAt) financials.__seededAt = todayISO();
+  if (!financials.__seededRegistrationPaid) {
+    const alreadyLogged = hasRegistrationPayment(financials);
+    if (!alreadyLogged) {
+      financials.paymentsHistory.unshift({
+        date: todayISO(),
+        method: 'Bank Transfer',
+        amount: DEFAULT_REGISTRATION_AMOUNT,
+        notes: '',
+        label: 'Registration payment',
+        kind: 'Payment',
+        receiptUrl: ''
+      });
+    }
+    applyPaymentToRow(financials, 0, DEFAULT_REGISTRATION_AMOUNT);
+    financials.__seededRegistrationPaid = true;
+  }
+  enforceInvariants(financials);
+  ensureOriginalDueSnapshot(financials);
+}
+
+function recalculateBaseFromPlan() {
+  financials = getState();
+  financials.tuition = toCurrency(financials.tuition ?? DEFAULT_TUITION);
+  financials.additionalFees = toCurrency(financials.additionalFees ?? DEFAULT_ADDITIONAL_FEES);
+  financials.registrationFee = toCurrency(financials.registrationFee ?? DEFAULT_REGISTRATION_AMOUNT);
+}
+
+function ensureOriginalDueSnapshot(targetState = null) {
+  const current = targetState || financials || getState();
+  if (!targetState && current !== financials) {
+    financials = current;
+  }
+  if (!Array.isArray(current.paymentPlan)) {
+    state.originalDue = [];
+    current.originalDue = [];
+    return;
+  }
+  const snapshot = current.paymentPlan.map((row) => toCurrency(row.amountDueBase ?? row.amountDue ?? 0));
+  state.originalDue = [...snapshot];
+  current.originalDue = [...snapshot];
+}
+
+function normalizePlan() {
+  financials = getState();
+  financials.paymentPlan.forEach((row) => {
+    row.amountDue = Math.max(toCurrency(row.amountDue), 0);
+    row.amountPaid = Math.max(toCurrency(row.amountPaid), 0);
+  });
+}
+
+function applyScholarshipRedistribution() {
+  const financials = getState();
+  const plan = financials.paymentPlan;
+  if (!Array.isArray(plan) || plan.length !== DEFAULT_PLAN_ROWS.length) return;
+
+  if (!Array.isArray(financials.originalDue) || financials.originalDue.length !== plan.length) {
+    financials.originalDue = plan.map((row, index) =>
+      toCurrency(row.amountDueBase ?? row.amountDue ?? DEFAULT_PLAN_ROWS[index].amountDue)
+    );
+  } else {
+    financials.originalDue = financials.originalDue.map((value, index) =>
+      toCurrency(
+        value ??
+          plan[index]?.amountDueBase ??
+          plan[index]?.amountDue ??
+          DEFAULT_PLAN_ROWS[index]?.amountDue ??
+          0
+      )
+    );
+  }
+  state.originalDue = [...financials.originalDue];
+
+  plan.forEach((row, index) => {
+    const base = toCurrency(financials.originalDue[index] ?? row.amountDueBase ?? row.amountDue ?? DEFAULT_PLAN_ROWS[index].amountDue);
+    row.amountDueBase = base;
+    row.amountDue = base;
+    if (index === 0) {
+      row.type = 'registration';
+      row.locked = true;
+    } else {
+      row.type = row.type || 'tuition';
+    }
+  });
+
+  const tuitionEntries = [1, 2, 3, 4]
+    .filter((idx) => plan[idx])
+    .map((idx) => {
+      const baseAmount = toCurrency(financials.originalDue[idx] ?? DEFAULT_PLAN_ROWS[idx].amountDue);
+      return {
+        idx,
+        base: baseAmount,
+        amount: baseAmount,
+        locked: Boolean(plan[idx]?.locked)
+      };
+    });
+
+  let remaining = Math.max(
+    0,
+    roundCurrency(financials.scholarships.reduce((acc, item) => acc + toCurrency(item.amount), 0))
+  );
+
+  let active = tuitionEntries.filter((entry) => !entry.locked && entry.amount > 0.0001);
+
+  while (remaining > 0.0001 && active.length) {
+    const share = remaining / active.length;
+    const nextActive = [];
+    for (const entry of active) {
+      const reduction = Math.min(entry.amount, share);
+      entry.amount = roundCurrency(entry.amount - reduction);
+      remaining = roundCurrency(remaining - reduction);
+      if (entry.amount > 0.0001) {
+        nextActive.push(entry);
+      }
+    }
+    if (nextActive.length === active.length) {
+      break;
+    }
+    active = nextActive;
+  }
+
+  if (remaining > 0.0001 && active.length) {
+    for (const entry of active) {
+      if (remaining <= 0.0001) break;
+      const reduction = Math.min(entry.amount, remaining);
+      entry.amount = roundCurrency(entry.amount - reduction);
+      remaining = roundCurrency(remaining - reduction);
+    }
+  }
+
+  tuitionEntries.forEach((entry) => {
+    const target = plan[entry.idx];
+    if (!target) return;
+    const nextAmount = entry.locked ? entry.base : entry.amount;
+    target.amountDue = Math.max(0, roundCurrency(nextAmount));
+  });
+
+  plan[0].amountDue = Math.max(0, roundCurrency(financials.originalDue[0] ?? DEFAULT_REGISTRATION_AMOUNT));
+
+  recalculateBaseFromPlan();
+  financials.paymentPlan = plan;
+}
+
+function applyCarryover() {
+  const financials = getState();
+  const plan = financials.paymentPlan;
+  if (!Array.isArray(plan) || plan.length === 0) {
+    financials.extraPaid = 0;
+    return 0;
+  }
+
+  let carry = 0;
+  for (let index = 0; index < plan.length; index += 1) {
+    const row = plan[index];
+    if (!row) continue;
+    if (carry > 0) {
+      const remaining = Math.max(roundCurrency(row.amountDue - row.amountPaid), 0);
+      const used = Math.min(remaining, carry);
+      if (used > 0) {
+        row.amountPaid = toCurrency(row.amountPaid + used);
+        carry = roundCurrency(carry - used);
+      }
+    }
+    const overpay = roundCurrency(row.amountPaid - row.amountDue);
+    if (overpay > 0.01) {
+      row.amountPaid = toCurrency(row.amountDue);
+      carry = roundCurrency(carry + overpay);
+    }
+  }
+
+  financials.extraPaid = carry > 0 ? roundCurrency(carry) : 0;
+  return financials.extraPaid;
+}
+
+function computeDerived() {
+  const financials = getState();
+  const scholarshipsEntered = roundCurrency(financials.scholarships.reduce((acc, item) => acc + toCurrency(item.amount), 0));
+  const totalAdditionalFees = calculateAdditionalFeesTotal();
+  recalculateBaseFromPlan();
+  const tuition = toCurrency(financials.tuition);
+  const totalProgramCost = calculateProgramCost();
+  const totalPlanDue = roundCurrency(financials.paymentPlan.reduce((acc, row) => acc + toCurrency(row.amountDue), 0));
+  const totalStudentCost = Math.max(totalPlanDue, 0);
+  const totalPaid = roundCurrency(financials.paymentPlan.reduce((acc, row) => acc + toCurrency(row.amountPaid), 0));
+  const outstanding = Math.max(roundCurrency(totalStudentCost - totalPaid), 0);
+  const registrationFee = toCurrency(financials.registrationFee);
+  const pendingAmount = outstanding;
+  const donutBase = totalProgramCost > 0 ? totalProgramCost : 0;
+  const appliedScholarships = Math.max(roundCurrency(totalProgramCost - totalStudentCost), 0);
+  const totalScholarships = Math.min(appliedScholarships, scholarshipsEntered);
+  const scholarshipChartAmount = donutBase > 0 ? Math.min(totalScholarships, donutBase) : 0;
+  const paidChartCapacity = Math.max(donutBase - scholarshipChartAmount, 0);
+  const paidChartAmount = donutBase > 0 ? Math.min(totalPaid, paidChartCapacity) : 0;
+  const pendingChartAmount = donutBase > 0 ? Math.max(roundCurrency(donutBase - scholarshipChartAmount - paidChartAmount), 0) : 0;
+  const donutPercents = donutBase > 0
+    ? normalizePercents([
+      (scholarshipChartAmount / donutBase) * 100,
+      (paidChartAmount / donutBase) * 100,
+      (pendingChartAmount / donutBase) * 100
+    ])
+    : [0, 0, 0];
+  const overpaid = Math.max(roundCurrency(totalPaid - totalStudentCost), 0);
+
+  return {
+    tuition,
+    totalScholarships,
+    totalAdditionalFees,
+    totalProgramCost,
+    totalStudentCost,
+    totalPaid,
+    outstanding,
+    registrationFee,
+    pendingAmount,
+    overpaid,
+    donutBase,
+    donutAmounts: {
+      scholarships: roundCurrency(scholarshipChartAmount),
+      paid: roundCurrency(paidChartAmount),
+      pending: roundCurrency(pendingChartAmount)
+    },
+    donutPercents: {
+      scholarships: donutPercents[0] ?? 0,
+      paid: donutPercents[1] ?? 0,
+      pending: donutPercents[2] ?? 0
+    }
+  };
+}
+
+function buildPlanView() {
+  const financials = getState();
+  const today = state.today || startOfToday();
+  return financials.paymentPlan.map((row, index) => {
+    const dueDate = parseISODate(row.dueDate);
+    const outstanding = Math.max(roundCurrency(row.amountDue - row.amountPaid), 0);
+    const status = rowStatus(row, today);
+    return { index, row, dueDate, outstanding, status };
+  });
+}
+
+function formatDueLabel(dueDate) {
+  if (!dueDate) return '—';
+  return new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(dueDate);
+}
+
+function renderCards() {
+  const { tuition, totalAdditionalFees, totalProgramCost, totalScholarships, totalStudentCost, totalPaid, outstanding } = state.derived;
+  setCardValue('card-tuition', 'card-tuition-usd', tuition);
+  setCardValue('card-fees', 'card-fees-usd', totalAdditionalFees);
+  setCardValue('card-total-before', 'card-total-before-usd', totalProgramCost);
+  setCardValue('card-scholarships', 'card-scholarships-usd', totalScholarships * -1);
+  setCardValue('card-student-cost', 'card-student-cost-usd', totalStudentCost);
+  setCardValue('card-paid', 'card-paid-usd', totalPaid);
+  setCardValue('card-outstanding', 'card-outstanding-usd', outstanding);
+}
+
+function setCardValue(cardId, usdId, value) {
+  const cardEl = state.root.querySelector(`#${cardId}`);
+  const usdEl = state.root.querySelector(`#${usdId}`);
+  if (cardEl) {
+    cardEl.textContent = formatEUR(value);
+  }
+  if (usdEl) {
+    usdEl.textContent = formatPlain(approxUSD(value, state.fxRate), 'en-US');
+  }
+}
+
+function renderSummaryPanel() {
+  const { totalProgramCost, totalScholarships, totalPaid, outstanding, registrationFee } = state.derived;
+  setText('sum-total-program', formatEUR(totalProgramCost));
+  setText('sum-scholarships', formatEUR(totalScholarships * -1));
+  setText('sum-paid', formatEUR(totalPaid));
+  setText('sum-outstanding', formatEUR(outstanding));
+  setText('sum-registration-fee', formatEUR(registrationFee));
+}
+
+function renderVisaBanner() {
+  const container = state.root.querySelector('#visa-status');
+  if (!container) return;
+  container.innerHTML = '';
+  const banner = document.createElement('div');
+  banner.className = 'alert mb-0 d-flex align-items-start gap-2';
+  if (state.derived.totalPaid < state.derived.registrationFee) {
+    banner.classList.add('alert-danger');
+    banner.innerHTML = '<span role="img" aria-label="Locked">🔒</span><div>Your Visa section is currently locked. Complete your registration payment to unlock My Visa.</div>';
+  } else {
+    banner.classList.add('alert-success');
+    banner.innerHTML = '<span role="img" aria-label="Unlocked">✅</span><div>My Visa is now unlocked. You can proceed with your visa documentation.</div>';
+  }
+  container.appendChild(banner);
+}
+
+function renderDonut() {
+  const container = state.root.querySelector('#financial-donut');
+  if (!container) return;
+  container.innerHTML = '';
+  const { donutBase, donutPercents, donutAmounts, overpaid, pendingAmount } = state.derived;
+  const paidPct = clamp(donutPercents.paid ?? 0, 0, 100);
+  const pendingPct = clamp(donutPercents.pending ?? 0, 0, 100);
+  const scholarshipsPct = clamp(donutPercents.scholarships ?? 0, 0, 100);
+  const paidAmount = donutAmounts.paid ?? 0;
+  const pendingDisplayAmount = pendingAmount ?? 0;
+  const scholarshipAmount = donutAmounts.scholarships ?? 0;
+  const overpaidEl = state.root.querySelector('#overpaid-caption');
+
+  const size = 280;
+  const center = size / 2;
+  const radius = 100;
+  const strokeWidth = 28;
+  const labelRadius = radius + strokeWidth / 2 + 26;
+  const circumference = 2 * Math.PI * radius;
+  const startAngle = -90;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'position-relative';
+  wrapper.style.width = `${size}px`;
+  wrapper.style.height = `${size}px`;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', `${size}`);
+  svg.setAttribute('height', `${size}`);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', `Paid ${paidPct}%, Pending ${pendingPct}%, Scholarships ${scholarshipsPct}%`);
+  svg.style.transform = 'rotate(-90deg)';
+
+  const baseCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  baseCircle.setAttribute('cx', `${center}`);
+  baseCircle.setAttribute('cy', `${center}`);
+  baseCircle.setAttribute('r', `${radius}`);
+  baseCircle.setAttribute('fill', 'none');
+  baseCircle.setAttribute('stroke', '#e9ecef');
+  baseCircle.setAttribute('stroke-width', `${strokeWidth}`);
+  svg.appendChild(baseCircle);
+
+  const segments = [
+    { key: 'scholarships', color: 'var(--bs-primary)', bootstrap: 'primary', label: 'Scholarships', amountId: 'lab-sch-eur', pctId: 'lab-sch-pct', amount: scholarshipAmount, pct: scholarshipsPct },
+    { key: 'paid', color: 'var(--bs-success)', bootstrap: 'success', label: 'Paid', amountId: 'lab-paid-eur', pctId: 'lab-paid-pct', amount: paidAmount, pct: paidPct },
+    { key: 'pending', color: 'var(--bs-danger)', bootstrap: 'danger', label: 'Pending', amountId: 'lab-pending-eur', pctId: 'lab-pending-pct', amount: pendingDisplayAmount, pct: pendingPct }
+  ];
+
+  let dashOffset = 0;
+  let currentAngle = startAngle;
+  const labelData = [];
+
+  segments.forEach((segment) => {
+    const pct = clamp(segment.pct, 0, 100);
+    if (pct > 0 && donutBase > 0) {
+      const dash = (pct / 100) * circumference;
+      const gap = Math.max(circumference - dash, 0);
+      const arc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      arc.setAttribute('cx', `${center}`);
+      arc.setAttribute('cy', `${center}`);
+      arc.setAttribute('r', `${radius}`);
+      arc.setAttribute('fill', 'none');
+      arc.setAttribute('stroke', segment.color);
+      arc.setAttribute('stroke-width', `${strokeWidth}`);
+      arc.setAttribute('stroke-linecap', 'round');
+      arc.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+      arc.setAttribute('stroke-dashoffset', `${dashOffset}`);
+      svg.appendChild(arc);
+      dashOffset -= dash;
+
+      const sweep = 360 * (pct / 100);
+      const midAngle = currentAngle + sweep / 2;
+      labelData.push({ segment, pct, midAngle });
+      currentAngle += sweep;
+    } else {
+      labelData.push({ segment, pct: 0, midAngle: currentAngle });
+    }
+  });
+
+  wrapper.appendChild(svg);
+
+  labelData.forEach((entry) => {
+    const label = document.createElement('div');
+    label.className = `position-absolute small fw-semibold text-${entry.segment.bootstrap}`;
+    label.style.pointerEvents = 'none';
+    label.innerHTML = `${entry.segment.label} €<span id="${entry.segment.amountId}">0.00</span> (<span id="${entry.segment.pctId}">0</span>%)`;
+
+    if (donutBase > 0 && entry.pct > 0) {
+      const radians = (entry.midAngle * Math.PI) / 180;
+      const x = center + (labelRadius * Math.cos(radians));
+      const y = center + (labelRadius * Math.sin(radians));
+      label.style.left = `${x}px`;
+      label.style.top = `${y}px`;
+      const cosine = Math.cos(radians);
+      if (cosine < 0) {
+        label.style.transform = 'translate(-100%, -50%)';
+        label.style.textAlign = 'right';
+      } else {
+        label.style.transform = 'translate(0, -50%)';
+        label.style.textAlign = 'left';
+      }
+    } else {
+      label.classList.add('text-muted', 'd-none');
+    }
+
+    wrapper.appendChild(label);
+  });
+
+  if (donutBase <= 0) {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'position-absolute top-50 start-50 translate-middle text-muted small text-center';
+    emptyState.textContent = 'No program cost available yet.';
+    wrapper.appendChild(emptyState);
+  }
+
+  container.appendChild(wrapper);
+
+  setText('lab-paid-eur', formatPlain(paidAmount));
+  setText('lab-paid-pct', paidPct);
+  setText('lab-pending-eur', formatPlain(pendingDisplayAmount));
+  setText('lab-pending-pct', pendingPct);
+  setText('lab-sch-eur', formatPlain(scholarshipAmount));
+  setText('lab-sch-pct', scholarshipsPct);
+
+  if (overpaidEl) {
+    if (overpaid > 0) {
+      overpaidEl.classList.remove('d-none');
+      setText('overpaid-eur', formatPlain(overpaid));
+    } else {
+      overpaidEl.classList.add('d-none');
+    }
+  }
+}
+
+function renderPaymentPlan() {
+  const tbody = state.root.querySelector('#tbl-payment-plan tbody');
+  if (!tbody) return;
+  const statusBadges = {
+    pending: '<span class="badge bg-secondary-subtle text-secondary">Pending</span>',
+    partial: '<span class="badge bg-warning-subtle text-warning">Partial</span>',
+    paid: '<span class="badge bg-success-subtle text-success">Paid</span>',
+    overdue: '<span class="badge bg-danger-subtle text-danger">Overdue</span>'
+  };
+  tbody.innerHTML = '';
+  state.planView.forEach((vm) => {
+    const tr = document.createElement('tr');
+    if (vm.status === 'overdue') {
+      tr.classList.add('table-danger');
+    }
+    const badge = statusBadges[vm.status] || statusBadges.pending;
+    tr.innerHTML = `
+      <td class="fw-semibold">
+        ${vm.row.label}
+        ${vm.row.note ? `<div class="text-muted small">${vm.row.note}</div>` : ''}
+      </td>
+      <td>${formatDueLabel(vm.dueDate)}</td>
+      <td>${formatEUR(vm.row.amountDue)}</td>
+      <td>${formatEUR(vm.row.amountPaid)}</td>
+      <td>${badge}</td>
+      <td class="text-end">
+        <div class="btn-group btn-group-sm" role="group">
+          <button class="btn btn-outline-primary" id="pay-row-${vm.index}" data-index="${vm.index}" data-action="pay-row">Pay</button>
+          <button class="btn btn-outline-secondary" id="edit-row-${vm.index}" data-index="${vm.index}" data-action="edit-row">Edit</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderScholarships() {
+  const financials = getState();
+  const tbody = state.root.querySelector('#tbl-scholarships tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const trashIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M11 5.5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>';
+  if (!financials.scholarships.length) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="4" class="text-muted text-center py-3">No scholarships yet.</td>';
+    tbody.appendChild(row);
+  } else {
+    financials.scholarships.forEach((item, index) => {
+      const amount = toCurrency(item.amount);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.label || 'Scholarship'}</td>
+        <td>${formatEUR(amount * -1)}</td>
+        <td>${formatUSD(approxUSD(amount * -1, state.fxRate))}</td>
+        <td class="text-end">
+          <button class="btn btn-link p-0 text-danger" type="button" data-action="remove-scholarship" data-index="${index}" title="Remove">
+            ${trashIcon}
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  setText('subtotal-scholarships', `Subtotal: ${formatEUR(state.derived.totalScholarships * -1)}`);
+}
+
+function renderFees() {
+  const financials = getState();
+  const tbody = state.root.querySelector('#tbl-fees tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const trashIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M11 5.5a.5.5 0 0 0-1 0v7a.5.5 0 0 0 1 0z"/><path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/></svg>';
+  const feeRows = [];
+  if (financials.additionalFees > 0) {
+    feeRows.push({ label: 'Program Fees', amount: toCurrency(financials.additionalFees), removable: true, index: -1, base: true });
+  }
+  financials.additionalFeeItems.forEach((item, index) => {
+    feeRows.push({ label: item.label || 'Fee', amount: toCurrency(item.amount), removable: true, index });
+  });
+  if (!feeRows.length) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="4" class="text-muted text-center py-3">No additional fees yet.</td>';
+    tbody.appendChild(row);
+  } else {
+    feeRows.forEach((item) => {
+      const amount = toCurrency(item.amount);
+      let removeCell = '<span class="text-muted">—</span>';
+      if (item.base) {
+        removeCell = `<button class="btn btn-link p-0 text-danger" type="button" data-remove-program-fee="true" title="Remove">${trashIcon}</button>`;
+      } else if (item.removable) {
+        removeCell = `<button class="btn btn-link p-0 text-danger" type="button" data-fee-idx="${item.index}" title="Remove">${trashIcon}</button>`;
+      }
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.label}</td>
+        <td>${formatEUR(amount)}</td>
+        <td>${formatUSD(approxUSD(amount, state.fxRate))}</td>
+        <td class="text-end">${removeCell}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  setText('subtotal-fees', `Subtotal: ${formatEUR(state.derived.totalAdditionalFees)}`);
+}
+
+function renderHistory() {
+  const financials = getState();
+  const tbody = state.root.querySelector('#tbl-history tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const indicator = document.getElementById('history-sort-indicator');
+  if (indicator) indicator.textContent = state.historySortAscending ? '↑' : '↓';
+  if (!financials.paymentsHistory.length) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="5" class="text-muted text-center py-3">No payments yet.</td>';
+    tbody.appendChild(row);
+    return;
+  }
+  const entries = [...financials.paymentsHistory].sort((a, b) => {
+    const dateA = parseISODate(a.date) || new Date(0);
+    const dateB = parseISODate(b.date) || new Date(0);
+    return state.historySortAscending ? dateA - dateB : dateB - dateA;
+  });
+  entries.forEach((item) => {
+    const amount = toCurrency(item.amount);
+    const methodDetail = [
+      item.label ? `<div class="small text-muted">${item.label}</div>` : '',
+      item.notes ? `<div class="small text-muted">${item.notes}</div>` : ''
+    ].join('');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.date || '—'}</td>
+      <td>${item.method || item.kind || '—'}${methodDetail}</td>
+      <td>${formatEUR(amount)}</td>
+      <td>${formatUSD(approxUSD(amount, state.fxRate))}</td>
+      <td>${item.receiptUrl ? `<a href="${item.receiptUrl}" class="btn btn-sm btn-outline-secondary">View</a>` : '<span class="text-muted">—</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderAmountToPay() {
+  const amountToPay = calculateAmountToPay(state.includeNext7);
+  setText('amount-to-pay-now', formatPlain(amountToPay));
+  setText('amount-to-pay-now-usd', formatPlain(approxUSD(amountToPay, state.fxRate), 'en-US'));
+}
+
+function calculateAmountToPay(includeUpcoming) {
+  const today = state.today || startOfToday();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  return state.planView.reduce((acc, vm) => {
+    if (vm.outstanding <= 0) return acc;
+    if (vm.status === 'overdue') return acc + vm.outstanding;
+    if (includeUpcoming && vm.dueDate && vm.dueDate >= today && vm.dueDate <= nextWeek) {
+      return acc + vm.outstanding;
+    }
+    return acc;
+  }, 0);
+}
+
+function pickNextInstallment(stateObj = null) {
+  const data = stateObj || getState();
+  if (!data || !Array.isArray(data.paymentPlan) || !data.paymentPlan.length) return -1;
+  const today = state.today || startOfToday();
+  const entries = data.paymentPlan.map((row, index) => {
+    const outstanding = Math.max(roundCurrency(row.amountDue - row.amountPaid), 0);
+    const dueDate = parseISODate(row.dueDate);
+    return {
+      index,
+      row,
+      outstanding,
+      dueDate,
+      status: rowStatus(row, today)
+    };
+  }).filter((entry) => entry.outstanding > 0);
+
+  const overdue = entries.find((entry) => entry.status === 'overdue');
+  if (overdue) return overdue.index;
+  const partial = entries.find((entry) => entry.status === 'partial');
+  if (partial) return partial.index;
+  const pending = entries
+    .filter((entry) => entry.status === 'pending')
+    .sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return a.index - b.index;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate - b.dueDate;
+    });
+  return pending.length ? pending[0].index : -1;
+}
+
+function renderNextPayment() {
+  const eurEl = state.root.querySelector('#next-due-eur');
+  const usdEl = state.root.querySelector('#next-due-usd');
+  const labelEl = state.root.querySelector('#next-due-label');
+  const button = state.root.querySelector('#btn-next-payment');
+  if (!eurEl || !usdEl || !labelEl || !button) return;
+
+  const financials = getState();
+  const nextIndex = pickNextInstallment(financials);
+  state.nextPaymentIndex = Number.isInteger(nextIndex) ? nextIndex : -1;
+  if (nextIndex == null || nextIndex < 0) {
+    eurEl.textContent = formatEUR(0);
+    usdEl.textContent = formatUSD(0);
+    labelEl.textContent = '✅ All payments are up to date.';
+    button.disabled = true;
+    return;
+  }
+
+  const row = financials.paymentPlan[nextIndex];
+  if (!row) {
+    eurEl.textContent = formatEUR(0);
+    usdEl.textContent = formatUSD(0);
+    labelEl.textContent = '✅ All payments are up to date.';
+    button.disabled = true;
+    state.nextPaymentIndex = -1;
+    return;
+  }
+
+  const outstanding = Math.max(roundCurrency(row.amountDue - row.amountPaid), 0);
+  if (outstanding <= 0.01) {
+    eurEl.textContent = formatEUR(0);
+    usdEl.textContent = formatUSD(0);
+    labelEl.textContent = '✅ All payments are up to date.';
+    button.disabled = true;
+    state.nextPaymentIndex = -1;
+    return;
+  }
+  const dueDate = parseISODate(row.dueDate);
+  eurEl.textContent = formatEUR(outstanding);
+  usdEl.textContent = formatUSD(approxUSD(outstanding, state.fxRate));
+  const dueText = dueDate
+    ? `Installment: ${row.label} • Due ${formatDueLabel(dueDate)}`
+    : `Installment: ${row.label}`;
+  labelEl.textContent = dueText;
+  button.disabled = false;
+}
+
+function setText(id, text) {
+  const el = state.root.querySelector(`#${id}`);
+  if (el) el.textContent = text;
+}
+
+function openPaymentModal(options = {}) {
+  const { index = null, suggestedAmount = null, label = '', dueDate = null } = options || {};
+  const amountInput = document.getElementById('payment-amount');
+  const methodSelect = document.getElementById('payment-method');
+  const notesField = document.getElementById('payment-notes');
+  const infoEl = document.getElementById('payment-target-info');
+  state.paymentTarget = { index, label, dueDate };
+  if (amountInput) {
+    amountInput.value = suggestedAmount != null ? roundCurrency(suggestedAmount) : '';
+    amountInput.focus();
+  }
+  if (methodSelect) methodSelect.value = methodSelect.options[0]?.value || 'Bank Transfer';
+  if (notesField) notesField.value = '';
+  if (infoEl) {
+    if (index == null) {
+      infoEl.classList.add('d-none');
+      infoEl.textContent = '';
+    } else {
+      const prettyDate = dueDate ? formatDueLabel(parseISODate(dueDate)) : '—';
+      infoEl.classList.remove('d-none');
+      infoEl.innerHTML = `<strong>${label || 'Selected installment'}</strong><br><span class="text-muted">Due ${prettyDate}</span>`;
+    }
+  }
+  state.paymentModal?.show();
+}
+
+function applyPayment(amount, method, notes, targetIndex = null, label = '') {
+  const paymentValue = toCurrency(amount);
+  if (paymentValue <= 0) return 0;
+  const financials = getState();
+  const plan = financials.paymentPlan || [];
+  if (!plan.length) return 0;
+
+  const suggestedIndex = Number.isInteger(targetIndex) && targetIndex >= 0 && targetIndex < plan.length
+    ? targetIndex
+    : pickNextInstallment(financials);
+  const fallbackIndex = plan.findIndex((row) => Math.max(roundCurrency(row.amountDue - row.amountPaid), 0) > 0);
+  const startIndex = Number.isInteger(suggestedIndex) && suggestedIndex >= 0 ? suggestedIndex : fallbackIndex;
+  if (!Number.isInteger(startIndex) || startIndex < 0) return 0;
+
+  const totalBefore = plan.reduce((acc, row) => acc + toCurrency(row.amountPaid), 0);
+  const { applied, remaining } = applyPaymentToRow(financials, startIndex, paymentValue);
+  const carry = applyCarryover();
+  const leftover = roundCurrency((remaining || 0) + (carry || 0));
+  const totalAfter = plan.reduce((acc, row) => acc + toCurrency(row.amountPaid), 0);
+  let appliedAmount = roundCurrency(totalAfter - totalBefore);
+  if (appliedAmount <= 0 && applied > 0) {
+    appliedAmount = roundCurrency(Math.max(applied - carry, 0));
+  }
+
+  const historyLabel = label || (plan[startIndex]?.label ?? 'Payment');
+  if (appliedAmount > 0) {
+    logPaymentHistory(appliedAmount, method, notes, historyLabel);
+  }
+  financials.extraPaid = leftover;
+  enforceInvariants(financials);
+  rerender();
+  return appliedAmount;
+}
+
+function logPaymentHistory(amount, method, notes, label = '', kind = 'Payment') {
+  const financials = getState();
+  const safeAmount = toCurrency(amount);
+  if (safeAmount <= 0 && kind === 'Payment') return;
+  financials.paymentsHistory.unshift({
+    date: todayISO(),
+    method: method || 'Other',
+    amount: safeAmount,
+    notes: notes || '',
+    label: label || '',
+    kind: kind,
+    receiptUrl: ''
+  });
+}
+
+function logAdjustmentHistory(label, changesSummary) {
+  const summary = changesSummary || 'Installment updated';
+  logPaymentHistory(0, 'Adjustment', summary, label, 'Adjustment');
+}
+
+function resetFinancialState() {
+  if (!window.confirm('Reset financial data to defaults?')) return;
+  window.__financialsState = reseedDefaults();
+  state.originalDue = [];
+  financials = getState();
+  ensurePlanDefaults();
+  enforceInvariants(financials);
+  state.historySortAscending = false;
+  rerender();
+}
+
+function handleModalSubmit(event) {
+  event.preventDefault();
+  const amountInput = document.getElementById('payment-amount');
+  const methodSelect = document.getElementById('payment-method');
+  const notesField = document.getElementById('payment-notes');
+  const amount = toCurrency(amountInput?.value);
+  if (!amount || amount <= 0) {
+    amountInput?.classList.add('is-invalid');
+    return;
+  }
+  amountInput?.classList.remove('is-invalid');
+  const method = methodSelect?.value || 'Other';
+  const notes = notesField?.value || '';
+  const targetIndex = state.paymentTarget?.index ?? null;
+  const label = state.paymentTarget?.label || '';
+  applyPayment(amount, method, notes, targetIndex, label);
+  state.paymentModal?.hide();
+}
+
+function handlePayRemaining() {
+  const financials = getState();
+  const totalOutstanding = state.planView.reduce((acc, vm) => acc + vm.outstanding, 0);
+  if (totalOutstanding <= 0) return;
+  applyPayment(totalOutstanding, 'Portal', 'Remaining balance', null, 'All installments');
+}
+
+function handleNextPaymentClick() {
+  const index = Number.isInteger(state.nextPaymentIndex) ? state.nextPaymentIndex : -1;
+  if (index < 0) return;
+  const financials = getState();
+  const row = financials.paymentPlan[index];
+  if (!row) return;
+  const outstanding = Math.max(roundCurrency(row.amountDue - row.amountPaid), 0);
+  if (outstanding <= 0) return;
+  openPaymentModal({
+    index,
+    suggestedAmount: outstanding,
+    label: row.label,
+    dueDate: row.dueDate
+  });
+}
+
+function handleAddScholarship() {
+  const financials = getState();
+  const label = window.prompt('Scholarship label');
+  if (label === null) return;
+  const amountInput = window.prompt('Scholarship amount in EUR');
+  const amount = toCurrency(amountInput);
+  if (!amount || amount <= 0) return;
+  financials.scholarships.push({ label: label || 'Scholarship', amount });
+  enforceInvariants(financials);
+  rerender();
+}
+
+function handleAddFee() {
+  const financials = getState();
+  const label = window.prompt('Fee label');
+  if (label === null) return;
+  const amountInput = window.prompt('Fee amount in EUR');
+  const amount = toCurrency(amountInput);
+  if (!amount || amount <= 0) return;
+  financials.additionalFeeItems.push({ label: label || 'Fee', amount });
+  enforceInvariants(financials);
+  rerender();
+}
+
+function handleRemoveScholarship(index) {
+  const financials = getState();
+  const position = Number.isFinite(index) ? index : Number(index);
+  if (!Number.isInteger(position) || position < 0 || position >= financials.scholarships.length) return;
+  financials.scholarships.splice(position, 1);
+  enforceInvariants(financials);
+  rerender();
+}
+
+function handleRemoveFee(index) {
+  const financials = getState();
+  const position = Number.isFinite(index) ? index : Number(index);
+  if (!Array.isArray(financials.additionalFeeItems) || !Number.isInteger(position) || position < 0 || position >= financials.additionalFeeItems.length) {
+    return;
+  }
+  financials.additionalFeeItems.splice(position, 1);
+  refreshFinancialSummaries(financials);
+  if (typeof console !== 'undefined') {
+    console.assert(financials.paymentPlan?.[0]?.amountDue === DEFAULT_REGISTRATION_AMOUNT, 'Registration due must stay 6800');
+    const paid = toCurrency(financials.paymentPlan?.[0]?.amountPaid ?? 0);
+    console.assert(paid >= 0 && paid <= DEFAULT_REGISTRATION_AMOUNT, 'Registration paid in range');
+  }
+}
+
+function handleRemoveProgramFee() {
+  const financials = getState();
+  if (!financials.additionalFees || financials.additionalFees <= 0) return;
+  financials.additionalFees = 0;
+  refreshFinancialSummaries(financials);
+  if (typeof console !== 'undefined') {
+    console.assert(financials.paymentPlan?.[0]?.amountDue === DEFAULT_REGISTRATION_AMOUNT, 'Registration due must stay 6800');
+    const paid = toCurrency(financials.paymentPlan?.[0]?.amountPaid ?? 0);
+    console.assert(paid >= 0 && paid <= DEFAULT_REGISTRATION_AMOUNT, 'Registration paid in range');
+  }
+}
+
+function openEditModal(index) {
+  const financials = getState();
+  const row = financials.paymentPlan[index];
+  if (!row) return;
+  state.editTarget = { index };
+  const labelInput = document.getElementById('edit-label');
+  const noteInput = document.getElementById('edit-note');
+  const dueDateInput = document.getElementById('edit-due-date');
+  const amountDueInput = document.getElementById('edit-amount-due');
+  const amountPaidInput = document.getElementById('edit-amount-paid');
+  const lockedInput = document.getElementById('edit-locked');
+  document.getElementById('edit-coherence-warning')?.classList.add('d-none');
+
+  if (labelInput) labelInput.value = row.label || '';
+  if (noteInput) noteInput.value = row.note || '';
+  if (dueDateInput) dueDateInput.value = row.dueDate || '';
+  if (amountDueInput) amountDueInput.value = roundCurrency(row.amountDueBase ?? row.amountDue).toFixed(2);
+  if (amountPaidInput) amountPaidInput.value = roundCurrency(row.amountPaid).toFixed(2);
+  if (lockedInput) {
+    lockedInput.checked = Boolean(row.locked);
+    lockedInput.disabled = row.type === 'registration';
+  }
+  state.editModal?.show();
+}
+
+function handleEditSubmit(event) {
+  event.preventDefault();
+  const financials = getState();
+  const index = state.editTarget?.index;
+  if (!Number.isInteger(index)) return;
+  const row = financials.paymentPlan[index];
+  if (!row) return;
+
+  const labelInput = document.getElementById('edit-label');
+  const noteInput = document.getElementById('edit-note');
+  const dueDateInput = document.getElementById('edit-due-date');
+  const amountDueInput = document.getElementById('edit-amount-due');
+  const amountPaidInput = document.getElementById('edit-amount-paid');
+  const lockedInput = document.getElementById('edit-locked');
+  const warningEl = document.getElementById('edit-coherence-warning');
+
+  const labelValue = (labelInput?.value || '').trim() || row.label || 'Installment';
+  const noteValue = (noteInput?.value || '').trim();
+  const dueDateValue = (dueDateInput?.value || '').trim();
+  if (dueDateInput) {
+    if (dueDateValue && !parseISODate(dueDateValue)) {
+      dueDateInput.classList.add('is-invalid');
+      return;
+    }
+    dueDateInput.classList.remove('is-invalid');
+  }
+  const amountDueValue = amountDueInput ? Math.max(0, toCurrency(amountDueInput.value)) : row.amountDueBase;
+  const amountPaidValue = amountPaidInput ? Math.max(0, toCurrency(amountPaidInput.value)) : row.amountPaid;
+  const lockedValue = row.type === 'registration' ? true : Boolean(lockedInput?.checked);
+
+  const previousSnapshot = {
+    label: row.label,
+    note: row.note,
+    dueDate: row.dueDate,
+    amountDueBase: row.amountDueBase,
+    amountPaid: row.amountPaid,
+    locked: row.locked
+  };
+
+  row.label = labelValue;
+  row.note = noteValue;
+  row.dueDate = dueDateValue;
+  row.amountDueBase = amountDueValue;
+  row.amountDue = amountDueValue;
+  row.amountPaid = amountPaidValue;
+  row.locked = lockedValue;
+  if (Array.isArray(financials.originalDue)) {
+    financials.originalDue[index] = amountDueValue;
+  }
+
+  recalculateBaseFromPlan();
+  applyScholarshipRedistribution();
+  applyCarryover();
+
+  const linesChanged = [];
+  if (previousSnapshot.label !== row.label) linesChanged.push('Label');
+  if (previousSnapshot.note !== row.note) linesChanged.push('Note');
+  if (previousSnapshot.dueDate !== row.dueDate) linesChanged.push('Due date');
+  if (roundCurrency(previousSnapshot.amountDueBase) !== roundCurrency(row.amountDueBase)) linesChanged.push('Amount due');
+  if (roundCurrency(previousSnapshot.amountPaid) !== roundCurrency(row.amountPaid)) linesChanged.push('Amount paid');
+  if (previousSnapshot.locked !== row.locked) linesChanged.push(row.locked ? 'Locked' : 'Unlocked');
+  if (linesChanged.length) {
+    logAdjustmentHistory(row.label, linesChanged.join(', '));
+  }
+
+  const baseTotal = Array.isArray(financials.originalDue)
+    ? financials.originalDue.reduce((acc, value) => acc + toCurrency(value), 0)
+    : financials.paymentPlan.reduce((acc, planRow) => acc + toCurrency(planRow.amountDueBase ?? planRow.amountDue), 0);
+  const scholarshipsTotal = financials.scholarships.reduce((acc, item) => acc + toCurrency(item.amount), 0);
+  const expectedTotal = Math.max(roundCurrency(baseTotal - scholarshipsTotal), 0);
+  const currentTotal = roundCurrency(financials.paymentPlan.reduce((acc, planRow) => acc + toCurrency(planRow.amountDue), 0));
+  const needsWarning = Math.abs(currentTotal - expectedTotal) > 0.05;
+  if (warningEl) {
+    warningEl.classList.toggle('d-none', !needsWarning);
+  }
+
+  enforceInvariants(financials);
+  rerender();
+
+  if (needsWarning) {
+    if (labelInput) labelInput.value = row.label || '';
+    if (noteInput) noteInput.value = row.note || '';
+    if (dueDateInput) dueDateInput.value = row.dueDate || '';
+    if (amountDueInput) amountDueInput.value = roundCurrency(row.amountDueBase ?? row.amountDue).toFixed(2);
+    if (amountPaidInput) amountPaidInput.value = roundCurrency(row.amountPaid).toFixed(2);
+    if (lockedInput) {
+      lockedInput.checked = Boolean(row.locked);
+      lockedInput.disabled = row.type === 'registration';
+    }
+    return;
+  }
+
+  state.editModal?.hide();
+}
+
+function bindEvents() {
+  const toggle = state.root.querySelector('#toggle-next7');
+  if (toggle) {
+    state.includeNext7 = Boolean(toggle.checked);
+    toggle.addEventListener('change', (event) => {
+      state.includeNext7 = Boolean(event.target.checked);
+      renderAmountToPay();
+    });
+  }
+  state.root.querySelector('#btn-make-payment')?.addEventListener('click', () => {
+    const suggested = calculateAmountToPay(state.includeNext7);
+    openPaymentModal({ suggestedAmount: suggested > 0 ? suggested : null });
+  });
+  state.root.querySelector('#btn-add-scholarship')?.addEventListener('click', handleAddScholarship);
+  state.root.querySelector('#btn-add-fee')?.addEventListener('click', handleAddFee);
+  state.root.querySelector('#btn-pay-remaining')?.addEventListener('click', handlePayRemaining);
+  state.root.querySelector('#btn-next-payment')?.addEventListener('click', handleNextPaymentClick);
+  const planTable = state.root.querySelector('#tbl-payment-plan');
+  if (planTable) {
+    planTable.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const action = button.dataset.action;
+      const idx = Number(button.dataset.index);
+      const vm = state.planView.find((entry) => entry.index === idx);
+      if (!vm) return;
+      if (action === 'pay-row') {
+        openPaymentModal({
+          index: idx,
+          suggestedAmount: vm.outstanding > 0 ? vm.outstanding : null,
+          label: vm.row.label,
+          dueDate: vm.row.dueDate
+        });
+      } else if (action === 'edit-row') {
+        openEditModal(idx);
+      }
+    });
+  }
+  const scholarshipsTable = state.root.querySelector('#tbl-scholarships');
+  if (scholarshipsTable) {
+    scholarshipsTable.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action="remove-scholarship"]');
+      if (!button) return;
+      const idx = Number(button.dataset.index);
+      handleRemoveScholarship(Number.isFinite(idx) ? idx : -1);
+    });
+  }
+  const feesTable = state.root.querySelector('#tbl-fees');
+  if (feesTable) {
+    feesTable.addEventListener('click', (event) => {
+      const feeButton = event.target.closest('[data-fee-idx]');
+      if (feeButton) {
+        const idx = Number(feeButton.dataset.feeIdx);
+        handleRemoveFee(Number.isFinite(idx) ? idx : -1);
+        return;
+      }
+      const baseButton = event.target.closest('[data-remove-program-fee]');
+      if (baseButton) {
+        handleRemoveProgramFee();
+      }
+    });
+  }
+
+  const modalElement = document.getElementById('financial-payment-modal');
+  if (modalElement && window.bootstrap?.Modal) {
+    state.paymentModal = new window.bootstrap.Modal(modalElement, { backdrop: 'static' });
+    modalElement.addEventListener('hidden.bs.modal', () => {
+      state.paymentTarget = null;
+      state.root.querySelector('#financial-payment-form')?.reset();
+      const infoEl = document.getElementById('payment-target-info');
+      infoEl?.classList.add('d-none');
+      if (infoEl) infoEl.textContent = '';
+    });
+  }
+  document.getElementById('financial-payment-form')?.addEventListener('submit', handleModalSubmit);
+  const editModalElement = document.getElementById('financial-edit-modal');
+  if (editModalElement && window.bootstrap?.Modal) {
+    state.editModal = new window.bootstrap.Modal(editModalElement, { backdrop: 'static' });
+    editModalElement.addEventListener('hidden.bs.modal', () => {
+      state.editTarget = null;
+      state.root.querySelector('#financial-edit-form')?.reset();
+      document.getElementById('edit-coherence-warning')?.classList.add('d-none');
+    });
+  }
+  document.getElementById('financial-edit-form')?.addEventListener('submit', handleEditSubmit);
+  state.root.querySelector('#toggle-history-sort')?.addEventListener('click', () => {
+    state.historySortAscending = !state.historySortAscending;
+    renderHistory();
+  });
+  state.root.querySelector('#financial-reset-link')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    resetFinancialState();
+  });
+}
+
+function rerender() {
+  financials = getState();
+  ensurePlanDefaults();
+  enforceInvariants(financials);
+  normalizePlan();
+  applyScholarshipRedistribution();
+  enforceInvariants(financials);
+  applyCarryover();
+  state.planView = buildPlanView();
+  state.derived = computeDerived();
+  renderCards();
+  renderSummaryPanel();
+  renderDonut();
+  renderVisaBanner();
+  renderPaymentPlan();
+  renderScholarships();
+  renderFees();
+  renderHistory();
+  renderAmountToPay();
+  renderNextPayment();
+}
+
+function initMyFinancials(container = document) {
+  const root = container.querySelector('#my-financials-view');
+  if (!root) return;
+  state.root = root;
+  state.today = parseISODate(PROTOTYPE_TODAY) || startOfToday();
+  financials = getState();
+  ensurePlanDefaults();
+  fixStateIntegrity(financials);
+  if (financials.scholarships && financials.scholarships.length) {
+    applyScholarshipRedistribution();
+  }
+  bindEvents();
+  rerender();
+}
+
+window.initMyFinancials = initMyFinancials;
+export { initMyFinancials, formatEUR, formatUSD, approxUSD, clamp, normalizePercents, todayISO };
+</script>
