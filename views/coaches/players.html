@@ -1,0 +1,172 @@
+<!-- File: views/coaches/players.html — Build: 2025-11-13T10:45Z -->
+<section class="coaches-players">
+  <h1 class="h4 mb-3">Players</h1>
+  <div class="row g-3 align-items-end mb-3">
+    <div class="col-12 col-md-4">
+      <label class="form-label">Position</label>
+      <select class="form-select" id="filter-position">
+        <option value="">Any</option>
+        <option value="CM">CM</option>
+        <option value="CB">CB</option>
+        <option value="ST">ST</option>
+        <option value="GK">GK</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label">Status</label>
+      <select class="form-select" id="filter-status">
+        <option value="">Any</option>
+        <option value="Freshman">Freshman</option>
+        <option value="Transfer">Transfer</option>
+        <option value="Graduate">Graduate</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-4 d-flex gap-2">
+      <button class="btn btn-primary flex-grow-1" id="btn-search">Search</button>
+      <div class="btn-group">
+        <button class="btn btn-outline-secondary active" id="btn-grid">Grid</button>
+        <button class="btn btn-outline-secondary" id="btn-list">List</button>
+      </div>
+    </div>
+  </div>
+  <div class="row g-3 align-items-end mb-3">
+    <div class="col-12 col-md-3">
+      <label class="form-label" for="playersCategoryFilter">Category</label>
+      <select class="form-select" id="playersCategoryFilter">
+        <option value="any">Any</option>
+        <option value="Third Division">Third Division</option>
+        <option value="Youth National League">Youth National League</option>
+        <option value="Regional Preferente">Regional Preferente</option>
+        <option value="Academy League">Academy League</option>
+        <option value="Eture FC A">Eture FC A</option>
+        <option value="Eture FC B">Eture FC B</option>
+        <option value="Vinaros CF A">Vinaros CF A</option>
+        <option value="Vinaros CF B">Vinaros CF B</option>
+        <option value="Gap Year">Gap Year</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label" for="playersCountryFilter">Country</label>
+      <select class="form-select" id="playersCountryFilter">
+        <option value="any">Any</option>
+        <option value="Spain">Spain</option>
+        <option value="USA">USA</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label" for="playersGpaFilter">GPA (min)</label>
+      <select class="form-select" id="playersGpaFilter">
+        <option value="any">Any</option>
+        <option value="3.0">3.0+</option>
+        <option value="3.3">3.3+</option>
+        <option value="3.5">3.5+</option>
+        <option value="3.7">3.7+</option>
+      </select>
+    </div>
+    <div class="col-12 col-md-3">
+      <label class="form-label" for="playersStateFilter">State / Province</label>
+      <select class="form-select" id="playersStateFilter">
+        <option value="any">Any</option>
+        <option value="Castellón">Castellón</option>
+        <option value="Madrid">Madrid</option>
+        <option value="Florida">Florida</option>
+        <option value="Texas">Texas</option>
+      </select>
+    </div>
+  </div>
+  <div class="row g-3" id="players-results" data-player-view="coaches-player">
+    <!-- results -->
+  </div>
+  <div id="players-pager"></div>
+
+  <div id="player-quickview" class="player-quickview" aria-hidden="true">
+    <div class="player-quickview__backdrop" data-player-quickview-close></div>
+
+    <aside class="player-quickview__panel" role="dialog" aria-modal="true" aria-labelledby="player-quickview-title">
+      <header class="player-quickview__header">
+        <div class="player-quickview__avatar"></div>
+
+        <div class="player-quickview__header-main">
+          <h2 id="player-quickview-title" class="player-quickview__name"></h2>
+
+          <p class="player-quickview__meta">
+            <span class="player-quickview__position"></span>
+            <span class="player-quickview__meta-separator">·</span>
+            <span class="player-quickview__club"></span>
+          </p>
+
+          <div class="player-quickview__tags">
+            <span class="player-quickview__status tag-pill"></span>
+            <span class="player-quickview__category tag-pill"></span>
+          </div>
+
+          <div class="player-quickview__pills">
+            <!-- These can be static placeholders, this is only for visual design. -->
+            <span class="player-quickview__pill player-quickview__pill--gpa">GPA N/A</span>
+            <span class="player-quickview__pill player-quickview__pill--height">Height —</span>
+            <span class="player-quickview__pill player-quickview__pill--weight">Weight —</span>
+          </div>
+        </div>
+
+        <button type="button"
+                class="player-quickview__close"
+                aria-label="Close"
+                data-player-quickview-close>&times;</button>
+      </header>
+
+      <button
+        type="button"
+        class="player-quickview-fav-btn"
+        data-fav-toggle
+        data-player-id=""
+        aria-label="Add to favorites"
+      >
+        + Add to favorites
+      </button>
+
+      <section class="player-quickview__body">
+        <section class="player-quickview__block">
+          <h3 class="player-quickview__section-title">Highlight video</h3>
+
+          <div class="player-quickview__video-placeholder">
+            <div class="player-quickview__video-thumb">
+              <span class="player-quickview__video-play">&#9658;</span>
+            </div>
+            <p class="player-quickview__video-caption">
+              Full highlight video will be available in the full profile.
+            </p>
+          </div>
+        </section>
+
+        <section class="player-quickview__block">
+          <h3 class="player-quickview__section-title">Summary</h3>
+          <!-- This text is populated by JS via .player-quickview__summary -->
+          <p class="player-quickview__summary">
+            More details will be available in the full profile.
+          </p>
+        </section>
+
+        <section class="player-quickview__block player-quickview__block--muted">
+          <h3 class="player-quickview__section-title">Activity feed</h3>
+          <ul class="player-quickview__activity-list">
+            <li>Last active: 2 days ago</li>
+            <li>Program views: 24 &nbsp;·&nbsp; Interested: 1 coach</li>
+          </ul>
+        </section>
+      </section>
+
+      <footer class="player-quickview__footer">
+        <button type="button"
+                class="btn btn-primary player-quickview__full-profile"
+                data-player-quickview-full-profile>
+          See full profile
+        </button>
+      </footer>
+    </aside>
+  </div>
+</section>
+<!-- Notas de integración:
+1) Filtros: Position + Status + Category + Country + GPA (min) + State/Province.
+2) Paginación a 12 por página; controles al final de la vista.
+3) Grid por defecto; List es tabla compacta.
+4) Al hacer clic en una tarjeta/fila, se navega a #coaches-player y guarda id en localStorage. -->

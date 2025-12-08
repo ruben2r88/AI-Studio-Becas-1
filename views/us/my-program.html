@@ -786,63 +786,29 @@
           <div class="card-header">Sizes for Training Kit</div>
           <div class="card-body">
             <form id="prep-sizes-form" class="row g-3">
-              <div class="col-6">
-                <label class="form-label">Training T-shirt size</label>
-                <select id="sz-shirt" class="form-select form-select-sm">
-                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
+              <div class="col-12 col-md-6">
+                <label class="form-label">Please provide the size for your training gear</label>
+                <select id="sz-kit" class="form-select form-select-sm">
+                  <option>XS</option><option>S</option><option>M</option>
+                  <option>L</option><option>XL</option><option>XXL</option>
                 </select>
-
-                <label class="form-label mt-3">Training Shorts size</label>
-                <select id="sz-shorts" class="form-select form-select-sm">
-                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
-                </select>
-
-                <label class="form-label mt-3">Sweatpants size</label>
-                <select id="sz-pants" class="form-select form-select-sm">
-                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
-                </select>
-
-                <label class="form-label mt-3">Socks size</label>
-                <select id="sz-socks" class="form-select form-select-sm">
-                  <option>S</option><option>M</option><option>L</option>
-                </select>
-              </div>
-
-              <div class="col-6">
-                <label class="form-label">Hoodie size</label>
-                <select id="sz-hoodie" class="form-select form-select-sm">
-                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
-                </select>
-
-                <label class="form-label mt-3">Jacket size</label>
-                <select id="sz-jacket" class="form-select form-select-sm">
-                  <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option>
-                </select>
-
-                <label class="form-label mt-3">Shoe size (US/EU)</label>
-                <input id="sz-shoes" class="form-control form-control-sm" placeholder="e.g., US 9 / EU 42"/>
 
                 <div class="form-check mt-3">
                   <input id="is-gk" class="form-check-input" type="checkbox">
                   <label class="form-check-label" for="is-gk">I am a goalkeeper</label>
                 </div>
-                <div id="gk-sizes" class="mt-2 d-none">
-                  <label class="form-label">Gloves size</label>
-                  <input id="sz-gloves" class="form-control form-control-sm" placeholder="e.g., 8, 9, 10"/>
-                </div>
-              </div>
 
-              <div class="col-12">
-                <div class="small text-muted mt-1">
+                <div id="gk-sizes" class="mt-2 d-none">
+                  <label class="form-label">Please tell us your glove size</label>
+                  <input id="sz-gloves" class="form-control form-control-sm" placeholder="e.g., 8, 9, 10" />
+                </div>
+
+                <div class="small text-muted mt-2">
                   Tip: US sizes often feel larger than EU sizes. If you’re between sizes, consider going one size up.
                 </div>
               </div>
 
               <div class="col-12 d-flex gap-2 mt-2">
-                <div class="form-check">
-                  <input id="sizes-confirm" class="form-check-input" type="checkbox">
-                  <label class="form-check-label" for="sizes-confirm">My sizes are correct</label>
-                </div>
                 <button type="button" id="btn-save-sizes" class="btn btn-primary btn-sm ms-auto">Save</button>
                 <button type="button" id="btn-sizes-summary" class="btn btn-light btn-sm">Show summary</button>
               </div>
@@ -854,10 +820,12 @@
           <div class="card-header">Provided by Eture</div>
           <div class="card-body">
             <ul class="mb-0">
-              <li>Training kit: T-shirt, shorts, socks</li>
-              <li>Cap, board shorts, polo, bag (one size)</li>
-              <li>Team hoodie and jacket (by size)</li>
-              <li class="text-danger">Bring your own personal towel (VERY IMPORTANT)</li>
+              <li>3 training T-shirts</li>
+              <li>3 training shorts</li>
+              <li>2 training sweatshirts</li>
+              <li>2 training sweatpants</li>
+              <li>1 hoodie</li>
+              <li>1 jacket</li>
             </ul>
           </div>
         </div>
@@ -928,6 +896,18 @@
     </div>
   </div>
 </section>
+
+<script>
+(function(){
+  const gk = document.getElementById('is-gk');
+  const gkWrap = document.getElementById('gk-sizes');
+  if (gk && gkWrap) {
+    const toggle = ()=> gkWrap.classList.toggle('d-none', !gk.checked);
+    gk.addEventListener('change', toggle);
+    toggle();
+  }
+})();
+</script>
 
 <!-- ===== Modals ===== -->
 <div class="modal fade" id="modal-contracts" tabindex="-1" aria-hidden="true">

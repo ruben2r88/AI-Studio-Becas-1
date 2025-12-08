@@ -113,3 +113,600 @@ h1, h2, h3, .display-1, .display-2, .display-3, .display-4 {
 }
 .icon-btn .bi { font-size: 1rem; }        /* tamaño del icono */
 .icon-btn.text-danger:hover { opacity: .8; }
+
+/* Coaches US – shared player card */
+.coach-player-card {
+  border-radius: 1rem;
+  transition: transform .15s ease;
+}
+.coach-player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08);
+}
+.coach-player-card-body {
+  padding: 1.75rem 1.25rem;
+  position: relative;
+}
+.coach-player-avatar {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+.coach-player-chips {
+  gap: .4rem !important;
+}
+.coach-player-chips .badge-eture,
+.coach-player-chips .badge-eture-soft {
+  border-radius: 999px;
+  padding: .3rem .75rem;
+  font-size: .78rem;
+}
+
+/* Coaches US – unified CTA button */
+.coach-view-profile-btn {
+  padding-inline: 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: none;
+  border-radius: 999px;
+  border-color: var(--brand-red);
+  color: var(--brand-red);
+}
+.coach-view-profile-btn:hover,
+.coach-view-profile-btn:focus {
+  background-color: var(--brand-red);
+  border-color: var(--brand-red);
+  color: #fff;
+}
+.coach-view-profile-btn:focus-visible {
+  box-shadow: 0 0 0 0.15rem rgba(156, 35, 31, 0.25);
+  outline: none;
+}
+
+/* Coaches US — Player profile view */
+.player-profile-page {
+  background: #fff;
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  box-shadow: 0 1.5rem 2.5rem rgba(11, 15, 20, 0.05);
+  margin: 0 auto 3rem;
+  max-width: 1100px;
+}
+.player-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.player-profile-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), rgba(0,0,0,0.08)), #cfd3d8;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+.player-profile-main-info h1 {
+  margin-bottom: 0.35rem;
+}
+.player-profile-subtitle {
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.player-profile-majors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.player-profile-chip {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(156, 35, 31, 0.08);
+  color: var(--brand-red);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.player-profile-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.player-profile-stat-card {
+  flex: 1;
+  min-width: 160px;
+  background: #fff5f4;
+  border: 1px solid rgba(156, 35, 31, 0.08);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+.player-profile-stat-value {
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.player-profile-stat-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+}
+
+.player-profile-main-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.player-profile-video-section,
+.player-profile-positions-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(16, 25, 40, 0.05);
+}
+.player-profile-section-header h2 {
+  margin-bottom: 0.25rem;
+}
+.player-profile-video-placeholder {
+  position: relative;
+  margin-top: 1rem;
+  border-radius: 1.25rem;
+  background: radial-gradient(circle at top, #444a52 0%, #1e2328 60%);
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.player-profile-video-placeholder::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-top: 24px solid transparent;
+  border-bottom: 24px solid transparent;
+  border-left: 36px solid #fff;
+  filter: drop-shadow(0 0 12px rgba(0,0,0,0.35));
+}
+
+.player-profile-positions-card h2 {
+  margin-bottom: 0.5rem;
+}
+.player-profile-pitch {
+  position: relative;
+  margin-top: 1rem;
+  background: linear-gradient(180deg, #1e8b4f 0%, #126132 100%);
+  border-radius: 1rem;
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  height: 280px;
+  overflow: hidden;
+}
+.player-profile-pitch-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+}
+.player-profile-pitch-line--horizontal {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+}
+.player-profile-pitch-line--vertical {
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+}
+.player-profile-position-marker {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: #0f5028;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+}
+.player-profile-position-marker.is-primary {
+  background: var(--brand-red);
+  color: #fff;
+}
+.player-profile-position-marker.is-secondary {
+  border: 2px solid var(--brand-red);
+}
+
+.player-profile-tabs {
+  margin-top: 2rem;
+}
+.player-profile-tab-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.player-profile-tab-button {
+  border: 1px solid var(--brand-red);
+  background: #fff;
+  color: var(--brand-red);
+  border-radius: 999px;
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.player-profile-tab-button:hover {
+  background: rgba(156, 35, 31, 0.08);
+}
+.player-profile-tab-button.active {
+  background: var(--brand-red);
+  color: #fff;
+  box-shadow: 0 0.5rem 1rem rgba(156, 35, 31, 0.3);
+}
+.player-profile-tab-panels {
+  margin-top: 1.5rem;
+}
+.player-profile-tab-panel {
+  display: none;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.03);
+}
+.player-profile-tab-panel.active {
+  display: block;
+}
+.player-profile-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 992px) {
+  .player-profile-main-row {
+    grid-template-columns: 1fr;
+  }
+  .player-profile-video-placeholder {
+    height: 260px;
+  }
+}
+
+@media (max-width: 600px) {
+  .player-profile-page {
+    padding: 1.5rem;
+  }
+  .player-profile-avatar {
+    width: 110px;
+    height: 110px;
+  }
+}
+
+/* Quick-view player sidebar */
+.player-quickview {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  z-index: 9999;
+  font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Por defecto NO puede capturar clics */
+  pointer-events: none;
+}
+
+/* Por defecto, ni backdrop ni panel capturan clics */
+.player-quickview__backdrop,
+.player-quickview__panel {
+  pointer-events: none;
+}
+
+.player-quickview__backdrop {
+  flex: 1 1 auto;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.player-quickview__panel {
+  position: relative;
+  flex: 0 0 540px; /* wider panel */
+  max-width: 100%;
+  height: 100%;
+  background: #ffffff;
+  box-shadow: -18px 0 40px rgba(15, 23, 42, 0.18);
+  padding: 24px 28px 20px;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+/* SOLO cuando está abierto y visible puede “comerse” los clics */
+.player-quickview.is-open[aria-hidden="false"] {
+  pointer-events: auto;
+}
+
+.player-quickview.is-open[aria-hidden="false"] .player-quickview__backdrop,
+.player-quickview.is-open[aria-hidden="false"] .player-quickview__panel {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.player-quickview.is-open[aria-hidden="false"] .player-quickview__panel {
+  transform: translateX(0);
+}
+
+.player-quickview.is-open .player-quickview__backdrop {
+  opacity: 1;
+}
+.player-quickview.is-open .player-quickview__panel {
+  transform: translateX(0);
+}
+.player-quickview__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.player-quickview__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+.player-quickview__header-main {
+  flex: 1 1 auto;
+}
+.player-quickview__name {
+  font-family: 'Neue Power', system-ui, sans-serif;
+  font-size: 22px;
+  line-height: 1.1;
+  margin: 0 0 4px;
+}
+.player-quickview__meta {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+.player-quickview__meta-separator {
+  margin: 0 6px;
+}
+.player-quickview__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.player-quickview__status,
+.player-quickview__category {
+  font-size: 11px;
+}
+.player-quickview__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.player-quickview__pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-size: 11px;
+  font-weight: 500;
+  color: #374151;
+}
+.player-quickview__close {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #9ca3af;
+}
+.player-quickview__close:hover {
+  color: #4b5563;
+}
+.player-quickview__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.player-quickview__block {
+  margin-bottom: 18px;
+}
+.player-quickview__block--muted {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 12px 14px 10px;
+}
+.player-quickview__section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+.player-quickview__summary {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #374151;
+  margin: 0;
+}
+.player-quickview__video-placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.player-quickview__video-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  background: radial-gradient(circle at 30% 30%, #4b5563, #111827);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.player-quickview__video-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 2px solid rgba(249, 250, 251, 0.8);
+  font-size: 20px;
+  color: #f9fafb;
+}
+.player-quickview__video-caption {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+.player-quickview__activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  color: #4b5563;
+}
+.player-quickview__activity-list li + li {
+  margin-top: 4px;
+}
+.player-quickview__footer {
+  flex-shrink: 0;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+.player-quickview__full-profile {
+  min-width: 160px;
+}
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #b91c1c;
+  background-color: #fef2f2;
+}
+
+/* Favorites buttons – shared styles */
+.player-fav-btn,
+.player-quickview-fav-btn,
+.player-profile-fav-btn {
+  background-color: #ffffff;
+  border: 1px solid var(--brand-red);
+  color: var(--brand-red);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.player-fav-btn:hover,
+.player-quickview-fav-btn:hover,
+.player-profile-fav-btn:hover {
+  background-color: var(--brand-red);
+  color: #ffffff;
+}
+
+/* Small circular "+" on cards */
+.player-fav-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  line-height: 1;
+  padding-inline: 8px;
+}
+
+/* Extra spacing for list-table icon */
+.player-fav-btn--list {
+  margin-left: 8px;
+}
+
+/* QuickView favorites button */
+.player-quickview-fav-btn {
+  margin-bottom: 12px;
+  align-self: flex-start;
+}
+
+/* Visual state when toggled */
+.player-fav-btn.is-favorite,
+.player-quickview-fav-btn.is-favorite,
+.player-profile-fav-btn.is-favorite {
+  background-color: var(--brand-red);
+  color: #ffffff;
+}
+
+/* Coaches player full profile: top bar with back button */
+.player-profile-topbar {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.player-profile-back {
+  gap: 0.25rem;
+}
+/* Coaches US — My Needs status pills */
+.status-pill {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  border: 1px solid transparent;
+  line-height: 1.2;
+}
+
+.status-pill-open {
+  color: #0f6848;
+  background-color: #e6f4ec;
+  border-color: #b6e2c6;
+}
+
+.status-pill-closed {
+  color: #6c757d;
+  background-color: #f5f5f5;
+  border-color: #d6d6d6;
+}
+
+/* Fila de need cerrada (ensombrada) */
+.needs-row-closed {
+  opacity: 0.65;
+  background-color: #f8f9fa;
+}
+
+.needs-row-closed {
+  opacity: 0.7;
+  background-color: #fafafa;
+}
+
+.needs-scholarship-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #5f6368; /* slightly darker gray for better readability */
+}

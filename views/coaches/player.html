@@ -1,0 +1,169 @@
+<!-- File: views/coaches/player.html — Build: 2025-11-13T09:30Z -->
+<section class="coaches-player">
+  <div class="player-profile-page">
+    <div class="player-profile-topbar d-flex justify-content-between align-items-center">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm player-profile-back"
+        data-coaches-back
+      >
+        ← Back to players
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-outline-danger btn-sm rounded-pill player-profile-fav-btn"
+        data-fav-toggle
+        data-player-id=""
+        aria-label="Add to favorites"
+      >
+        + Add to favorites
+      </button>
+    </div>
+    <header class="player-profile-header">
+      <div class="player-profile-avatar" role="img" aria-label="Player avatar placeholder"></div>
+      <div class="player-profile-main-info">
+        <h1 class="player-profile-name">Vicent Abaso</h1>
+        <p class="player-profile-subtitle">CD Vinaròs • 1 FFCV</p>
+        <p class="player-profile-status"><strong>Status:</strong> Transfer</p>
+        <div class="player-profile-majors" aria-label="Majors of interest">
+          <span class="player-profile-chip">Business</span>
+          <span class="player-profile-chip">Accounting</span>
+          <span class="player-profile-chip">Economics</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="player-profile-stats">
+      <div class="player-profile-stat-card">
+        <span class="player-profile-stat-value">180 cm</span>
+        <span class="player-profile-stat-label">Height</span>
+      </div>
+      <div class="player-profile-stat-card">
+        <span class="player-profile-stat-value">78 kg</span>
+        <span class="player-profile-stat-label">Weight</span>
+      </div>
+      <div class="player-profile-stat-card">
+        <span class="player-profile-stat-value">3.7</span>
+        <span class="player-profile-stat-label">GPA</span>
+      </div>
+    </div>
+
+    <div class="player-profile-main-row">
+      <section class="player-profile-video-section">
+        <div class="player-profile-section-header">
+          <h2>Highlight Video (Highlight 1)</h2>
+          <p class="text-muted mb-0">Full match breakdown and key actions.</p>
+        </div>
+        <div class="player-profile-video-placeholder" aria-label="Highlight video placeholder"></div>
+      </section>
+
+      <aside class="player-profile-positions-card">
+        <h2>Positions on the Field</h2>
+        <p class="text-muted">Primary role as central midfielder with flexibility to cover wide midfield and holding spots.</p>
+        <div class="player-profile-pitch" aria-hidden="true">
+          <div class="player-profile-pitch-line player-profile-pitch-line--horizontal"></div>
+          <div class="player-profile-pitch-line player-profile-pitch-line--vertical"></div>
+          <div class="player-profile-position-marker is-primary" style="top:45%;left:48%;">CM</div>
+          <div class="player-profile-position-marker" style="top:25%;left:60%;">RM</div>
+          <div class="player-profile-position-marker is-secondary" style="top:65%;left:32%;">CDM</div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="player-profile-tabs" aria-label="Player profile details">
+      <div class="player-profile-tab-buttons" role="tablist">
+        <button type="button" class="player-profile-tab-button is-active" data-tab="bio" role="tab" aria-selected="true">Bio</button>
+        <button type="button" class="player-profile-tab-button" data-tab="academic" role="tab" aria-selected="false">Academic Info</button>
+        <button type="button" class="player-profile-tab-button" data-tab="athletic" role="tab" aria-selected="false">Athletic Info</button>
+      </div>
+      <div class="player-profile-tab-panels">
+        <section class="player-profile-tab-panel is-active" data-tab-panel="bio" role="tabpanel" aria-hidden="false">
+          <p>Vicent is a technically gifted midfielder with an exceptional ability to dictate tempo. After leading CD Vinaròs to back-to-back regional finals, he joined Eture’s high-performance program where he honed his leadership and tactical awareness.</p>
+          <p>Fluent in English and Spanish, he is seeking a program that values proactive build-up play and provides a competitive business major. Coaches describe him as disciplined, team-first, and relentless in possession recovery.</p>
+        </section>
+        <section class="player-profile-tab-panel" data-tab-panel="academic" role="tabpanel" aria-hidden="true" hidden>
+          <ul class="player-profile-list">
+            <li><strong>GPA:</strong> 3.7 (weighted)</li>
+            <li><strong>High School:</strong> IES Vinaròs — Castellón, Spain</li>
+            <li><strong>Graduation Year:</strong> 2025</li>
+            <li><strong>Standardized Tests:</strong> SAT 1280 (super score)</li>
+            <li><strong>Academic Interests:</strong> Business Analytics, Finance, Entrepreneurship</li>
+          </ul>
+        </section>
+        <section class="player-profile-tab-panel" data-tab-panel="athletic" role="tabpanel" aria-hidden="true" hidden>
+          <ul class="player-profile-list">
+            <li><strong>Positions:</strong> CM (primary), RM, CDM</li>
+            <li><strong>Current Club:</strong> Eture FC • Spanish Youth National League</li>
+            <li><strong>Previous Honors:</strong> Regional All-Star (2023, 2024), Tournament MVP 2023</li>
+            <li><strong>Strengths:</strong> Vision, first touch, line-breaking passes, stamina</li>
+            <li><strong>Looking For:</strong> Fast-paced possession systems with emphasis on midfield rotations.</li>
+          </ul>
+        </section>
+      </div>
+    </section>
+  </div>
+</section>
+<!-- Notas de integración:
+1) Los datos reales del perfil promocional reemplazarán estos placeholders.
+2) Se mantendrán los filtros de privacidad y se conectarán los botones de Favorite/Request Info en los siguientes hitos.
+3) Este layout está preparado para inyectar highlights y el mapa de posiciones dinámico. -->
+
+<style>
+  .player-profile-tab-button.is-active {
+    background: var(--brand-red);
+    color: #fff;
+    box-shadow: 0 0.5rem 1rem rgba(156, 35, 31, 0.3);
+  }
+  .player-profile-tab-panel.is-active {
+    display: block;
+  }
+</style>
+
+<script>
+  (function () {
+    var root = document.querySelector('.player-profile-tabs');
+    if (!root) return;
+
+    var buttons = Array.prototype.slice.call(
+      root.querySelectorAll('.player-profile-tab-button')
+    );
+    var panels = Array.prototype.slice.call(
+      root.querySelectorAll('.player-profile-tab-panel')
+    );
+
+    if (!buttons.length || !panels.length) return;
+
+    function setActive(tabId) {
+      if (!tabId) return;
+
+      buttons.forEach(function (btn) {
+        var isActive = btn.dataset.tab === tabId;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+
+      panels.forEach(function (panel) {
+        var match = panel.dataset.tabPanel === tabId;
+        panel.classList.toggle('is-active', match);
+        panel.hidden = !match;
+        panel.setAttribute('aria-hidden', match ? 'false' : 'true');
+      });
+    }
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tabId = btn.dataset.tab;
+        setActive(tabId);
+      });
+    });
+
+    var initialBtn = buttons.find(function (btn) {
+      return btn.classList.contains('is-active');
+    }) || buttons[0];
+
+    if (initialBtn && initialBtn.dataset.tab) {
+      setActive(initialBtn.dataset.tab);
+    }
+  })();
+</script>

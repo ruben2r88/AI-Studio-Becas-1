@@ -1,297 +1,152 @@
-<!DOCTYPE html>
-<html lang="es">
+<!-- File: index.coaches.html — Build: 2025-11-13T10:45Z -->
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Eture — Coaches</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eture — Coaches US</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/brand/brand.css">
+  <style>
+    :root {
+      --eture-red: #9C231F;
+      --eture-red-08: rgba(156,35,31,.08);
+      --eture-red-12: rgba(156,35,31,.12);
+      --hairline: 0.5px; /* ultra-thin borders */
+    }
+    .eture-logo { height: 28px; }
+    .card-fixed { min-height: 160px; }
+    .news-card .badge { text-transform: none; }
+    .card.card-fixed:hover { transform: translateY(-2px); transition: .15s ease; box-shadow: 0 .5rem 1rem rgba(0,0,0,.08); }
+    .card.card-fixed:focus-within { outline: 2px solid var(--eture-red); outline-offset: 2px; }
+    h1.h4 { font-weight: 600; }
+    .player-card:hover { transform: translateY(-2px); transition: .15s ease; }
+    /* Micro-chip badge system (Eture red/white) */
+    .badge-base {
+      display: inline-block;
+      border-radius: 9999px;
+      padding: .22rem .40rem; /* compact */
+      line-height: 1;
+      font-size: .75rem; /* smaller text */
+      font-weight: 500; /* lighter than 600 */
+      letter-spacing: .1px;
+      vertical-align: middle;
+      white-space: nowrap;
+      transform: translateZ(0); /* crisp edges */
+    }
+    /* Outline micro-chips (metrics & status) */
+    .badge-outline {
+      background: #fff;
+      color: var(--eture-red);
+      border: var(--hairline) solid var(--eture-red);
+      box-shadow: inset 0 0 0 var(--hairline) var(--eture-red); /* retina hairline */
+    }
+    /* Solid micro-chips (program) */
+    .badge-solid {
+      background: var(--eture-red);
+      color: #fff;
+      border: var(--hairline) solid var(--eture-red);
+    }
+    /* Subtle hover (optional) */
+    .badge-outline:hover { background: var(--eture-red-08); }
+    .badge-solid:hover { filter: brightness(0.96); }
+    /* Spacing between chips */
+    .chips,
+    .d-flex.gap-2 { gap: .35rem !important; }
+    /* Any previous custom classes should inherit the new shapes */
+    .badge-eture,
+    .badge-eture-soft,
+    .badge-soft { all: unset; }
+    /* Re-apply with the compact system based on semantics used in templates */
+    .badge-eture,
+    .program-badge { display: inline-block; }
+    /* Final explicit mappings for our templates */
+    .badge-eture {
+      display: inline-block;
+      border-radius: 9999px;
+      padding: .22rem .40rem;
+      line-height: 1;
+      font-size: .75rem;
+      font-weight: 500;
+      letter-spacing: .1px;
+      background: var(--eture-red);
+      color: #fff;
+      border: var(--hairline) solid var(--eture-red);
+    }
+    .badge-eture-soft,
+    .badge-soft {
+      display: inline-block;
+      border-radius: 9999px;
+      padding: .22rem .40rem;
+      line-height: 1;
+      font-size: .75rem;
+      font-weight: 500;
+      letter-spacing: .1px;
+      background: #fff;
+      color: var(--eture-red);
+      border: var(--hairline) solid var(--eture-red);
+      box-shadow: inset 0 0 0 var(--hairline) var(--eture-red);
+    }
 
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-    crossorigin="anonymous"
-  />
-  <link rel="preload" href="assets/fonts/poppins/Poppins-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/fonts/neue-power/NeuePower-Bold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/brand/brand.css">
-  <link rel="stylesheet" href="./src/styles/visa.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    /* Tabs: corporate red (no Bootstrap blue) */
+    .nav.nav-pills { gap: .5rem; }
+    .nav-pills .nav-link {
+      color: var(--eture-red);
+      border-radius: .6rem;
+      font-weight: 600;
+    }
+    .nav-pills .nav-link:hover {
+      background: var(--eture-red-12);
+      color: var(--eture-red);
+    }
+    .nav-pills .nav-link.active {
+      background-color: var(--eture-red);
+      border-color: var(--eture-red);
+      color: #fff;
+    }
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-
-  <!-- Chart.js for Finanzas -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <link rel="stylesheet" href="assets/styles/app.css">
+    /* Dashboard hover consistency */
+    .player-feature:hover {
+      transform: translateY(-1px);
+      transition: .15s ease;
+      box-shadow: 0 .4rem .8rem rgba(156,35,31,.18);
+    }
+  </style>
 </head>
-<body>
-  <!-- App Container -->
-  <div id="app-container">
-    <div class="d-flex">
-      <!-- Sidebar -->
-      <aside class="sidebar d-flex flex-column justify-content-between p-3 vh-100 position-sticky top-0 flex-shrink-0">
-        <div>
-          <!-- Marca en el sidebar -->
-          <div class="px-3 py-3 d-flex align-items-center">
-            <img src="assets/brand/eture-logo-white.png" alt="Eture" class="sidebar-logo">
-          </div>
+<body class="bg-light">
+  <nav class="navbar navbar-light bg-white border-bottom sticky-top">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2 ps-1" href="#">
+        <img src="./assets/brand/eture-logo-black.png" class="eture-logo" alt="Eture">
+        <span class="fw-semibold">Coaches US</span>
+      </a>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="./index.html">Main</a>
+      </div>
+    </div>
+  </nav>
 
-          <ul class="nav nav-pills flex-column mb-auto gap-2" id="main-nav" role="tablist">
-            <li class="nav-item">
-              <a href="#inicio" class="nav-link d-flex align-items-center active" data-bs-toggle="tab" data-bs-target="#inicio-content">
-                <i class="bi bi-speedometer2 me-3"></i>
-                <span>Home</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#perfil" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#perfil-content">
-                <i class="bi bi-person-circle me-3"></i>
-                <span>My Profile</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#proceso" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#proceso-content">
-                <i class="bi bi-diagram-3 me-3"></i>
-                <span>My Process</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#visa" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#visa-content">
-                <i class="bi bi-passport me-3"></i>
-                <span>My Visa</span>
-              </a>
-            </li>
-            <!-- Integration Notes:
-                 - Keep MyVisa immediately before My Program in the navigation list.
-                 - Hash routing for My Program remains controlled by app.js.
-            -->
-            <li class="nav-item">
-              <a href="#my-program" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#my-program-content">🎓<span class="ms-3">My Program</span></a>
-            </li>
-            <li class="nav-item">
-              <a href="#tareas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#tareas-content">
-                <i class="bi bi-check2-square me-3"></i>
-                <span>Task List</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#documentos" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#documentos-content">
-                <i class="bi bi-folder2 me-3"></i>
-                <span>My Documents</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#finanzas" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#finanzas-content">
-                <i class="bi bi-piggy-bank me-3"></i>
-                <span>My Financials</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#chat" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#chat-content">
-                <i class="bi bi-chat-dots me-3"></i>
-                <span>Chat</span>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a href="#ayuda" class="nav-link d-flex align-items-center" data-bs-toggle="tab" data-bs-target="#ayuda-content">
-                <i class="bi bi-life-preserver me-3"></i>
-                <span>Help</span>
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Log out -->
-        <div>
-          <button id="logout-btn" data-action="logout" class="btn nav-link d-flex align-items-center w-100 text-start">
-            <i class="bi bi-box-arrow-right me-3"></i>
-            <span>Log Out</span>
-          </button>
-        </div>
-      </aside>
-
-      <!-- Main Content -->
-      <main id="app-view" class="flex-grow-1 p-4" style="overflow-y:auto; height:100vh;">
-        <div class="tab-content" id="main-content">
-          <div class="tab-pane fade show active" id="inicio-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="perfil-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="proceso-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="visa-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="my-program-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="tareas-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="documentos-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="finanzas-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="chat-content" role="tabpanel"></div>
-          <div class="tab-pane fade" id="ayuda-content" role="tabpanel"></div>
-        </div>
-      </main>
+  <div class="bg-white border-bottom">
+    <div class="container py-2">
+      <ul class="nav nav-pills" id="coaches-tabs">
+        <li class="nav-item"><a class="nav-link" data-view="dashboard" href="#dashboard">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" data-view="players"   href="#players">Players</a></li>
+        <li class="nav-item"><a class="nav-link" data-view="favorites" href="#favorites">Favorites</a></li>
+        <li class="nav-item"><a class="nav-link" data-view="my-needs"  href="#my-needs">My Needs</a></li>
+        <li class="nav-item"><a class="nav-link" data-view="chat"      href="#chat">Chat</a></li>
+      </ul>
     </div>
   </div>
 
-  <!-- Modals -->
-  <div class="modal fade" id="social-media-modal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Add Social Profile</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="social-type" class="form-label">Network type</label>
-            <select class="form-select" id="social-type">
-              <option>Instagram</option>
-              <option>Twitter</option>
-              <option>TikTok</option>
-              <option>Facebook</option>
-            </select>
-          </div>
-          <div>
-            <label for="social-url" class="form-label">Profile URL</label>
-            <input type="url" class="form-control" id="social-url" placeholder="https://..." />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" id="save-social-link">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <main id="main-content" class="container my-4">
+    <div class="text-center text-muted py-5" id="boot-loader">Loading…</div>
+  </main>
 
-  <div class="modal fade" id="multimedia-modal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header"><h5 class="modal-title">Add Media</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-        <div class="modal-body">
-          <input type="hidden" id="multimedia-type" />
-          <div class="mb-3"><label for="multimedia-name" class="form-label"></label><input type="text" class="form-control" id="multimedia-name" /></div>
-          <div><label for="multimedia-url" class="form-label">Link (URL)</label><input type="url" class="form-control" id="multimedia-url" placeholder="https://..." /></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" id="save-multimedia-link">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <footer class="border-top bg-white py-3 mt-4">
+    <div class="container small text-muted">© Eture — Coaches US (prototype)</div>
+  </footer>
 
-  <!-- Scholarship Breakdown Modal -->
-  <div class="modal fade" id="scholarship-modal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="scholarship-modal-title">Scholarship Breakdown</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" id="scholarship-modal-body">
-          <p class="text-center">Loading details...</p>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- NUEVO: Modal para crear/editar universidad -->
-  <div class="modal fade" id="university-modal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Add University</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="university-form">
-            <div class="mb-3">
-              <label class="form-label">University Name</label>
-              <input type="text" class="form-control" id="university-name-input" placeholder="E.g.: University of Florida" required>
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Status</label>
-              <select class="form-select" id="university-status-select" required>
-                <option>Pending</option>
-                <option>In Contact</option>
-                <option>Offer Received</option>
-                <option>Not Interested</option>
-              </select>
-            </div>
-            <div class="form-text">You can edit or add the scholarship breakdown later.</div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" id="save-university-btn">Save</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-<!-- University Timeline (Seguimiento) -->
-<div class="modal fade" id="university-timeline-modal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">University Timeline</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <div class="modal-body">
-        <div id="timeline-list" class="mb-3">
-          <!-- aquí se renderiza el historial -->
-        </div>
-
-        <div class="card">
-          <div class="card-body">
-            <label class="form-label fw-bold">Add note</label>
-            <textarea id="timeline-new-text" class="form-control" rows="3" placeholder="E.g.: Call scheduled for Tuesday at 5:00 p.m."></textarea>
-          </div>
-          <div class="card-footer text-end">
-            <button type="button" id="timeline-add-btn" class="btn btn-primary" data-university-id="">Save note</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-  <script>
-    (function() {
-      try {
-        if (!localStorage.getItem('eture_area')) {
-          localStorage.setItem('eture_area', 'COACHES');
-        }
-      } catch (e) { /* ignore */ }
-    })();
-  </script>
-
-  <!-- Bootstrap JS Bundle -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-    crossorigin="anonymous"
-  ></script>
-
-  <!-- App Logic -->
-  <!-- Default route: only if no hash -->
-  <script>
-    (function () {
-      try {
-        if (!location.hash || location.hash === '#') {
-          location.hash = '#inicio';
-        }
-      } catch (e) {}
-    })();
-  </script>
-  <script type="module" src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="./app.coaches.js"></script>
 </body>
-</html>
-
+</html>º

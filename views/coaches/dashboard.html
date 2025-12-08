@@ -1,0 +1,54 @@
+<!-- File: views/coaches/dashboard.html — Build: 2025-11-13T11:30Z -->
+<section class="coaches-dashboard">
+  <h2 class="h5 mb-3">News</h2>
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <div class="card news-card shadow-sm">
+        <div class="card-body">
+          <span class="badge-eture mb-2">Hat-trick</span>
+          <h3 class="h6">John Doe scores a hat-trick vs Traiguera</h3>
+          <p class="small text-muted mb-0">Third Division — matchday 9</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card news-card shadow-sm">
+        <div class="card-body">
+          <span class="badge-eture mb-2">Big Win</span>
+          <h3 class="h6">Eture FC prospect beats Atlético de Madrid C</h3>
+          <p class="small text-muted mb-0">Highlight performance</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card news-card shadow-sm">
+        <div class="card-body">
+          <span class="badge-eture mb-2">Clean Sheet</span>
+          <h3 class="h6">Goalkeeper keeps a clean sheet this weekend</h3>
+          <p class="small text-muted mb-0">Third Division — solid display</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-4">
+  <header class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h1 class="h4 fw-semibold mb-1">Eture recommended players</h1>
+      <small class="text-muted">These are the players that Eture recommend for your program.</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="form-label mb-0 me-1">I'm looking for</label>
+      <select class="form-select form-select-sm" id="dash-position" style="width:220px">
+        <option value="CM">Central Midfielder (CM)</option>
+        <option value="CB">Center Back (CB)</option>
+        <option value="ST">Striker (ST)</option>
+        <option value="GK">Goalkeeper (GK)</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="row g-3" id="dash-featured">
+    <!-- featured players injected via JS -->
+  </div>
+</section>

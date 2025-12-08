@@ -1,0 +1,374 @@
+<!-- File: views/coaches/my-needs.html — Build: 2025-12-03T11:15Z -->
+
+<section class="coaches-my-needs">
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <h1 class="h4 mb-1">My Needs</h1>
+      <p class="text-muted mb-0">
+        Tell us what type of players you are currently looking for. 
+        We&#39;ll use this information to match you with the right profiles.
+      </p>
+    </div>
+  </div>
+
+  <!-- Needs list + Add button -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h2 class="h5 mb-0">Needs</h2>
+            <small class="text-muted">All the player profiles you are currently looking for or have already covered.</small>
+
+          </div>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-primary"
+            id="btn-open-need-form"
+          >
+            + Add new need
+          </button>
+        </div>
+
+        <div class="card-body p-0">
+          <!-- Empty state -->
+          <div 
+            class="p-4 text-center text-muted"
+            id="needs-empty-state"
+          >
+            You don't have any needs yet. Click "Add new need" to create your first one.
+          </div>
+
+          <!-- Open needs table -->
+          <div class="p-3 border-top d-none" id="needs-open-wrapper">
+            <h3 class="h6 mb-2">Open Needs</h3>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 18%;">Position</th>
+                    <th style="width: 18%;">Origin</th>
+                    <th style="width: 18%;">Player cost (per year)</th>
+                    <th style="width: 26%;">Traits</th>
+                    <th style="width: 10%;">Status</th>
+                    <th style="width: 10%;" class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="needs-open-body">
+                  <!-- Open rows rendered by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div 
+            id="needs-all-covered-message"
+            class="p-3 text-muted d-none"
+            style="font-size: 0.9rem;"
+          >
+            <strong>All your needs are covered right now.</strong><br>
+            You can review your completed needs below.
+          </div>
+
+          <!-- Closed needs table -->
+          <div class="p-3 border-top d-none" id="needs-closed-wrapper">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 mb-0">Closed Needs</h3>
+              <button 
+                type="button"
+                id="btn-toggle-closed-needs"
+                class="btn btn-sm btn-outline-secondary"
+              >
+                Hide closed
+              </button>
+            </div>
+            <div class="table-responsive" id="needs-closed-table-container">
+              <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 18%;">Position</th>
+                    <th style="width: 18%;">Origin</th>
+                    <th style="width: 18%;">Player cost (per year)</th>
+                    <th style="width: 26%;">Traits</th>
+                    <th style="width: 10%;">Status</th>
+                    <th style="width: 10%;" class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="needs-closed-body">
+                  <!-- Closed rows rendered by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Need form modal -->
+  <div 
+    class="modal fade" 
+    id="need-modal" 
+    tabindex="-1" 
+    aria-labelledby="need-form-title" 
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content" id="need-form-card">
+        <div class="modal-header">
+          <h2 class="h5 modal-title mb-0" id="need-form-title">New Need</h2>
+          <button 
+            type="button" 
+            class="btn-close" 
+            aria-label="Close"
+            data-need-modal-close
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <p class="text-muted small mb-3">
+            Define the type of player you are looking for. 
+            Fields marked with * are required.
+          </p>
+
+          <!-- Position -->
+          <div class="mb-3">
+            <label for="need-position" class="form-label">
+              Position needed *
+            </label>
+            <select 
+              id="need-position" 
+              class="form-select"
+            >
+              <option value="">Select a position...</option>
+              <!-- Estas opciones se podrán rellenar dinámicamente con footballPositions.js -->
+              <option value="GK">Goalkeeper</option>
+              <option value="RB">Right Back</option>
+              <option value="LB">Left Back</option>
+              <option value="CB">Center Back</option>
+              <option value="CDM">Defensive Midfielder</option>
+              <option value="CM">Central Midfielder</option>
+              <option value="CAM">Attacking Midfielder</option>
+              <option value="LW">Left Winger</option>
+              <option value="RW">Right Winger</option>
+              <option value="ST">Striker</option>
+            </select>
+          </div>
+
+          <!-- Origin -->
+          <div class="mb-3">
+            <label class="form-label d-block">
+              Player origin *
+            </label>
+            <div class="btn-group" role="group" aria-label="Player origin">
+              <input 
+                type="radio" 
+                class="btn-check" 
+                name="need-origin" 
+                id="origin-american" 
+                value="american" 
+                autocomplete="off"
+              >
+              <label class="btn btn-outline-secondary" for="origin-american">
+                🇺🇸 American
+              </label>
+
+              <input 
+                type="radio" 
+                class="btn-check" 
+                name="need-origin" 
+                id="origin-spanish" 
+                value="spanish" 
+                autocomplete="off"
+              >
+              <label class="btn btn-outline-secondary" for="origin-spanish">
+                🇪🇸 Spanish
+              </label>
+
+              <input 
+                type="radio" 
+                class="btn-check" 
+                name="need-origin" 
+                id="origin-any" 
+                value="any" 
+                autocomplete="off" 
+                checked
+              >
+              <label class="btn btn-outline-secondary" for="origin-any">
+                🌍 Doesn&#39;t matter
+              </label>
+            </div>
+          </div>
+
+          <!-- Scholarship type -->
+          <div class="mb-3">
+            <label for="need-scholarship-type" class="form-label">
+              Scholarship type
+            </label>
+            <select 
+              id="need-scholarship-type" 
+              class="form-select"
+            >
+              <option value="">Select scholarship type...</option>
+              <option value="full">Full scholarship</option>
+              <option value="partial">Partial scholarship</option>
+              <option value="walk-on">Walk-on</option>
+            </select>
+          </div>
+
+          <!-- Athletic scholarship -->
+          <div class="mb-3">
+            <label for="need-athletic-scholarship" class="form-label">
+              Athletic scholarship amount (per year)
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">USD</span>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="need-athletic-scholarship" 
+                min="0" 
+                step="500" 
+                placeholder="e.g. 20000"
+              >
+            </div>
+            <div class="form-text">
+              Amount you can offer in athletic scholarship.
+            </div>
+          </div>
+
+          <!-- Academic scholarship (GPA & amount, texto) -->
+          <div class="mb-3">
+            <label for="need-academic-scholarship" class="form-label">
+              Academic scholarship (GPA &amp; amount, per year)
+            </label>
+            <textarea 
+              id="need-academic-scholarship" 
+              class="form-control" 
+              rows="3"
+              placeholder="e.g. 3.0 GPA or above → $10,000; 3.5 GPA or above → $15,000"
+            ></textarea>
+            <div class="form-text">
+              Academic scholarship based on the student&#39;s GPA (e.g. 3.0 or above).
+            </div>
+          </div>
+
+          <!-- Player budget -->
+          <div class="mb-3">
+            <label for="need-player-budget" class="form-label">
+              Estimated cost for the player (per year)
+            </label>
+            <div class="input-group">
+              <span class="input-group-text">USD</span>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="need-player-budget" 
+                min="0" 
+                step="500" 
+                placeholder="e.g. 15000"
+              >
+            </div>
+            <div class="form-text">
+              Final cost for the player after scholarships.
+            </div>
+          </div>
+
+          <!-- Traits -->
+          <div class="mb-3">
+            <label class="form-label d-block">
+              Player traits (select all that apply)
+            </label>
+            <div id="need-traits-group" class="d-flex flex-wrap gap-2">
+              <!-- Son botones que actuaremos como "chips" (toggle) con JS -->
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Fast">
+                Fast
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Strong">
+                Strong
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Technical">
+                Technical
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Creative">
+                Creative
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Tall">
+                Tall
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Versatile">
+                Versatile
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Left-footed">
+                Left-footed
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Right-footed">
+                Right-footed
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Leader">
+                Leader
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Hard-working">
+                Hard-working
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Goalscorer">
+                Goalscorer
+              </button>
+              <button type="button" class="btn btn-outline-secondary btn-sm need-trait-btn" data-trait="Defensive-minded">
+                Defensive-minded
+              </button>
+            </div>
+            <div class="form-text">
+              You can select 2–3 main traits, or more if needed.
+            </div>
+          </div>
+
+          <!-- Comments -->
+          <div class="mb-3">
+            <label for="need-notes" class="form-label">
+              Additional comments (optional)
+            </label>
+            <textarea 
+              id="need-notes" 
+              class="form-control" 
+              rows="3"
+              placeholder="Example: Box-to-box midfielder, good stamina, comfortable in a double pivot."
+            ></textarea>
+          </div>
+
+          <!-- Status (solo lectura en esta primera versión) -->
+          <div class="mb-1">
+            <label class="form-label d-block mb-1">
+              Status
+            </label>
+            <span class="badge-eture-soft" id="need-status-pill">
+              Open
+            </span>
+            <div class="form-text">
+              New needs are created as <strong>Open</strong>. 
+              Later we can add actions to mark them as Closed.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary" 
+            id="btn-cancel-need"
+          >
+            Cancel
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            id="btn-save-need"
+          >
+            Save need
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
