@@ -4160,6 +4160,7 @@ const pages = {
   chat: 'views/us/chat.html',
   ayuda: 'views/us/ayuda.html',
   'my-program': 'views/us/my-program.html', // My Program view lives under /views, not /src/views
+  'my-academics': 'views/us/my-academics.html',
   visa: 'views/us/my-visa.html'    // ← ESTA LÍNEA con coma arriba
 };
 const perfilSubPages = {
