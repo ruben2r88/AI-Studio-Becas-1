@@ -11,13 +11,28 @@
       <li class="nav-item" role="presentation">
         <button
           class="nav-link active"
+          id="tab-overview"
+          data-bs-toggle="tab"
+          data-bs-target="#panel-overview"
+          type="button"
+          role="tab"
+          aria-controls="panel-overview"
+          aria-selected="true"
+        >
+          <i class="bi bi-info-circle align-middle me-1"></i>
+          <span class="align-middle">Overview</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
           id="tab-get-enrolled"
           data-bs-toggle="tab"
           data-bs-target="#panel-get-enrolled"
           type="button"
           role="tab"
           aria-controls="panel-get-enrolled"
-          aria-selected="true"
+          aria-selected="false"
         >
           <i class="bi bi-clipboard-check align-middle me-1"></i>
           <span class="align-middle">Get Enrolled</span>
@@ -71,224 +86,732 @@
     </ul>
 
     <div class="tab-content mt-4" id="my-academics-tabs-content">
-      <!-- Tab 1: Get Enrolled -->
+      <!-- Tab 1: Overview -->
       <div
         class="tab-pane fade show active"
-        id="panel-get-enrolled"
+        id="panel-overview"
         role="tabpanel"
-        aria-labelledby="tab-get-enrolled"
+        aria-labelledby="tab-overview"
       >
         <div class="row g-3">
-          <div class="col-12 col-lg-6">
+          <div class="col-12 col-lg-7">
             <div class="card eture-card h-100">
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title d-flex align-items-center gap-2 mb-3">
-                  <i class="bi bi-person-check"></i>
-                  <span>My Status</span>
-                </h5>
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                  <span class="badge bg-primary text-uppercase">Not Enrolled</span>
-                  <span class="badge bg-light text-dark border text-uppercase">In Process</span>
-                  <span class="badge bg-light text-dark border text-uppercase">Enrolled</span>
-                </div>
-                <button type="button" class="btn btn-primary mb-3">Start your application with ETURE</button>
-                <p class="small text-muted mb-2">This process needs to be done at Missouri State University.</p>
-                <p class="small mb-3">
-                  Contact: <a href="mailto:euo375s@missouristate.edu">euo375s@missouristate.edu</a>
+              <div class="card-body">
+                <h5 class="card-title mb-1">What MyAcademics is for</h5>
+                <p class="text-muted small mb-3">
+                  Track each academic step to avoid NCAA eligibility issues and stay aligned with your academic pathway.
                 </p>
-                <div>
-                  <p class="fw-semibold small mb-2">Process stages</p>
-                  <ul class="list-unstyled small mb-0">
-                    <li class="d-flex align-items-center gap-2">
-                      <i class="bi bi-check2-square text-muted"></i>
-                      <span>What you will need</span>
-                    </li>
-                    <li class="d-flex align-items-center gap-2">
-                      <i class="bi bi-check2-square text-muted"></i>
-                      <span>Complete your application</span>
-                    </li>
-                    <li class="d-flex align-items-center gap-2">
-                      <i class="bi bi-check2-square text-muted"></i>
-                      <span>Confirmation &amp; Next Steps</span>
-                    </li>
-                    <li class="d-flex align-items-center gap-2">
-                      <i class="bi bi-check2-square text-muted"></i>
-                      <span>Course registration</span>
-                    </li>
-                  </ul>
-                </div>
+                <h6 class="small text-uppercase text-muted mb-2">How this works</h6>
+                <ul class="list-unstyled small mb-0">
+                  <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-check2-circle text-muted"></i>
+                    <span>Complete the Overview steps to unlock the next sections.</span>
+                  </li>
+                  <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-check2-circle text-muted"></i>
+                    <span>ETURE reviews your entries to confirm pathway and credit load.</span>
+                  </li>
+                  <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-check2-circle text-muted"></i>
+                    <span>Once approved, you can add classes, documents, and eligibility details.</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
-
-          <div class="col-12 col-lg-6">
+          <div class="col-12 col-lg-5">
             <div class="card eture-card h-100">
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title d-flex align-items-center gap-2 mb-3">
-                  <i class="bi bi-mortarboard"></i>
-                  <span>ETURE Academic Options</span>
-                </h5>
-                <div class="row g-2">
-                  <div class="col-12">
-                    <div class="border rounded p-3 h-100">
-                      <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h6 class="mb-0">Gap Year (No Credit)</h6>
-                        <span class="badge bg-light text-dark border">Credits: 0</span>
-                      </div>
-                      <p class="mb-0 small text-muted">Total cost: €42,800</p>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="border rounded p-3 h-100">
-                      <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h6 class="mb-0">Spanish Program (6 Credits)</h6>
-                        <span class="badge bg-light text-dark border">Credits: 6</span>
-                      </div>
-                      <p class="mb-1 small text-muted">Total cost: €44,100</p>
-                      <p class="mb-1 small">+ $300 administration fee</p>
-                      <p class="mb-0 small text-muted">Includes Spanish 101 / 102.</p>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="border rounded p-3 h-100">
-                      <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h6 class="mb-0">Global Sports Certificate (12 Credits)</h6>
-                        <span class="badge bg-light text-dark border">Credits: 12</span>
-                      </div>
-                      <p class="mb-1 small text-muted">Total cost: €48,100</p>
-                      <p class="mb-0 small">+ $300 administration fee</p>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="border rounded p-3 h-100">
-                      <div class="d-flex justify-content-between align-items-start mb-1">
-                        <h6 class="mb-0">Full Program: GSC + Spanish Program (18 Credits)</h6>
-                        <span class="badge bg-light text-dark border">Credits: 18</span>
-                      </div>
-                      <p class="mb-1 small text-muted">Total cost: €49,100</p>
-                      <p class="mb-0 small">+ $300 administration fee</p>
-                    </div>
-                  </div>
-                </div>
-                <p class="small text-muted mt-3 mb-0">Additional online credits may be taken directly through MSU Online and paid to MSU.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-12">
-            <div class="card eture-card">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                  <h5 class="card-title d-flex align-items-center gap-2 mb-0">
-                    <i class="bi bi-window-sidebar"></i>
-                    <span>MSU Online Application</span>
-                  </h5>
-                  <span class="badge bg-light text-dark small">4 steps</span>
+                  <h5 class="card-title mb-0">Your current snapshot</h5>
+                  <span class="badge bg-light text-dark small text-uppercase">Preview</span>
                 </div>
-                <ol class="list-group list-group-numbered">
-                  <li class="list-group-item">
-                    <div class="d-flex flex-column gap-2">
-                      <div>
-                        <h6 class="mb-1">Start your application</h6>
-                        <p class="small mb-2 text-muted">Begin the Missouri State University application with Eture guidance.</p>
-                        <button type="button" class="btn btn-sm btn-outline-primary">Go to application portal</button>
-                      </div>
-                    </div>
+                <ul class="list-unstyled small mb-0">
+                  <li class="d-flex justify-content-between">
+                    <span class="text-muted">Pathway</span>
+                    <span>--</span>
                   </li>
-                  <li class="list-group-item">
-                    <div>
-                      <h6 class="mb-1">Complete your application</h6>
-                      <ul class="small mb-0 ps-3">
-                        <li>Upload required documents and personal details.</li>
-                        <li>Review academic history and English level info.</li>
-                        <li>Confirm program selection with Eture support.</li>
-                      </ul>
-                    </div>
+                  <li class="d-flex justify-content-between">
+                    <span class="text-muted">Enrollment</span>
+                    <span>--</span>
                   </li>
-                  <li class="list-group-item">
-                    <div>
-                      <h6 class="mb-1">Confirmation &amp; Next Steps</h6>
-                      <p class="small mb-0 text-muted">Watch for MSU confirmation emails and share updates with <a href="mailto:euo375s@missouristate.edu">euo375s@missouristate.edu</a>.</p>
-                    </div>
+                  <li class="d-flex justify-content-between">
+                    <span class="text-muted">Credits</span>
+                    <span>--</span>
                   </li>
-                  <li class="list-group-item">
-                    <div>
-                      <h6 class="mb-1">Course Registration</h6>
-                      <p class="small mb-0 text-muted">Register for your courses once MSU opens enrollment.</p>
-                    </div>
-                  </li>
-                </ol>
+                </ul>
               </div>
             </div>
           </div>
-
+          <div class="col-12">
+            <div class="alert alert-light border mb-0">
+              <div class="small">
+                <strong>Important eligibility note:</strong> Your credit load (part-time vs. full-time) can impact NCAA
+                eligibility. ETURE staff will review your selections.
+              </div>
+            </div>
+          </div>
           <div class="col-12">
             <div class="card eture-card">
               <div class="card-body">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <i class="bi bi-cash-coin"></i>
-                  <h5 class="card-title mb-0">Financial Aid &amp; Scholarships</h5>
-                </div>
-                <p class="small text-muted mb-4">
-                  Some students may qualify for financial aid or scholarships through Missouri State University. Eligibility depends on enrollment status and academic program.
-                </p>
-
-                <div class="row g-3">
-                  <div class="col-12 col-lg-6">
-                    <h6 class="small text-uppercase text-muted mb-2">Scholarships</h6>
-                    <ul class="list-unstyled small mb-3">
-                      <li class="d-flex align-items-start gap-2">
-                        <i class="bi bi-dot"></i>
-                        <span>Most academic scholarships require <strong>full-time enrollment</strong>.</span>
-                      </li>
-                      <li class="d-flex align-items-start gap-2">
-                        <i class="bi bi-dot"></i>
-                        <span>Some scholarships may have limitations when living off campus.</span>
-                      </li>
-                      <li class="d-flex align-items-start gap-2">
-                        <i class="bi bi-dot"></i>
-                        <span>Availability and requirements depend on MSU policies.</span>
-                      </li>
-                    </ul>
-                    <button type="button" class="btn btn-sm btn-outline-primary">See scholarship options</button>
-                  </div>
-                  <div class="col-12 col-lg-6">
-                    <h6 class="small text-uppercase text-muted mb-2">Student Loans</h6>
-                    <ul class="list-unstyled small mb-3">
-                      <li class="d-flex align-items-start gap-2">
-                        <i class="bi bi-dot"></i>
-                        <span>Student loans usually require <strong>half-time or full-time enrollment</strong>.</span>
-                      </li>
-                      <li class="d-flex align-items-start gap-2">
-                        <i class="bi bi-dot"></i>
-                        <span>Loans are typically available only to <strong>degree-seeking students</strong>.</span>
-                      </li>
-                      <li class="d-flex align-items-start gap-2">
-                        <i class="bi bi-dot"></i>
-                        <span>Requirements vary depending on your country and program.</span>
-                      </li>
-                    </ul>
-                    <button type="button" class="btn btn-sm btn-outline-secondary">Explore loan options</button>
-                  </div>
-                </div>
-
-                <div class="border-top pt-3 mt-2">
-                  <h6 class="small text-uppercase text-muted mb-1">Maintain enrollment status</h6>
-                  <p class="small mb-0">
-                    To remain eligible for financial aid or loans, students must maintain the required enrollment status each semester, according to MSU rules.
-                  </p>
-                </div>
-
-                <p class="small text-muted mt-3 mb-0">
-                  Exact conditions depend on Missouri State University policies. Always talk to your Eture coach before making financial decisions.
-                </p>
+                <h5 class="card-title mb-2">ETURE Programs (quick context)</h5>
+                <ul class="list-unstyled small mb-0">
+                  <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-circle-fill text-muted small"></i>
+                    <span>Spanish language courses aligned with athletic schedules.</span>
+                  </li>
+                  <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-circle-fill text-muted small"></i>
+                    <span>Global Sports Certificate academic pathway.</span>
+                  </li>
+                  <li class="d-flex align-items-start gap-2">
+                    <i class="bi bi-circle-fill text-muted small"></i>
+                    <span>Full program option combines language and certificate tracks.</span>
+                  </li>
+                </ul>
               </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2">
+              <button
+                type="button"
+                class="btn btn-primary"
+                id="academics-overview-continue"
+                data-bs-toggle="tab"
+                data-bs-target="#panel-get-enrolled"
+              >
+                Start Get Enrolled
+              </button>
+              <span class="small text-muted">
+                Prototype: in the next step we will save your selection and unlock steps automatically.
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Tab 2: My Classes -->
+      <!-- Tab 2: Get Enrolled -->
+      <div
+        class="tab-pane fade"
+        id="panel-get-enrolled"
+        role="tabpanel"
+        aria-labelledby="tab-get-enrolled"
+      >
+        <div class="row g-3">
+          <!-- Top status -->
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                  <h5 class="card-title mb-1">Your Academic Status</h5>
+                  <p class="text-muted small mb-0">
+                    This section helps ETURE understand your academic pathway and ensure NCAA eligibility.
+                  </p>
+                </div>
+                <span class="badge bg-secondary text-uppercase">Not started</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="accordion" id="get-enrolled-accordion">
+              <div class="accordion-item" data-step="0">
+                <h2 class="accordion-header" id="get-enrolled-step-0-heading">
+                  <button
+                    class="accordion-button"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#get-enrolled-step-0"
+                    aria-expanded="true"
+                    aria-controls="get-enrolled-step-0"
+                  >
+                    <span>Academic Intent</span>
+                    <span class="badge bg-light text-dark small text-uppercase ms-2">Step 0</span>
+                  </button>
+                </h2>
+                <div
+                  id="get-enrolled-step-0"
+                  class="accordion-collapse collapse show"
+                  aria-labelledby="get-enrolled-step-0-heading"
+                  data-bs-parent="#get-enrolled-accordion"
+                >
+                  <div class="accordion-body">
+                    <p class="text-muted small mb-3">Are you going to study during your ETURE program?</p>
+
+                    <div class="row g-2">
+                      <div class="col-12 col-md-4">
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm w-100"
+                          data-academic-intent="highschool"
+                        >
+                          High School (Online)
+                        </button>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm w-100"
+                          data-academic-intent="gap"
+                        >
+                          No — Gap Year (No Credit)
+                        </button>
+                      </div>
+                      <div class="col-12 col-md-4">
+                        <button
+                          type="button"
+                          class="btn btn-outline-secondary btn-sm w-100"
+                          data-academic-intent="credits"
+                        >
+                          Yes — I will take university credits
+                        </button>
+                      </div>
+                    </div>
+                    <div class="small text-muted mt-2">After you choose, the next step will unlock (prototype).</div>
+
+                    <div class="alert alert-light border mt-3 mb-0">
+                      <div class="small">
+                        <strong>Note:</strong> This is a prototype. In the next micro-hito we will make these steps interactive (show/hide).
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="small text-muted px-3 pb-3 d-none" data-gap-message>
+                  You’re all set for now. If you decide to take classes next semester, come back here and update your Academic Intent to continue.
+                </div>
+              </div>
+
+              <div class="accordion-item is-locked" data-step="1">
+                <h2 class="accordion-header" id="get-enrolled-step-1-heading">
+                  <button
+                    class="accordion-button collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#get-enrolled-step-1"
+                    aria-expanded="false"
+                    aria-controls="get-enrolled-step-1"
+                    aria-disabled="true"
+                    tabindex="-1"
+                  >
+                    <span>Institution Type</span>
+                    <span class="badge bg-light text-dark small text-uppercase ms-2">Step 1</span>
+                    <span class="badge bg-success text-uppercase ms-2 d-none" data-step1-complete-badge>Completed</span>
+                    <span class="ms-auto d-flex align-items-center gap-2" data-lock-indicator>
+                      <span class="badge bg-light text-dark small text-uppercase">Locked</span>
+                      <i class="bi bi-lock-fill text-muted"></i>
+                    </span>
+                  </button>
+                </h2>
+                <div
+                  id="get-enrolled-step-1"
+                  class="accordion-collapse collapse"
+                  aria-labelledby="get-enrolled-step-1-heading"
+                  data-bs-parent="#get-enrolled-accordion"
+                >
+                  <div class="accordion-body">
+                    <div class="alert alert-light border mb-3" data-locked-alert>
+                      <div class="small">Locked: complete the previous step to continue.</div>
+                    </div>
+                    <div class="step-content opacity-50" data-step-content>
+                      <div class="d-none" data-step1-mode="highschool">
+                        <h6 class="small text-uppercase text-muted mb-2">High School details</h6>
+                        <div class="row g-2">
+                          <div class="col-12">
+                            <label class="form-label small mb-1">High school name</label>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm"
+                              placeholder="High school name"
+                              data-step1-highschool-name
+                              required
+                            >
+                          </div>
+                          <div class="col-12 col-sm-4">
+                            <label class="form-label small mb-1">Grade</label>
+                            <select class="form-select form-select-sm" data-step1-highschool-grade required>
+                              <option value="">Select</option>
+                              <option value="9">9</option>
+                              <option value="10">10</option>
+                              <option value="11">11</option>
+                              <option value="12">12</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="mt-3">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            data-step1-continue
+                            data-step1-mode="highschool"
+                            disabled
+                          >
+                            Continue
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="d-none" data-step1-mode="university">
+                        <h6 class="small text-uppercase text-muted mb-2">Where are you going to study?</h6>
+                        <div class="row g-2">
+                          <div class="col-12 col-lg-6">
+                            <button
+                              type="button"
+                              class="btn btn-outline-secondary w-100 text-start"
+                              data-step1-choice="eture_msu"
+                            >
+                              <div class="fw-semibold">Through ETURE / Missouri State</div>
+                              <div class="small text-muted">ETURE academic programs + MSU online partnership.</div>
+                            </button>
+                          </div>
+                          <div class="col-12 col-lg-6">
+                            <button
+                              type="button"
+                              class="btn btn-outline-secondary w-100 text-start"
+                              data-step1-choice="other_institution"
+                            >
+                              <div class="fw-semibold">Through Another Institution</div>
+                              <div class="small text-muted">You will add your classes in the next step.</div>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="mt-3 d-none" data-step1-other-institution-wrap>
+                          <label class="form-label small mb-1">Institution name</label>
+                          <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            placeholder="University / College name"
+                            data-step1-other-institution-name
+                            required
+                          >
+                        </div>
+
+                        <div class="mt-3">
+                          <button
+                            type="button"
+                            class="btn btn-sm btn-primary"
+                            data-step1-continue
+                            data-step1-mode="university"
+                            disabled
+                          >
+                            Continue
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item is-locked" data-step="2">
+                <h2 class="accordion-header" id="get-enrolled-step-2-heading">
+                  <button
+                    class="accordion-button collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#get-enrolled-step-2"
+                    aria-expanded="false"
+                    aria-controls="get-enrolled-step-2"
+                    aria-disabled="true"
+                    tabindex="-1"
+                  >
+                    <span>Enrollment Type</span>
+                    <span class="badge bg-light text-dark small text-uppercase ms-2">Step 2</span>
+                    <span class="badge bg-success text-uppercase ms-2 d-none" data-step2-complete-badge>Completed</span>
+                    <span class="ms-auto d-flex align-items-center gap-2" data-lock-indicator>
+                      <span class="badge bg-light text-dark small text-uppercase">Locked</span>
+                      <i class="bi bi-lock-fill text-muted"></i>
+                    </span>
+                  </button>
+                </h2>
+                <div
+                  id="get-enrolled-step-2"
+                  class="accordion-collapse collapse"
+                  aria-labelledby="get-enrolled-step-2-heading"
+                  data-bs-parent="#get-enrolled-accordion"
+                >
+                  <div class="accordion-body">
+                    <div class="alert alert-light border mb-3" data-locked-alert>
+                      <div class="small">Locked: complete the previous step to continue.</div>
+                    </div>
+                    <div class="step-content opacity-50" data-step-content>
+                      <div data-step2-root>
+                        <div class="d-none" data-step2-mode="highschool">
+                          <h6 class="small text-uppercase text-muted mb-2">Add your High School classes</h6>
+                          <div class="row g-2 align-items-end">
+                            <div class="col-12 col-md-6">
+                              <label class="form-label small mb-1">Course name</label>
+                              <input
+                                type="text"
+                                class="form-control form-control-sm"
+                                placeholder="Example: English 11"
+                                data-step2-add-name
+                              >
+                            </div>
+                            <div class="col-12 col-md-4">
+                              <label class="form-label small mb-1">Credits (optional)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                class="form-control form-control-sm"
+                                placeholder="Optional. If your school uses credits, enter 1-3 (or your value). If not, use 0."
+                                data-step2-add-credits
+                              >
+                            </div>
+                            <div class="col-12 col-md-2">
+                              <button type="button" class="btn btn-sm btn-outline-primary w-100" data-step2-add-btn>
+                                Add class
+                              </button>
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="small text-muted">Classes added</span>
+                              <span class="small">Total credits: <strong data-step2-total>0</strong></span>
+                            </div>
+                            <div class="small text-muted mt-2 d-none" data-step2-empty>No classes added yet.</div>
+                            <ul class="list-group list-group-flush small mt-2" data-step2-list></ul>
+                          </div>
+                          <div class="mt-3">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-primary"
+                              data-step2-continue
+                              data-step2-mode="highschool"
+                              disabled
+                            >
+                              Continue
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="d-none" data-step2-mode="other">
+                          <h6 class="small text-uppercase text-muted mb-2">Add your university classes</h6>
+                          <div class="mb-3">
+                            <label class="form-label small mb-1">Institution name</label>
+                            <input
+                              type="text"
+                              class="form-control form-control-sm"
+                              placeholder="University / College name"
+                              data-step2-institution-name
+                              required
+                            >
+                          </div>
+                          <div class="row g-2 align-items-end">
+                            <div class="col-12 col-md-6">
+                              <label class="form-label small mb-1">Course name</label>
+                              <input
+                                type="text"
+                                class="form-control form-control-sm"
+                                placeholder="Example: Intro to Psychology"
+                                data-step2-add-name
+                              >
+                            </div>
+                            <div class="col-12 col-md-3">
+                              <label class="form-label small mb-1">Credits</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                class="form-control form-control-sm"
+                                placeholder="Credits"
+                                data-step2-add-credits
+                                required
+                              >
+                            </div>
+                            <div class="col-12 col-md-3">
+                              <button type="button" class="btn btn-sm btn-outline-primary w-100" data-step2-add-btn>
+                                Add class
+                              </button>
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="small text-muted">Classes added</span>
+                              <span class="small">Total credits: <strong data-step2-total>0</strong></span>
+                            </div>
+                            <div class="small text-muted mt-2 d-none" data-step2-empty>No classes added yet.</div>
+                            <ul class="list-group list-group-flush small mt-2" data-step2-list></ul>
+                          </div>
+                          <div class="mt-2 small text-muted">
+                            Inferred enrollment: <strong data-step2-inferred>Part-time</strong>
+                          </div>
+                          <div class="card border bg-light mt-3 d-none" data-step2-confirm-wrap>
+                            <div class="card-body p-3">
+                              <p class="small mb-2" data-step2-confirm-text></p>
+                              <div class="d-flex flex-wrap align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-step2-confirm-yes>Yes</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-step2-confirm-no>No</button>
+                                <span
+                                  class="badge bg-warning text-dark text-uppercase small ms-auto d-none"
+                                  data-step2-hold-badge
+                                >
+                                  Needs staff review (On hold)
+                                </span>
+                              </div>
+                              <div class="mt-3 d-none" data-step2-mismatch-wrap>
+                                <label class="form-label small mb-1">Why does this not match?</label>
+                                <select class="form-select form-select-sm" data-step2-mismatch-select>
+                                  <option value="">Select a reason</option>
+                                  <option value="guidance">I don't know, I need guidance</option>
+                                  <option value="different">My situation is different</option>
+                                  <option value="staff_told_me">ETURE staff told me to choose this</option>
+                                </select>
+                                <label class="form-label small mb-1 mt-2">Notes (optional)</label>
+                                <textarea
+                                  class="form-control form-control-sm"
+                                  rows="2"
+                                  placeholder="Add any details you think staff should know (optional)"
+                                  data-step2-notes
+                                ></textarea>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-primary"
+                              data-step2-continue
+                              data-step2-mode="other"
+                              disabled
+                            >
+                              Continue
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="d-none" data-step2-mode="eture">
+                          <h6 class="small text-uppercase text-muted mb-2">Choose your enrollment type</h6>
+                          <div class="alert alert-light border mb-3">
+                            <div class="small">
+                              <strong>NCAA note:</strong>
+                              <ul class="mb-0 ps-3">
+                                <li>If you already completed a Gap Year, you must choose Full-time.</li>
+                                <li>If this is your Gap Year, we recommend Part-time so your NCAA clock does not start.</li>
+                              </ul>
+                            </div>
+                          </div>
+                          <div class="row g-2" data-step2-enrollment-cards>
+                            <div class="col-12 col-md-6">
+                              <button
+                                type="button"
+                                class="btn btn-outline-secondary w-100 text-start"
+                                data-step2-enrollment-choice="part-time"
+                              >
+                                <div class="fw-semibold">Part-time</div>
+                                <div class="small text-muted">Recommended if this is your Gap Year.</div>
+                              </button>
+                            </div>
+                            <div class="col-12 col-md-6">
+                              <button
+                                type="button"
+                                class="btn btn-outline-secondary w-100 text-start"
+                                data-step2-enrollment-choice="full-time"
+                              >
+                                <div class="fw-semibold">Full-time</div>
+                                <div class="small text-muted">Required if you already completed a Gap Year.</div>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="card border bg-light mt-3 d-none" data-step2-confirm-wrap>
+                            <div class="card-body p-3">
+                              <p class="small mb-2" data-step2-confirm-text></p>
+                              <div class="d-flex flex-wrap align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-step2-confirm-yes>Yes</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-step2-confirm-no>No</button>
+                                <span
+                                  class="badge bg-warning text-dark text-uppercase small ms-auto d-none"
+                                  data-step2-hold-badge
+                                >
+                                  Needs staff review (On hold)
+                                </span>
+                              </div>
+                              <div class="mt-3 d-none" data-step2-mismatch-wrap>
+                                <label class="form-label small mb-1">Why does this not match?</label>
+                                <select class="form-select form-select-sm" data-step2-mismatch-select>
+                                  <option value="">Select a reason</option>
+                                  <option value="guidance">I don't know, I need guidance</option>
+                                  <option value="different">My situation is different</option>
+                                  <option value="staff_told_me">ETURE staff told me to choose this</option>
+                                </select>
+                                <label class="form-label small mb-1 mt-2">Notes (optional)</label>
+                                <textarea
+                                  class="form-control form-control-sm"
+                                  rows="2"
+                                  placeholder="Add any details you think staff should know (optional)"
+                                  data-step2-notes
+                                ></textarea>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="mt-3">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-primary"
+                              data-step2-continue
+                              data-step2-mode="eture"
+                              disabled
+                            >
+                              Continue
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item is-locked" data-step="3">
+                <h2 class="accordion-header" id="get-enrolled-step-3-heading">
+                  <button
+                    class="accordion-button collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#get-enrolled-step-3"
+                    aria-expanded="false"
+                    aria-controls="get-enrolled-step-3"
+                    aria-disabled="true"
+                    tabindex="-1"
+                  >
+                    <span>ETURE Academic Programs</span>
+                    <span class="badge bg-light text-dark small text-uppercase ms-2">Step 3</span>
+                    <span class="ms-auto d-flex align-items-center gap-2" data-lock-indicator>
+                      <span class="badge bg-light text-dark small text-uppercase">Locked</span>
+                      <i class="bi bi-lock-fill text-muted"></i>
+                    </span>
+                  </button>
+                </h2>
+                <div
+                  id="get-enrolled-step-3"
+                  class="accordion-collapse collapse"
+                  aria-labelledby="get-enrolled-step-3-heading"
+                  data-bs-parent="#get-enrolled-accordion"
+                >
+                  <div class="accordion-body">
+                    <div class="alert alert-light border mb-3" data-locked-alert>
+                      <div class="small">Locked: complete the previous step to continue.</div>
+                    </div>
+                    <div class="step-content opacity-50" data-step-content>
+                      <p class="text-muted small mb-3">Choose your academic program.</p>
+
+                      <div class="row g-2">
+                        <div class="col-12 col-lg-4">
+                          <div class="border rounded p-3 h-100">
+                            <div class="fw-semibold">Spanish Program</div>
+                            <div class="text-muted small">6 credits</div>
+                          </div>
+                        </div>
+                        <div class="col-12 col-lg-4">
+                          <div class="border rounded p-3 h-100">
+                            <div class="fw-semibold">Global Sports Certificate (GSC)</div>
+                            <div class="text-muted small">12 credits</div>
+                          </div>
+                        </div>
+                        <div class="col-12 col-lg-4">
+                          <div class="border rounded p-3 h-100">
+                            <div class="fw-semibold">Full Program (Spanish + GSC)</div>
+                            <div class="text-muted small">18 credits</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
+                        <span class="badge bg-light text-dark">Includes ETURE classes</span>
+                        <button type="button" class="btn btn-sm btn-link ms-auto">View program details &amp; costs</button>
+                      </div>
+
+                      <div class="alert alert-light border mt-2 mb-0">
+                        <div class="small">
+                          If you selected full-time, additional online credits will be taken through Missouri State Online (paid to MSU).
+                        </div>
+                      </div>
+
+                      <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-complete-step="3">
+                          Mark step as complete (demo)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="accordion-item is-locked" data-step="4">
+                <h2 class="accordion-header" id="get-enrolled-step-4-heading">
+                  <button
+                    class="accordion-button collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#get-enrolled-step-4"
+                    aria-expanded="false"
+                    aria-controls="get-enrolled-step-4"
+                    aria-disabled="true"
+                    tabindex="-1"
+                  >
+                    <span>University Application Status</span>
+                    <span class="badge bg-light text-dark small text-uppercase ms-2">Step 4</span>
+                    <span class="ms-auto d-flex align-items-center gap-2" data-lock-indicator>
+                      <span class="badge bg-light text-dark small text-uppercase">Locked</span>
+                      <i class="bi bi-lock-fill text-muted"></i>
+                    </span>
+                  </button>
+                </h2>
+                <div
+                  id="get-enrolled-step-4"
+                  class="accordion-collapse collapse"
+                  aria-labelledby="get-enrolled-step-4-heading"
+                  data-bs-parent="#get-enrolled-accordion"
+                >
+                  <div class="accordion-body">
+                    <div class="alert alert-light border mb-3" data-locked-alert>
+                      <div class="small">Locked: complete the previous step to continue.</div>
+                    </div>
+                    <div class="step-content opacity-50" data-step-content>
+                      <p class="text-muted small mb-3">
+                        All students must apply to Missouri State University through the standard application process.
+                      </p>
+
+                      <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary">Start application</button>
+                        <select class="form-select form-select-sm w-auto">
+                          <option>In process</option>
+                          <option>Pending confirmation</option>
+                          <option>Completed</option>
+                        </select>
+                      </div>
+
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-primary">I have been accepted</button>
+                        <div class="small text-muted">
+                          Academic contact: <strong>vicentabaso@eturesports.com</strong>
+                        </div>
+                      </div>
+
+                      <div class="mt-3">
+                        <label class="form-label small mb-1">Upload Acceptance Letter (PDF or image)</label>
+                        <input type="file" class="form-control form-control-sm" disabled>
+                        <div class="form-text">Prototype only — upload will be enabled in a later step.</div>
+                      </div>
+
+                      <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-complete-step="4">
+                          Mark step as complete (demo)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tab 3: My Classes -->
       <div
         class="tab-pane fade"
         id="panel-my-classes"
@@ -296,6 +819,13 @@
         aria-labelledby="tab-my-classes"
       >
         <div class="row g-3">
+          <div class="col-12">
+            <div class="alert alert-light border mb-0">
+              <div class="small">
+                Use this section to track your classes and monthly progress. If you selected Gap Year, you can leave this empty.
+              </div>
+            </div>
+          </div>
           <div class="col-12 col-xl-8">
             <div class="card eture-card h-100">
               <div class="card-body d-flex flex-column">
@@ -387,7 +917,7 @@
         </div>
       </div>
 
-      <!-- Tab 3: NCAA Eligibility -->
+      <!-- Tab 4: NCAA Eligibility -->
       <div
         class="tab-pane fade"
         id="panel-ncaa"
@@ -395,6 +925,13 @@
         aria-labelledby="tab-ncaa"
       >
         <div class="row g-3">
+          <div class="col-12">
+            <div class="alert alert-light border mb-0">
+              <div class="small">
+                You can request a review anytime, but for the most accurate review complete Get Enrolled and add your current classes first.
+              </div>
+            </div>
+          </div>
           <div class="col-12 col-lg-6">
             <div class="card eture-card h-100">
               <div class="card-body d-flex flex-column">
@@ -490,7 +1027,7 @@
         </div>
       </div>
 
-      <!-- Tab 4: My Academic Credentials -->
+      <!-- Tab 5: My Academic Credentials -->
       <div
         class="tab-pane fade"
         id="panel-credentials"
@@ -498,6 +1035,13 @@
         aria-labelledby="tab-credentials"
       >
         <div class="row g-3">
+          <div class="col-12">
+            <div class="alert alert-light border mb-0">
+              <div class="small">
+                You can add your transcripts anytime. This helps ETURE review your background and NCAA eligibility.
+              </div>
+            </div>
+          </div>
           <div class="col-12 col-lg-6">
             <div class="card eture-card h-100">
               <div class="card-body d-flex flex-column">
@@ -588,4 +1132,1081 @@
       </div>
     </div>
   </div>
+
+  <script type="module">
+    (() => {
+      const root = document.getElementById('my-academics');
+      if (!root) return;
+
+      const storageKey = 'eture_myacademics_intent';
+      const step1PathKey = 'eture_myacademics_step1_path';
+      const highschoolNameKey = 'eture_myacademics_highschool_name';
+      const highschoolGradeKey = 'eture_myacademics_highschool_grade';
+      const otherInstitutionNameKey = 'eture_myacademics_other_institution_name';
+      const step2ModeKey = 'eture_myacademics_step2_mode';
+      const step2ClassesKey = 'eture_myacademics_step2_classes_json';
+      const step2TotalKey = 'eture_myacademics_step2_total_credits';
+      const step2InferredKey = 'eture_myacademics_step2_inferred_enrollment';
+      const step2SelectedEnrollmentKey = 'eture_myacademics_step2_selected_enrollment';
+      const step2ConfirmationKey = 'eture_myacademics_step2_confirmation';
+      const step2MismatchReasonKey = 'eture_myacademics_step2_mismatch_reason';
+      const step2NotesKey = 'eture_myacademics_step2_notes';
+      const step2CompletedKey = 'eture_myacademics_step2_completed';
+      const validIntents = new Set(['highschool', 'gap', 'credits', 'study']);
+      const validStep1Paths = new Set(['highschool', 'eture_msu', 'other_institution']);
+      const intentButtons = Array.from(root.querySelectorAll('[data-academic-intent]'));
+      const gapMessage = root.querySelector('[data-gap-message]');
+      const step0Collapse = root.querySelector('#get-enrolled-step-0');
+      const step1Item = root.querySelector('#get-enrolled-accordion [data-step="1"]');
+      const step1Button = step1Item?.querySelector('.accordion-button');
+      const step1Collapse = root.querySelector('#get-enrolled-step-1');
+      const step1Content = step1Item?.querySelector('[data-step-content]');
+      const step1LockIndicator = step1Item?.querySelector('[data-lock-indicator]');
+      const step1LockedAlert = step1Item?.querySelector('[data-locked-alert]');
+      const step1CompleteBadge = step1Item?.querySelector('[data-step1-complete-badge]');
+      const step1ModeHighschool = step1Item?.querySelector('[data-step1-mode="highschool"]');
+      const step1ModeUniversity = step1Item?.querySelector('[data-step1-mode="university"]');
+      const highschoolNameInput = step1Item?.querySelector('[data-step1-highschool-name]');
+      const highschoolGradeSelect = step1Item?.querySelector('[data-step1-highschool-grade]');
+      const highschoolContinueBtn = step1Item?.querySelector('[data-step1-continue][data-step1-mode="highschool"]');
+      const step1ChoiceButtons = Array.from(step1Item?.querySelectorAll('[data-step1-choice]') || []);
+      const otherInstitutionWrap = step1Item?.querySelector('[data-step1-other-institution-wrap]');
+      const otherInstitutionInput = step1Item?.querySelector('[data-step1-other-institution-name]');
+      const universityContinueBtn = step1Item?.querySelector('[data-step1-continue][data-step1-mode="university"]');
+      const stepItems = Array.from(root.querySelectorAll('#get-enrolled-accordion [data-step]'));
+      const myClassesTab = root.querySelector('#tab-my-classes');
+      const gatedSteps = stepItems.filter((item) => Number(item.dataset.step) > 0);
+      const step2Item = root.querySelector('#get-enrolled-accordion [data-step="2"]');
+      const step2Button = step2Item?.querySelector('.accordion-button');
+      const step2Collapse = root.querySelector('#get-enrolled-step-2');
+      const step2Content = step2Item?.querySelector('[data-step-content]');
+      const step2LockIndicator = step2Item?.querySelector('[data-lock-indicator]');
+      const step2LockedAlert = step2Item?.querySelector('[data-locked-alert]');
+      const step2CompleteBadge = step2Item?.querySelector('[data-step2-complete-badge]');
+      const step2Root = step2Item?.querySelector('[data-step2-root]');
+      const step2ModeHighschool = step2Item?.querySelector('[data-step2-mode="highschool"]');
+      const step2ModeOther = step2Item?.querySelector('[data-step2-mode="other"]');
+      const step2ModeEture = step2Item?.querySelector('[data-step2-mode="eture"]');
+      const step2HsNameInput = step2ModeHighschool?.querySelector('[data-step2-add-name]');
+      const step2HsCreditsInput = step2ModeHighschool?.querySelector('[data-step2-add-credits]');
+      const step2HsAddBtn = step2ModeHighschool?.querySelector('[data-step2-add-btn]');
+      const step2HsList = step2ModeHighschool?.querySelector('[data-step2-list]');
+      const step2HsEmpty = step2ModeHighschool?.querySelector('[data-step2-empty]');
+      const step2HsTotal = step2ModeHighschool?.querySelector('[data-step2-total]');
+      const step2HsContinue = step2ModeHighschool?.querySelector('[data-step2-continue]');
+      const step2OtherInstitutionInput = step2ModeOther?.querySelector('[data-step2-institution-name]');
+      const step2OtherNameInput = step2ModeOther?.querySelector('[data-step2-add-name]');
+      const step2OtherCreditsInput = step2ModeOther?.querySelector('[data-step2-add-credits]');
+      const step2OtherAddBtn = step2ModeOther?.querySelector('[data-step2-add-btn]');
+      const step2OtherList = step2ModeOther?.querySelector('[data-step2-list]');
+      const step2OtherEmpty = step2ModeOther?.querySelector('[data-step2-empty]');
+      const step2OtherTotal = step2ModeOther?.querySelector('[data-step2-total]');
+      const step2OtherInferred = step2ModeOther?.querySelector('[data-step2-inferred]');
+      const step2OtherConfirmWrap = step2ModeOther?.querySelector('[data-step2-confirm-wrap]');
+      const step2OtherConfirmText = step2ModeOther?.querySelector('[data-step2-confirm-text]');
+      const step2OtherConfirmYes = step2ModeOther?.querySelector('[data-step2-confirm-yes]');
+      const step2OtherConfirmNo = step2ModeOther?.querySelector('[data-step2-confirm-no]');
+      const step2OtherMismatchWrap = step2ModeOther?.querySelector('[data-step2-mismatch-wrap]');
+      const step2OtherMismatchSelect = step2ModeOther?.querySelector('[data-step2-mismatch-select]');
+      const step2OtherNotes = step2ModeOther?.querySelector('[data-step2-notes]');
+      const step2OtherHoldBadge = step2ModeOther?.querySelector('[data-step2-hold-badge]');
+      const step2OtherContinue = step2ModeOther?.querySelector('[data-step2-continue]');
+      const step2EtureChoiceButtons = Array.from(
+        step2ModeEture?.querySelectorAll('[data-step2-enrollment-choice]') || []
+      );
+      const step2EtureConfirmWrap = step2ModeEture?.querySelector('[data-step2-confirm-wrap]');
+      const step2EtureConfirmText = step2ModeEture?.querySelector('[data-step2-confirm-text]');
+      const step2EtureConfirmYes = step2ModeEture?.querySelector('[data-step2-confirm-yes]');
+      const step2EtureConfirmNo = step2ModeEture?.querySelector('[data-step2-confirm-no]');
+      const step2EtureMismatchWrap = step2ModeEture?.querySelector('[data-step2-mismatch-wrap]');
+      const step2EtureMismatchSelect = step2ModeEture?.querySelector('[data-step2-mismatch-select]');
+      const step2EtureNotes = step2ModeEture?.querySelector('[data-step2-notes]');
+      const step2EtureHoldBadge = step2ModeEture?.querySelector('[data-step2-hold-badge]');
+      const step2EtureContinue = step2ModeEture?.querySelector('[data-step2-continue]');
+      const step3Item = root.querySelector('#get-enrolled-accordion [data-step="3"]');
+      const step3Button = step3Item?.querySelector('.accordion-button');
+      const step3Collapse = root.querySelector('#get-enrolled-step-3');
+      const step3Content = step3Item?.querySelector('[data-step-content]');
+      const step3LockIndicator = step3Item?.querySelector('[data-lock-indicator]');
+      const step3LockedAlert = step3Item?.querySelector('[data-locked-alert]');
+
+      const Collapse = window.bootstrap?.Collapse;
+      const Tab = window.bootstrap?.Tab;
+
+      const showCollapse = (element) => {
+        if (!element) return;
+        if (Collapse?.getOrCreateInstance) {
+          Collapse.getOrCreateInstance(element, { toggle: false }).show();
+          return;
+        }
+        if (Collapse) {
+          new Collapse(element, { toggle: false }).show();
+          return;
+        }
+        element.classList.add('show');
+      };
+
+      const hideCollapse = (element) => {
+        if (!element) return;
+        if (Collapse?.getOrCreateInstance) {
+          Collapse.getOrCreateInstance(element, { toggle: false }).hide();
+          return;
+        }
+        if (Collapse) {
+          new Collapse(element, { toggle: false }).hide();
+          return;
+        }
+        element.classList.remove('show');
+      };
+
+      const normalizeIntent = (intent) => {
+        if (!intent) return null;
+        if (intent === 'study') return 'credits';
+        return validIntents.has(intent) ? intent : null;
+      };
+
+      const readStorage = (key) => {
+        try {
+          return localStorage.getItem(key);
+        } catch (_) {
+          return null;
+        }
+      };
+
+      const writeStorage = (key, value) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch (_) {}
+      };
+
+      const clearStorage = (key) => {
+        try {
+          localStorage.removeItem(key);
+        } catch (_) {}
+      };
+
+      let currentIntent = null;
+      let currentStep1Path = null;
+      let currentStep2Mode = null;
+      let step2Classes = [];
+      let step2Confirmation = '';
+      let step2MismatchReason = '';
+      let step2Notes = '';
+      let step2SelectedEnrollment = '';
+      let step2Completed = false;
+      let isRestoringStep2 = false;
+
+      const setMyClassesNotNeeded = (isNotNeeded) => {
+        if (!myClassesTab) return;
+        if (isNotNeeded) {
+          myClassesTab.classList.add('disabled');
+          myClassesTab.setAttribute('aria-disabled', 'true');
+          myClassesTab.setAttribute('tabindex', '-1');
+          myClassesTab.style.pointerEvents = 'none';
+          return;
+        }
+
+        myClassesTab.classList.remove('disabled');
+        myClassesTab.removeAttribute('aria-disabled');
+        myClassesTab.removeAttribute('tabindex');
+        myClassesTab.style.pointerEvents = '';
+      };
+
+      const unlockStep1 = (shouldUnlock) => {
+        if (!step1Item || !step1Button) return;
+        step1Item.classList.toggle('is-locked', !shouldUnlock);
+        step1Button.classList.toggle('disabled', !shouldUnlock);
+        if (shouldUnlock) {
+          step1Button.removeAttribute('aria-disabled');
+          step1Button.removeAttribute('tabindex');
+          step1LockIndicator?.classList.add('d-none');
+          step1LockedAlert?.classList.add('d-none');
+          step1Content?.classList.remove('opacity-50');
+          return;
+        }
+        step1Button.setAttribute('aria-disabled', 'true');
+        step1Button.setAttribute('tabindex', '-1');
+        step1LockIndicator?.classList.remove('d-none');
+        step1LockedAlert?.classList.remove('d-none');
+        step1Content?.classList.add('opacity-50');
+        hideCollapse(step1Collapse);
+      };
+
+      const unlockStep2 = (shouldUnlock) => {
+        if (!step2Item || !step2Button) return;
+        step2Item.classList.toggle('is-locked', !shouldUnlock);
+        step2Button.classList.toggle('disabled', !shouldUnlock);
+        if (shouldUnlock) {
+          step2Button.removeAttribute('aria-disabled');
+          step2Button.removeAttribute('tabindex');
+          step2LockIndicator?.classList.add('d-none');
+          step2LockedAlert?.classList.add('d-none');
+          step2Content?.classList.remove('opacity-50');
+          return;
+        }
+        step2Button.setAttribute('aria-disabled', 'true');
+        step2Button.setAttribute('tabindex', '-1');
+        step2LockIndicator?.classList.remove('d-none');
+        step2LockedAlert?.classList.remove('d-none');
+        step2Content?.classList.add('opacity-50');
+        hideCollapse(step2Collapse);
+      };
+
+      const unlockStep3 = (shouldUnlock) => {
+        if (!step3Item || !step3Button) return;
+        step3Item.classList.toggle('is-locked', !shouldUnlock);
+        step3Button.classList.toggle('disabled', !shouldUnlock);
+        if (shouldUnlock) {
+          step3Button.removeAttribute('aria-disabled');
+          step3Button.removeAttribute('tabindex');
+          step3LockIndicator?.classList.add('d-none');
+          step3LockedAlert?.classList.add('d-none');
+          step3Content?.classList.remove('opacity-50');
+          return;
+        }
+        step3Button.setAttribute('aria-disabled', 'true');
+        step3Button.setAttribute('tabindex', '-1');
+        step3LockIndicator?.classList.remove('d-none');
+        step3LockedAlert?.classList.remove('d-none');
+        step3Content?.classList.add('opacity-50');
+        hideCollapse(step3Collapse);
+      };
+
+      const updateStep1CompleteBadge = (isComplete) => {
+        step1CompleteBadge?.classList.toggle('d-none', !isComplete);
+      };
+
+      const updateStep2CompleteBadge = (isComplete) => {
+        step2CompleteBadge?.classList.toggle('d-none', !isComplete);
+      };
+
+      const step2ModeKeyMap = {
+        highschool: 'highschool_classes',
+        other: 'other_institution_classes',
+        eture: 'eture_msu_enrollment'
+      };
+
+      const setStep2Completed = (isCompleted) => {
+        step2Completed = isCompleted;
+        updateStep2CompleteBadge(isCompleted);
+        if (isCompleted) {
+          writeStorage(step2CompletedKey, '1');
+          unlockStep3(true);
+          return;
+        }
+        clearStorage(step2CompletedKey);
+        unlockStep3(false);
+      };
+
+      const markStep2Dirty = () => {
+        if (!step2Completed) return;
+        setStep2Completed(false);
+      };
+
+      const getStep2Mode = () => {
+        if (!currentIntent || currentIntent === 'gap') return null;
+        const storedPath = readStorage(step1PathKey);
+        if (currentIntent === 'highschool' || storedPath === 'highschool') return 'highschool';
+        if (currentIntent === 'credits') {
+          if (storedPath === 'other_institution') return 'other';
+          if (storedPath === 'eture_msu') return 'eture';
+        }
+        return null;
+      };
+
+      const setStep2Mode = (mode) => {
+        currentStep2Mode = mode;
+        step2ModeHighschool?.classList.toggle('d-none', mode !== 'highschool');
+        step2ModeOther?.classList.toggle('d-none', mode !== 'other');
+        step2ModeEture?.classList.toggle('d-none', mode !== 'eture');
+        if (!mode) {
+          step2Root?.classList.add('d-none');
+          clearStorage(step2ModeKey);
+          return;
+        }
+        step2Root?.classList.remove('d-none');
+        writeStorage(step2ModeKey, step2ModeKeyMap[mode]);
+      };
+
+      const parseStep2Classes = () => {
+        const raw = readStorage(step2ClassesKey);
+        if (!raw) return [];
+        try {
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) return [];
+          return parsed
+            .map((item) => ({
+              name: typeof item.name === 'string' ? item.name.trim() : '',
+              credits: Number(item.credits) || 0
+            }))
+            .filter((item) => item.name);
+        } catch (_) {
+          return [];
+        }
+      };
+
+      const renderStep2List = (listElement, emptyElement) => {
+        if (!listElement) return;
+        listElement.innerHTML = '';
+        if (!step2Classes.length) {
+          emptyElement?.classList.remove('d-none');
+          return;
+        }
+        emptyElement?.classList.add('d-none');
+        step2Classes.forEach((item, index) => {
+          const row = document.createElement('li');
+          row.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+          const info = document.createElement('div');
+          const name = document.createElement('div');
+          name.className = 'fw-semibold';
+          name.textContent = item.name;
+          const credits = document.createElement('div');
+          credits.className = 'small text-muted';
+          credits.textContent = `Credits: ${item.credits}`;
+          info.append(name, credits);
+
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'btn btn-sm btn-outline-secondary';
+          remove.dataset.step2Remove = String(index);
+          remove.textContent = 'Remove';
+
+          row.append(info, remove);
+          listElement.append(row);
+        });
+      };
+
+      const updateStep2Totals = () => {
+        const total = step2Classes.reduce((sum, item) => sum + (Number(item.credits) || 0), 0);
+        if (step2HsTotal) step2HsTotal.textContent = String(total);
+        if (step2OtherTotal) step2OtherTotal.textContent = String(total);
+        writeStorage(step2TotalKey, String(total));
+
+        if (currentStep2Mode === 'other') {
+          const inferred = total >= 12 ? 'Full-time' : 'Part-time';
+          if (step2OtherInferred) step2OtherInferred.textContent = inferred;
+          writeStorage(step2InferredKey, inferred.toLowerCase());
+        } else {
+          clearStorage(step2InferredKey);
+        }
+
+        return total;
+      };
+
+      const resetStep2Confirmation = () => {
+        step2Confirmation = '';
+        step2MismatchReason = '';
+        step2Notes = '';
+        clearStorage(step2ConfirmationKey);
+        clearStorage(step2MismatchReasonKey);
+        clearStorage(step2NotesKey);
+        if (step2OtherMismatchSelect) step2OtherMismatchSelect.value = '';
+        if (step2EtureMismatchSelect) step2EtureMismatchSelect.value = '';
+        if (step2OtherNotes) step2OtherNotes.value = '';
+        if (step2EtureNotes) step2EtureNotes.value = '';
+      };
+
+      const updateConfirmButtons = (yesButton, noButton) => {
+        if (!yesButton || !noButton) return;
+        const isYes = step2Confirmation === 'yes';
+        const isNo = step2Confirmation === 'no';
+        yesButton.classList.toggle('btn-primary', isYes);
+        yesButton.classList.toggle('btn-outline-primary', !isYes);
+        noButton.classList.toggle('btn-secondary', isNo);
+        noButton.classList.toggle('btn-outline-secondary', !isNo);
+      };
+
+      const updateOtherConfirmationUI = (totalCredits) => {
+        if (currentStep2Mode !== 'other' || !step2OtherConfirmWrap) return;
+        const hasClasses = step2Classes.length > 0;
+        step2OtherConfirmWrap.classList.toggle('d-none', !hasClasses);
+        if (!hasClasses) {
+          resetStep2Confirmation();
+          step2OtherMismatchWrap?.classList.add('d-none');
+          step2OtherHoldBadge?.classList.add('d-none');
+          updateConfirmButtons(step2OtherConfirmYes, step2OtherConfirmNo);
+          return;
+        }
+        const inferred = totalCredits >= 12 ? 'Full-time' : 'Part-time';
+        if (step2OtherConfirmText) {
+          step2OtherConfirmText.textContent = `You added ${totalCredits} credits. This means ${inferred}. Is that correct?`;
+        }
+        updateConfirmButtons(step2OtherConfirmYes, step2OtherConfirmNo);
+        const showMismatch = step2Confirmation === 'no';
+        step2OtherMismatchWrap?.classList.toggle('d-none', !showMismatch);
+        step2OtherHoldBadge?.classList.toggle('d-none', !showMismatch);
+      };
+
+      const updateEtureConfirmationUI = () => {
+        if (currentStep2Mode !== 'eture' || !step2EtureConfirmWrap) return;
+        const hasSelection = step2SelectedEnrollment === 'part-time' || step2SelectedEnrollment === 'full-time';
+        step2EtureConfirmWrap.classList.toggle('d-none', !hasSelection);
+        if (!hasSelection) {
+          resetStep2Confirmation();
+          step2EtureMismatchWrap?.classList.add('d-none');
+          step2EtureHoldBadge?.classList.add('d-none');
+          updateConfirmButtons(step2EtureConfirmYes, step2EtureConfirmNo);
+          return;
+        }
+        const confirmText = step2SelectedEnrollment === 'part-time'
+          ? 'We understand you chose Part-time because this is your Gap Year. Is that correct?'
+          : 'We understand you chose Full-time because you already completed a Gap Year. Is that correct?';
+        if (step2EtureConfirmText) {
+          step2EtureConfirmText.textContent = confirmText;
+        }
+        updateConfirmButtons(step2EtureConfirmYes, step2EtureConfirmNo);
+        const showMismatch = step2Confirmation === 'no';
+        step2EtureMismatchWrap?.classList.toggle('d-none', !showMismatch);
+        step2EtureHoldBadge?.classList.toggle('d-none', !showMismatch);
+      };
+
+      const updateStep2ContinueState = () => {
+        if (currentStep2Mode === 'highschool') {
+          const canContinue = step2Classes.length > 0;
+          if (step2HsContinue) step2HsContinue.disabled = !canContinue;
+          if (step2OtherContinue) step2OtherContinue.disabled = true;
+          if (step2EtureContinue) step2EtureContinue.disabled = true;
+          return;
+        }
+
+        if (currentStep2Mode === 'other') {
+          const institutionOk = Boolean(step2OtherInstitutionInput?.value.trim());
+          const classesOk = step2Classes.length > 0;
+          const confirmOk = step2Confirmation === 'yes'
+            || (step2Confirmation === 'no' && Boolean(step2MismatchReason));
+          if (step2OtherContinue) step2OtherContinue.disabled = !(institutionOk && classesOk && confirmOk);
+          if (step2HsContinue) step2HsContinue.disabled = true;
+          if (step2EtureContinue) step2EtureContinue.disabled = true;
+          return;
+        }
+
+        if (currentStep2Mode === 'eture') {
+          const selectionOk = step2SelectedEnrollment === 'part-time' || step2SelectedEnrollment === 'full-time';
+          const confirmOk = step2Confirmation === 'yes'
+            || (step2Confirmation === 'no' && Boolean(step2MismatchReason));
+          if (step2EtureContinue) step2EtureContinue.disabled = !(selectionOk && confirmOk);
+          if (step2HsContinue) step2HsContinue.disabled = true;
+          if (step2OtherContinue) step2OtherContinue.disabled = true;
+          return;
+        }
+
+        if (step2HsContinue) step2HsContinue.disabled = true;
+        if (step2OtherContinue) step2OtherContinue.disabled = true;
+        if (step2EtureContinue) step2EtureContinue.disabled = true;
+      };
+
+      const clearStep2Storage = () => {
+        clearStorage(step2ModeKey);
+        clearStorage(step2ClassesKey);
+        clearStorage(step2TotalKey);
+        clearStorage(step2InferredKey);
+        clearStorage(step2SelectedEnrollmentKey);
+        clearStorage(step2ConfirmationKey);
+        clearStorage(step2MismatchReasonKey);
+        clearStorage(step2NotesKey);
+        clearStorage(step2CompletedKey);
+      };
+
+      const setStep2Enrollment = (selection, { persist = true, resetConfirm = true } = {}) => {
+        if (!selection) return;
+        step2SelectedEnrollment = selection;
+        step2EtureChoiceButtons.forEach((button) => {
+          const isActive = button.dataset.step2EnrollmentChoice === selection;
+          button.classList.toggle('btn-primary', isActive);
+          button.classList.toggle('btn-outline-secondary', !isActive);
+          button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+        if (persist) {
+          writeStorage(step2SelectedEnrollmentKey, selection);
+        }
+        if (resetConfirm) {
+          resetStep2Confirmation();
+        }
+        updateEtureConfirmationUI();
+        updateStep2ContinueState();
+      };
+
+      const setStep2Confirmation = (value, { persist = true } = {}) => {
+        step2Confirmation = value;
+        if (persist) {
+          if (value) {
+            writeStorage(step2ConfirmationKey, value);
+          } else {
+            clearStorage(step2ConfirmationKey);
+          }
+        }
+        if (value !== 'no') {
+          step2MismatchReason = '';
+          step2Notes = '';
+          clearStorage(step2MismatchReasonKey);
+          clearStorage(step2NotesKey);
+          if (step2OtherMismatchSelect) step2OtherMismatchSelect.value = '';
+          if (step2EtureMismatchSelect) step2EtureMismatchSelect.value = '';
+          if (step2OtherNotes) step2OtherNotes.value = '';
+          if (step2EtureNotes) step2EtureNotes.value = '';
+        }
+        updateConfirmButtons(step2OtherConfirmYes, step2OtherConfirmNo);
+        updateConfirmButtons(step2EtureConfirmYes, step2EtureConfirmNo);
+        updateOtherConfirmationUI(updateStep2Totals());
+        updateEtureConfirmationUI();
+        updateStep2ContinueState();
+      };
+
+      const updateStep2UI = () => {
+        if (currentStep2Mode === 'highschool') {
+          renderStep2List(step2HsList, step2HsEmpty);
+          updateStep2Totals();
+          updateStep2ContinueState();
+          return;
+        }
+
+        if (currentStep2Mode === 'other') {
+          renderStep2List(step2OtherList, step2OtherEmpty);
+          const total = updateStep2Totals();
+          updateOtherConfirmationUI(total);
+          updateStep2ContinueState();
+          return;
+        }
+
+        if (currentStep2Mode === 'eture') {
+          updateEtureConfirmationUI();
+          updateStep2ContinueState();
+        }
+      };
+
+      const isStep2Complete = () => {
+        if (currentStep2Mode === 'highschool') {
+          return step2Classes.length > 0;
+        }
+
+        if (currentStep2Mode === 'other') {
+          const institutionOk = Boolean(step2OtherInstitutionInput?.value.trim());
+          const classesOk = step2Classes.length > 0;
+          const confirmOk = step2Confirmation === 'yes'
+            || (step2Confirmation === 'no' && Boolean(step2MismatchReason));
+          return institutionOk && classesOk && confirmOk;
+        }
+
+        if (currentStep2Mode === 'eture') {
+          const selectionOk = step2SelectedEnrollment === 'part-time' || step2SelectedEnrollment === 'full-time';
+          const confirmOk = step2Confirmation === 'yes'
+            || (step2Confirmation === 'no' && Boolean(step2MismatchReason));
+          return selectionOk && confirmOk;
+        }
+
+        return false;
+      };
+
+      const applyStep2State = ({ step1Complete = false } = {}) => {
+        const derivedMode = getStep2Mode();
+        if (!derivedMode) {
+          setStep2Mode(null);
+          setStep2Completed(false);
+          return;
+        }
+
+        const storedMode = readStorage(step2ModeKey);
+        const expectedMode = step2ModeKeyMap[derivedMode];
+        if (storedMode && storedMode !== expectedMode) {
+          clearStep2Storage();
+        }
+
+        setStep2Mode(derivedMode);
+
+        isRestoringStep2 = true;
+        step2Classes = parseStep2Classes();
+        step2Confirmation = readStorage(step2ConfirmationKey) || '';
+        step2MismatchReason = readStorage(step2MismatchReasonKey) || '';
+        step2Notes = readStorage(step2NotesKey) || '';
+        step2SelectedEnrollment = readStorage(step2SelectedEnrollmentKey) || '';
+
+        if (step2OtherInstitutionInput) {
+          step2OtherInstitutionInput.value = readStorage(otherInstitutionNameKey) || '';
+        }
+
+        if (step2OtherMismatchSelect) {
+          step2OtherMismatchSelect.value = step2MismatchReason;
+        }
+        if (step2EtureMismatchSelect) {
+          step2EtureMismatchSelect.value = step2MismatchReason;
+        }
+        if (step2OtherNotes) {
+          step2OtherNotes.value = step2Notes;
+        }
+        if (step2EtureNotes) {
+          step2EtureNotes.value = step2Notes;
+        }
+
+        if (currentStep2Mode === 'eture' && step2SelectedEnrollment) {
+          setStep2Enrollment(step2SelectedEnrollment, { persist: false, resetConfirm: false });
+        }
+
+        updateStep2UI();
+        isRestoringStep2 = false;
+
+        const storedCompleted = readStorage(step2CompletedKey) === '1';
+        const canRestoreComplete = step1Complete && storedCompleted && isStep2Complete();
+        setStep2Completed(canRestoreComplete);
+      };
+
+      const setStep1Mode = (intent) => {
+        const showHighschool = intent === 'highschool';
+        const showUniversity = intent === 'credits';
+        step1ModeHighschool?.classList.toggle('d-none', !showHighschool);
+        step1ModeUniversity?.classList.toggle('d-none', !showUniversity);
+      };
+
+      const setStep1Choice = (choice, { persist = true } = {}) => {
+        if (!choice || !validStep1Paths.has(choice) || choice === 'highschool') return;
+        currentStep1Path = choice;
+        step1ChoiceButtons.forEach((btn) => {
+          const isActive = btn.dataset.step1Choice === choice;
+          btn.classList.toggle('btn-primary', isActive);
+          btn.classList.toggle('btn-outline-secondary', !isActive);
+          btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+        otherInstitutionWrap?.classList.toggle('d-none', choice !== 'other_institution');
+        if (persist) {
+          writeStorage(step1PathKey, choice);
+        }
+        updateStep1ContinueState();
+      };
+
+      const resetStep1ChoiceUI = () => {
+        step1ChoiceButtons.forEach((btn) => {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline-secondary');
+          btn.setAttribute('aria-pressed', 'false');
+        });
+        otherInstitutionWrap?.classList.add('d-none');
+      };
+
+      const updateStep1ContinueState = () => {
+        const intent = currentIntent;
+        if (intent === 'highschool') {
+          const nameOk = Boolean(highschoolNameInput?.value.trim());
+          const gradeOk = Boolean(highschoolGradeSelect?.value);
+          if (highschoolContinueBtn) {
+            highschoolContinueBtn.disabled = !(nameOk && gradeOk);
+          }
+          if (universityContinueBtn) {
+            universityContinueBtn.disabled = true;
+          }
+          return;
+        }
+
+        if (intent === 'credits') {
+          let isValid = false;
+          if (currentStep1Path === 'eture_msu') {
+            isValid = true;
+          } else if (currentStep1Path === 'other_institution') {
+            isValid = Boolean(otherInstitutionInput?.value.trim());
+          }
+          if (universityContinueBtn) {
+            universityContinueBtn.disabled = !isValid;
+          }
+          if (highschoolContinueBtn) {
+            highschoolContinueBtn.disabled = true;
+          }
+          return;
+        }
+
+        if (highschoolContinueBtn) {
+          highschoolContinueBtn.disabled = true;
+        }
+        if (universityContinueBtn) {
+          universityContinueBtn.disabled = true;
+        }
+      };
+
+      const isStep1Complete = () => {
+        if (currentIntent === 'highschool') {
+          if (currentStep1Path !== 'highschool') return false;
+          return Boolean(highschoolNameInput?.value.trim()) && Boolean(highschoolGradeSelect?.value);
+        }
+        if (currentIntent === 'credits') {
+          if (currentStep1Path === 'eture_msu') return true;
+          if (currentStep1Path === 'other_institution') {
+            return Boolean(otherInstitutionInput?.value.trim());
+          }
+        }
+        return false;
+      };
+
+      const completeStep1 = () => {
+        updateStep1CompleteBadge(true);
+        unlockStep2(true);
+        applyStep2State({ step1Complete: true });
+        hideCollapse(step1Collapse);
+        showCollapse(step2Collapse);
+      };
+
+      const applyStep1State = () => {
+        if (!currentIntent || currentIntent === 'gap') {
+          updateStep1CompleteBadge(false);
+          unlockStep2(false);
+          applyStep2State({ step1Complete: false });
+          return;
+        }
+
+        setStep1Mode(currentIntent);
+
+        const storedPath = readStorage(step1PathKey);
+        const storedHighschoolName = readStorage(highschoolNameKey);
+        const storedHighschoolGrade = readStorage(highschoolGradeKey);
+        const storedOtherName = readStorage(otherInstitutionNameKey);
+
+        if (storedHighschoolName !== null && highschoolNameInput) {
+          highschoolNameInput.value = storedHighschoolName;
+        }
+        if (storedHighschoolGrade !== null && highschoolGradeSelect) {
+          highschoolGradeSelect.value = storedHighschoolGrade;
+        }
+        if (storedOtherName !== null && otherInstitutionInput) {
+          otherInstitutionInput.value = storedOtherName;
+        }
+
+        if (currentIntent === 'highschool') {
+          currentStep1Path = storedPath === 'highschool' ? 'highschool' : null;
+          resetStep1ChoiceUI();
+        }
+
+        if (currentIntent === 'credits') {
+          if (storedPath === 'eture_msu' || storedPath === 'other_institution') {
+            currentStep1Path = storedPath;
+            setStep1Choice(storedPath, { persist: false });
+          } else {
+            currentStep1Path = null;
+            resetStep1ChoiceUI();
+          }
+        }
+
+        updateStep1ContinueState();
+
+        const isComplete = isStep1Complete();
+        updateStep1CompleteBadge(isComplete);
+        unlockStep2(isComplete);
+        applyStep2State({ step1Complete: isComplete });
+      };
+
+      const setIntent = (intent, { autoAdvance = false } = {}) => {
+        const normalizedIntent = normalizeIntent(intent);
+        if (!normalizedIntent) return;
+        currentIntent = normalizedIntent;
+
+        intentButtons.forEach((btn) => {
+          const isSelected = btn.dataset.academicIntent === normalizedIntent;
+          btn.classList.toggle('active', isSelected);
+          btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+          btn.classList.toggle('btn-primary', isSelected);
+          btn.classList.toggle('btn-outline-secondary', !isSelected);
+        });
+
+        writeStorage(storageKey, normalizedIntent);
+
+        const isGap = normalizedIntent === 'gap';
+        gapMessage?.classList.toggle('d-none', !isGap);
+        setMyClassesNotNeeded(isGap);
+        gatedSteps.forEach((item) => item.classList.toggle('d-none', isGap));
+
+        if (isGap) {
+          unlockStep1(false);
+          unlockStep2(false);
+          showCollapse(step0Collapse);
+          hideCollapse(step1Collapse);
+          hideCollapse(step2Collapse);
+          updateStep1CompleteBadge(false);
+          setStep2Mode(null);
+          setStep2Completed(false);
+          return;
+        }
+
+        unlockStep1(true);
+        applyStep1State();
+
+        if (autoAdvance) {
+          hideCollapse(step0Collapse);
+          showCollapse(step1Collapse);
+        }
+      };
+
+      root.addEventListener('click', (event) => {
+        const intentButton = event.target.closest('[data-academic-intent]');
+        if (intentButton) {
+          const intent = intentButton.dataset.academicIntent;
+          setIntent(intent, { autoAdvance: intent !== 'gap' });
+          return;
+        }
+
+        const step1Choice = event.target.closest('[data-step1-choice]');
+        if (step1Choice) {
+          if (currentIntent !== 'credits') return;
+          const choice = step1Choice.dataset.step1Choice;
+          setStep1Choice(choice);
+          return;
+        }
+
+        const step1Continue = event.target.closest('[data-step1-continue]');
+        if (step1Continue) {
+          if (step1Continue.disabled) return;
+          const mode = step1Continue.dataset.step1Mode;
+          if (mode === 'highschool') {
+            const name = highschoolNameInput?.value.trim() ?? '';
+            const grade = highschoolGradeSelect?.value ?? '';
+            if (!name || !grade) return;
+            currentStep1Path = 'highschool';
+            writeStorage(step1PathKey, 'highschool');
+            writeStorage(highschoolNameKey, name);
+            writeStorage(highschoolGradeKey, grade);
+            completeStep1();
+            return;
+          }
+          if (mode === 'university') {
+            if (currentStep1Path === 'eture_msu') {
+              writeStorage(step1PathKey, 'eture_msu');
+              completeStep1();
+              return;
+            }
+            if (currentStep1Path === 'other_institution') {
+              const institutionName = otherInstitutionInput?.value.trim() ?? '';
+              if (!institutionName) return;
+              writeStorage(step1PathKey, 'other_institution');
+              writeStorage(otherInstitutionNameKey, institutionName);
+              completeStep1();
+            }
+          }
+          return;
+        }
+
+        const step2AddBtn = event.target.closest('[data-step2-add-btn]');
+        if (step2AddBtn) {
+          const mode = step2AddBtn.closest('[data-step2-mode]')?.dataset.step2Mode;
+          if (mode !== currentStep2Mode) return;
+          const nameInput = mode === 'highschool' ? step2HsNameInput : step2OtherNameInput;
+          const creditsInput = mode === 'highschool' ? step2HsCreditsInput : step2OtherCreditsInput;
+          const name = nameInput?.value.trim() ?? '';
+          if (!name) return;
+          const rawCredits = creditsInput?.value.trim() ?? '';
+          let credits = 0;
+          if (mode === 'other') {
+            if (!rawCredits) return;
+            credits = Number(rawCredits);
+            if (!Number.isFinite(credits) || credits < 0) return;
+          } else {
+            credits = rawCredits ? Number(rawCredits) : 0;
+            if (!Number.isFinite(credits) || credits < 0) {
+              credits = 0;
+            }
+          }
+          step2Classes.push({ name, credits });
+          writeStorage(step2ClassesKey, JSON.stringify(step2Classes));
+          markStep2Dirty();
+          if (mode === 'other') {
+            resetStep2Confirmation();
+          }
+          if (nameInput) nameInput.value = '';
+          if (creditsInput) creditsInput.value = '';
+          updateStep2UI();
+          return;
+        }
+
+        const step2RemoveBtn = event.target.closest('[data-step2-remove]');
+        if (step2RemoveBtn) {
+          const index = Number(step2RemoveBtn.dataset.step2Remove);
+          if (Number.isNaN(index)) return;
+          step2Classes.splice(index, 1);
+          writeStorage(step2ClassesKey, JSON.stringify(step2Classes));
+          markStep2Dirty();
+          resetStep2Confirmation();
+          updateStep2UI();
+          return;
+        }
+
+        const step2ConfirmYes = event.target.closest('[data-step2-confirm-yes]');
+        if (step2ConfirmYes) {
+          markStep2Dirty();
+          setStep2Confirmation('yes');
+          return;
+        }
+
+        const step2ConfirmNo = event.target.closest('[data-step2-confirm-no]');
+        if (step2ConfirmNo) {
+          markStep2Dirty();
+          setStep2Confirmation('no');
+          return;
+        }
+
+        const step2EnrollmentChoice = event.target.closest('[data-step2-enrollment-choice]');
+        if (step2EnrollmentChoice) {
+          if (currentStep2Mode !== 'eture') return;
+          const choice = step2EnrollmentChoice.dataset.step2EnrollmentChoice;
+          markStep2Dirty();
+          setStep2Enrollment(choice);
+          return;
+        }
+
+        const step2Continue = event.target.closest('[data-step2-continue]');
+        if (step2Continue) {
+          if (step2Continue.disabled) return;
+          const mode = step2Continue.dataset.step2Mode;
+          if (mode !== currentStep2Mode) return;
+          if (!isStep2Complete()) return;
+
+          writeStorage(step2ModeKey, step2ModeKeyMap[currentStep2Mode]);
+
+          if (currentStep2Mode === 'highschool') {
+            writeStorage(step2ClassesKey, JSON.stringify(step2Classes));
+            updateStep2Totals();
+            clearStorage(step2SelectedEnrollmentKey);
+            clearStorage(step2ConfirmationKey);
+            clearStorage(step2MismatchReasonKey);
+            clearStorage(step2NotesKey);
+          }
+
+          if (currentStep2Mode === 'other') {
+            writeStorage(step2ClassesKey, JSON.stringify(step2Classes));
+            updateStep2Totals();
+            writeStorage(step2ConfirmationKey, step2Confirmation);
+            writeStorage(step2MismatchReasonKey, step2MismatchReason || '');
+            writeStorage(step2NotesKey, step2Notes || '');
+          }
+
+          if (currentStep2Mode === 'eture') {
+            writeStorage(step2SelectedEnrollmentKey, step2SelectedEnrollment);
+            writeStorage(step2ConfirmationKey, step2Confirmation);
+            writeStorage(step2MismatchReasonKey, step2MismatchReason || '');
+            writeStorage(step2NotesKey, step2Notes || '');
+            clearStorage(step2ClassesKey);
+            clearStorage(step2TotalKey);
+            clearStorage(step2InferredKey);
+          }
+
+          setStep2Completed(true);
+          hideCollapse(step2Collapse);
+          return;
+        }
+
+        const accordionButton = event.target.closest('#get-enrolled-accordion .accordion-button');
+        if (accordionButton) {
+          const stepItem = accordionButton.closest('.accordion-item');
+          if (stepItem?.classList.contains('is-locked')) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }
+      });
+
+      const continueBtn = root.querySelector('#academics-overview-continue');
+      if (continueBtn) {
+        continueBtn.addEventListener('click', () => {
+          const targetTab = root.querySelector('#tab-get-enrolled');
+          if (!targetTab) return;
+          if (Tab?.getOrCreateInstance) {
+            Tab.getOrCreateInstance(targetTab).show();
+            return;
+          }
+          if (Tab) {
+            new Tab(targetTab).show();
+            return;
+          }
+          targetTab.click?.();
+        });
+      }
+
+      if (highschoolNameInput) {
+        highschoolNameInput.addEventListener('input', () => {
+          writeStorage(highschoolNameKey, highschoolNameInput.value.trim());
+          updateStep1ContinueState();
+        });
+      }
+
+      if (highschoolGradeSelect) {
+        highschoolGradeSelect.addEventListener('change', () => {
+          writeStorage(highschoolGradeKey, highschoolGradeSelect.value);
+          updateStep1ContinueState();
+        });
+      }
+
+      if (otherInstitutionInput) {
+        otherInstitutionInput.addEventListener('input', () => {
+          writeStorage(otherInstitutionNameKey, otherInstitutionInput.value.trim());
+          updateStep1ContinueState();
+        });
+      }
+
+      if (step2OtherInstitutionInput) {
+        step2OtherInstitutionInput.addEventListener('input', () => {
+          if (currentStep2Mode !== 'other') return;
+          if (isRestoringStep2) return;
+          markStep2Dirty();
+          writeStorage(otherInstitutionNameKey, step2OtherInstitutionInput.value.trim());
+          updateStep2ContinueState();
+        });
+      }
+
+      if (step2OtherMismatchSelect) {
+        step2OtherMismatchSelect.addEventListener('change', () => {
+          if (currentStep2Mode !== 'other') return;
+          markStep2Dirty();
+          step2MismatchReason = step2OtherMismatchSelect.value;
+          writeStorage(step2MismatchReasonKey, step2MismatchReason);
+          updateStep2ContinueState();
+        });
+      }
+
+      if (step2EtureMismatchSelect) {
+        step2EtureMismatchSelect.addEventListener('change', () => {
+          if (currentStep2Mode !== 'eture') return;
+          markStep2Dirty();
+          step2MismatchReason = step2EtureMismatchSelect.value;
+          writeStorage(step2MismatchReasonKey, step2MismatchReason);
+          updateStep2ContinueState();
+        });
+      }
+
+      if (step2OtherNotes) {
+        step2OtherNotes.addEventListener('input', () => {
+          if (currentStep2Mode !== 'other') return;
+          markStep2Dirty();
+          step2Notes = step2OtherNotes.value;
+          writeStorage(step2NotesKey, step2Notes);
+        });
+      }
+
+      if (step2EtureNotes) {
+        step2EtureNotes.addEventListener('input', () => {
+          if (currentStep2Mode !== 'eture') return;
+          markStep2Dirty();
+          step2Notes = step2EtureNotes.value;
+          writeStorage(step2NotesKey, step2Notes);
+        });
+      }
+
+      let savedIntent = null;
+      try {
+        savedIntent = localStorage.getItem(storageKey);
+      } catch (_) {}
+
+      const normalizedIntent = normalizeIntent(savedIntent);
+
+      if (normalizedIntent) {
+        setIntent(normalizedIntent, { autoAdvance: false });
+      } else {
+        setMyClassesNotNeeded(false);
+        unlockStep1(false);
+        unlockStep2(false);
+        unlockStep3(false);
+        gapMessage?.classList.add('d-none');
+        gatedSteps.forEach((item) => item.classList.remove('d-none'));
+        intentButtons.forEach((btn) => {
+          btn.classList.remove('active', 'btn-primary');
+          btn.classList.add('btn-outline-secondary');
+          btn.setAttribute('aria-pressed', 'false');
+        });
+        updateStep1CompleteBadge(false);
+        updateStep2CompleteBadge(false);
+      }
+    })();
+  </script>
 </section>
