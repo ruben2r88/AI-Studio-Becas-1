@@ -4673,6 +4673,9 @@ async function renderPage(pageId) {
     if (pageId === 'my-program') {
       initMyProgramView(contentDiv);
     }
+    if (pageId === 'my-academics') {
+      initMyAcademicsView(contentDiv);
+    }
     if (pageId === 'ayuda') {
       initHelpCenter(contentDiv);
     }
@@ -4756,6 +4759,313 @@ function initMyProgramView(contentRoot) {
   tabs.dataset.initialized = 'true';
   // TODO: Link "Edit in MyVisa" actions to "#my-visa-trip"
   // TODO: Wire CTAs to backend (rides/driver) later
+}
+
+function initMyAcademicsView(contentRoot) {
+  if (!contentRoot) return;
+  const root = contentRoot.querySelector('#my-academics');
+  if (!root || root.dataset.step3Initialized === 'true') return;
+  root.dataset.step3Initialized = 'true';
+
+  const intentKey = 'eture_myacademics_intent';
+  const step1PathKey = 'eture_myacademics_step1_path';
+  const step2CompletedKey = 'eture_myacademics_step2_completed';
+  const step3ProgramKey = 'eture_myacademics_step3_program';
+  const step3CompletedKey = 'eture_myacademics_step3_completed';
+
+  const validPrograms = new Set(['spanish', 'gsc', 'full']);
+
+  const step3Item = root.querySelector('#get-enrolled-accordion [data-step="3"]');
+  if (!step3Item) return;
+  const step3Button = step3Item.querySelector('.accordion-button');
+  const step3Collapse = root.querySelector('#get-enrolled-step-3');
+  const step3Content = step3Item.querySelector('[data-step-content]');
+  const step3LockIndicator = step3Item.querySelector('[data-lock-indicator]');
+  const step3LockedAlert = step3Item.querySelector('[data-locked-alert]');
+  const step3CompleteBadge = step3Item.querySelector('[data-step3-complete-badge]');
+  const step3Continue = step3Item.querySelector('[data-step3-continue]');
+  const step3Cards = Array.from(step3Item.querySelectorAll('[data-step3-card]'));
+
+  const step4Item = root.querySelector('#get-enrolled-accordion [data-step="4"]');
+  const step4Button = step4Item?.querySelector('.accordion-button');
+  const step4Collapse = root.querySelector('#get-enrolled-step-4');
+  const step4Content = step4Item?.querySelector('[data-step-content]');
+  const step4LockIndicator = step4Item?.querySelector('[data-lock-indicator]');
+  const step4LockedAlert = step4Item?.querySelector('[data-locked-alert]');
+
+  const Collapse = window.bootstrap?.Collapse;
+
+  const showCollapse = (element) => {
+    if (!element) return;
+    if (Collapse?.getOrCreateInstance) {
+      Collapse.getOrCreateInstance(element, { toggle: false }).show();
+      return;
+    }
+    if (Collapse) {
+      new Collapse(element, { toggle: false }).show();
+      return;
+    }
+    element.classList.add('show');
+  };
+
+  const hideCollapse = (element) => {
+    if (!element) return;
+    if (Collapse?.getOrCreateInstance) {
+      Collapse.getOrCreateInstance(element, { toggle: false }).hide();
+      return;
+    }
+    if (Collapse) {
+      new Collapse(element, { toggle: false }).hide();
+      return;
+    }
+    element.classList.remove('show');
+  };
+
+  const readStorage = (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const writeStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (_) {}
+  };
+
+  const clearStorage = (key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (_) {}
+  };
+
+  const normalizeIntent = (intent) => {
+    if (!intent) return null;
+    if (intent === 'study') return 'credits';
+    return intent;
+  };
+
+  const isEtureRoute = () => {
+    const intent = normalizeIntent(readStorage(intentKey));
+    const route = readStorage(step1PathKey);
+    return intent === 'credits' && route === 'eture_msu';
+  };
+
+  let currentProgram = null;
+  let step3Completed = false;
+  let refreshScheduled = false;
+
+  const setStepLocked = (item, button, content, lockIndicator, lockedAlert, collapse, shouldLock) => {
+    if (!item || !button) return;
+    item.classList.toggle('is-locked', shouldLock);
+    button.classList.toggle('disabled', shouldLock);
+    if (shouldLock) {
+      button.setAttribute('aria-disabled', 'true');
+      button.setAttribute('tabindex', '-1');
+      lockIndicator?.classList.remove('d-none');
+      lockedAlert?.classList.remove('d-none');
+      content?.classList.add('opacity-50');
+      hideCollapse(collapse);
+      return;
+    }
+    button.removeAttribute('aria-disabled');
+    button.removeAttribute('tabindex');
+    lockIndicator?.classList.add('d-none');
+    lockedAlert?.classList.add('d-none');
+    content?.classList.remove('opacity-50');
+  };
+
+  const setStep3Locked = (shouldLock) => {
+    setStepLocked(
+      step3Item,
+      step3Button,
+      step3Content,
+      step3LockIndicator,
+      step3LockedAlert,
+      step3Collapse,
+      shouldLock
+    );
+  };
+
+  const setStep4Locked = (shouldLock) => {
+    setStepLocked(
+      step4Item,
+      step4Button,
+      step4Content,
+      step4LockIndicator,
+      step4LockedAlert,
+      step4Collapse,
+      shouldLock
+    );
+  };
+
+  const setStep3Completed = (isCompleted, { persist = true } = {}) => {
+    step3Completed = isCompleted;
+    step3CompleteBadge?.classList.toggle('d-none', !isCompleted);
+    if (persist) {
+      if (isCompleted) {
+        writeStorage(step3CompletedKey, '1');
+      } else {
+        clearStorage(step3CompletedKey);
+      }
+    }
+    const shouldUnlockStep4 = isCompleted && isEtureRoute();
+    setStep4Locked(!shouldUnlockStep4);
+    if (!isEtureRoute()) {
+      hideCollapse(step4Collapse);
+    }
+  };
+
+  const updateContinueState = () => {
+    if (step3Continue) {
+      step3Continue.disabled = !currentProgram;
+    }
+  };
+
+  const applyProgramSelection = (program, { persist = false } = {}) => {
+    if (!validPrograms.has(program)) return;
+    currentProgram = program;
+    step3Cards.forEach((card) => {
+      const isActive = card.dataset.step3Card === program;
+      card.classList.toggle('border-primary', isActive);
+      card.classList.toggle('bg-light', isActive);
+      card.classList.toggle('shadow-sm', isActive);
+      card.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+    if (persist) {
+      writeStorage(step3ProgramKey, program);
+    }
+    updateContinueState();
+  };
+
+  const restoreStep3 = () => {
+    const storedProgram = readStorage(step3ProgramKey);
+    if (storedProgram && validPrograms.has(storedProgram)) {
+      applyProgramSelection(storedProgram, { persist: false });
+    }
+    const storedCompleted = readStorage(step3CompletedKey) === '1';
+    setStep3Completed(Boolean(storedCompleted && currentProgram), { persist: false });
+  };
+
+  const refreshStep3Availability = () => {
+    const showEtureSteps = isEtureRoute();
+
+    step3Item.classList.toggle('d-none', !showEtureSteps);
+    step4Item?.classList.toggle('d-none', !showEtureSteps);
+
+    if (!showEtureSteps) {
+      setStep3Locked(true);
+      setStep3Completed(false, { persist: false });
+      setStep4Locked(true);
+      return;
+    }
+
+    const step2Completed = readStorage(step2CompletedKey) === '1';
+    setStep3Locked(!step2Completed);
+
+    if (!step2Completed) {
+      setStep3Completed(false, { persist: false });
+      return;
+    }
+
+    if (!currentProgram) {
+      const storedProgram = readStorage(step3ProgramKey);
+      if (storedProgram && validPrograms.has(storedProgram)) {
+        applyProgramSelection(storedProgram, { persist: false });
+      }
+    }
+
+    const storedCompleted = readStorage(step3CompletedKey) === '1';
+    setStep3Completed(Boolean(storedCompleted && currentProgram), { persist: false });
+  };
+
+  const scheduleRefresh = () => {
+    if (refreshScheduled) return;
+    refreshScheduled = true;
+    requestAnimationFrame(() => {
+      refreshScheduled = false;
+      refreshStep3Availability();
+    });
+  };
+
+  step3Cards.forEach((card) => {
+    card.addEventListener('click', (event) => {
+      if (step3Item.classList.contains('is-locked') || step3Item.classList.contains('d-none')) return;
+      if (event.target.closest('[data-step3-pricing-toggle]')) return;
+      const program = card.dataset.step3Card;
+      if (!program) return;
+      if (step3Completed && currentProgram && currentProgram !== program) {
+        const confirmed = window.confirm('You changed your program selection. Confirm?');
+        if (!confirmed) return;
+        applyProgramSelection(program, { persist: true });
+        setStep3Completed(true);
+        return;
+      }
+      applyProgramSelection(program);
+    });
+
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (step3Item.classList.contains('is-locked') || step3Item.classList.contains('d-none')) return;
+      if (event.target.closest('[data-step3-pricing-toggle]')) return;
+      event.preventDefault();
+      const program = card.dataset.step3Card;
+      if (!program) return;
+      if (step3Completed && currentProgram && currentProgram !== program) {
+        const confirmed = window.confirm('You changed your program selection. Confirm?');
+        if (!confirmed) return;
+        applyProgramSelection(program, { persist: true });
+        setStep3Completed(true);
+        return;
+      }
+      applyProgramSelection(program);
+    });
+  });
+
+  step3Continue?.addEventListener('click', () => {
+    if (step3Item.classList.contains('is-locked') || step3Item.classList.contains('d-none')) return;
+    if (!currentProgram) return;
+    writeStorage(step3ProgramKey, currentProgram);
+    setStep3Completed(true);
+    hideCollapse(step3Collapse);
+    if (isEtureRoute()) {
+      showCollapse(step4Collapse);
+    }
+  });
+
+  root.addEventListener('click', (event) => {
+    const step2Continue = event.target.closest('[data-step2-continue]');
+    if (step2Continue) {
+      scheduleRefresh();
+      requestAnimationFrame(() => {
+        if (!isEtureRoute()) return;
+        if (readStorage(step2CompletedKey) !== '1') return;
+        refreshStep3Availability();
+        showCollapse(step3Collapse);
+      });
+      return;
+    }
+
+    if (
+      event.target.closest('[data-academic-intent]')
+      || event.target.closest('[data-step1-choice]')
+      || event.target.closest('[data-step1-continue]')
+      || event.target.closest('#get-enrolled-step-2')
+    ) {
+      scheduleRefresh();
+    }
+  });
+
+  root.addEventListener('input', (event) => {
+    if (event.target.closest('#get-enrolled-step-2')) {
+      scheduleRefresh();
+    }
+  });
+
+  restoreStep3();
+  refreshStep3Availability();
 }
 
 function waitForElement(sel, { timeout = 3000, root = document } = {}) {
