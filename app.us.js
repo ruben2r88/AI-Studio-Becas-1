@@ -4161,6 +4161,8 @@ const pages = {
   ayuda: 'views/us/ayuda.html',
   'my-program': 'views/us/my-program.html', // My Program view lives under /views, not /src/views
   'my-academics': 'views/us/my-academics.html',
+  'my-athletics': 'views/us/my-athletics.html',
+  'medical-center': 'views/us/medical-center.html',
   visa: 'views/us/my-visa.html'    // ← ESTA LÍNEA con coma arriba
 };
 const perfilSubPages = {

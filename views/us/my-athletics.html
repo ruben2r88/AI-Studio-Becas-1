@@ -1,0 +1,714 @@
+<section id="my-athletics" class="eture-section py-4">
+  <div class="container">
+    <header class="mb-4">
+      <h1 class="mb-1 eture-heading">My Athletics</h1>
+      <p class="mb-1 text-uppercase small fw-semibold text-muted">PERFORMANCE HUB</p>
+      <p class="text-muted mb-0">Track your matches, workload, and gym plan in one place.</p>
+    </header>
+
+    <ul class="nav nav-tabs flex-wrap" id="my-athletics-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link active"
+          id="tab-athletics-overview"
+          data-bs-toggle="tab"
+          data-bs-target="#panel-athletics-overview"
+          type="button"
+          role="tab"
+          aria-controls="panel-athletics-overview"
+          aria-selected="true"
+        >
+          <i class="bi bi-info-circle align-middle me-1"></i>
+          <span class="align-middle">Overview</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="tab-athletics-games"
+          data-bs-toggle="tab"
+          data-bs-target="#panel-athletics-games"
+          type="button"
+          role="tab"
+          aria-controls="panel-athletics-games"
+          aria-selected="false"
+        >
+          <i class="bi bi-calendar-event align-middle me-1"></i>
+          <span class="align-middle">Games</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="tab-athletics-stats"
+          data-bs-toggle="tab"
+          data-bs-target="#panel-athletics-stats"
+          type="button"
+          role="tab"
+          aria-controls="panel-athletics-stats"
+          aria-selected="false"
+        >
+          <i class="bi bi-graph-up align-middle me-1"></i>
+          <span class="align-middle">Season Stats</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          id="tab-athletics-gym"
+          data-bs-toggle="tab"
+          data-bs-target="#panel-athletics-gym"
+          type="button"
+          role="tab"
+          aria-controls="panel-athletics-gym"
+          aria-selected="false"
+        >
+          <i class="bi bi-heart-pulse align-middle me-1"></i>
+          <span class="align-middle">My Gym</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content mt-4" id="my-athletics-tabs-content">
+      <div
+        class="tab-pane fade show active"
+        id="panel-athletics-overview"
+        role="tabpanel"
+        aria-labelledby="tab-athletics-overview"
+      >
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="d-flex flex-column gap-2">
+              <button
+                type="button"
+                class="btn btn-primary btn-lg"
+                data-bs-toggle="modal"
+                data-bs-target="#athletics-add-game-modal"
+              >
+                <i class="bi bi-plus-lg me-2"></i>
+                Add Game
+              </button>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-7">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h5 class="card-title mb-1">Last Game</h5>
+                    <p class="text-muted small mb-0">Friendly vs. Lakeside FC - Jan 18, 2026 - 7:00 PM</p>
+                  </div>
+                  <span class="badge bg-light text-dark text-uppercase">Completed</span>
+                </div>
+                <div class="row g-2 small mb-2">
+                  <div class="col-6">
+                    <span class="text-muted">Status</span>
+                    <div class="fw-semibold">Started</div>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted">Minutes</span>
+                    <div class="fw-semibold">78</div>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted">Satisfaction</span>
+                    <div class="fw-semibold d-flex align-items-center gap-1">
+                      <i class="bi bi-emoji-smile text-success"></i>
+                      Happy
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <span class="text-muted">Position</span>
+                    <div class="fw-semibold">Right Wing</div>
+                  </div>
+                </div>
+                <p class="small text-muted fst-italic mb-3">Notes: Controlled tempo, high pressing, great link-up play.</p>
+                <button type="button" class="btn btn-sm btn-outline-primary">Open highlight</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-5">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <h5 class="card-title mb-2">Today Status</h5>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <span class="badge bg-success">Healthy</span>
+                  <span class="small text-muted">Updated today</span>
+                </div>
+                <div class="mb-3">
+                  <div class="text-muted small text-uppercase mb-2">Fatigue</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <span class="badge rounded-pill bg-light text-dark">Low</span>
+                    <span class="badge rounded-pill bg-warning text-dark">Medium</span>
+                    <span class="badge rounded-pill bg-light text-dark">High</span>
+                  </div>
+                </div>
+                <div class="small text-muted mb-3">Sleep quality: 7.5 hrs - Soreness: Mild</div>
+                <button type="button" class="btn btn-outline-secondary btn-sm">Update in Medical Center</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <h5 class="card-title mb-1">Season Snapshot</h5>
+                    <p class="text-muted small mb-0">Quick overview of your current load.</p>
+                  </div>
+                  <span class="badge bg-light text-dark">2025-26</span>
+                </div>
+                <div class="row g-3">
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Games played</div>
+                        <div class="fs-4 fw-semibold">12</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Starts</div>
+                        <div class="fs-4 fw-semibold">9</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Sub appearances</div>
+                        <div class="fs-4 fw-semibold">3</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Total minutes</div>
+                        <div class="fs-4 fw-semibold">812</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                  <div>
+                    <h5 class="card-title mb-1">Key Stats</h5>
+                    <p class="text-muted small mb-0">Toggle position to preview the most relevant metrics.</p>
+                  </div>
+                  <div class="btn-group" role="group" aria-label="Position toggle">
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary active"
+                      data-role-toggle="field"
+                      aria-pressed="true"
+                    >
+                      Field Player
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary"
+                      data-role-toggle="goalkeeper"
+                      aria-pressed="false"
+                    >
+                      Goalkeeper
+                    </button>
+                  </div>
+                </div>
+                <div class="row g-3 mt-2" id="athletics-key-stats-field">
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Goals</div>
+                        <div class="fs-4 fw-semibold">4</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Assists</div>
+                        <div class="fs-4 fw-semibold">6</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-3 mt-2 d-none" id="athletics-key-stats-goalkeeper">
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Saves</div>
+                        <div class="fs-4 fw-semibold">23</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-6 col-lg-3">
+                    <div class="card border-0 bg-light h-100">
+                      <div class="card-body py-3">
+                        <div class="text-muted small text-uppercase">Goals conceded</div>
+                        <div class="fs-4 fw-semibold">9</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div>
+                    <h5 class="card-title mb-1">My Gym This Week</h5>
+                    <p class="text-muted small mb-1">Week of Jan 27, 2026</p>
+                    <p class="mb-2">Strength & Mobility - Focus on hip stability and sprint mechanics.</p>
+                    <button
+                      type="button"
+                      class="btn btn-outline-primary btn-sm"
+                      data-bs-toggle="tab"
+                      data-bs-target="#panel-athletics-gym"
+                    >
+                      Open My Gym
+                    </button>
+                  </div>
+                  <span class="badge bg-light text-dark text-uppercase">Next session</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="tab-pane fade"
+        id="panel-athletics-games"
+        role="tabpanel"
+        aria-labelledby="tab-athletics-games"
+      >
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3 mb-3">
+          <div>
+            <h4 class="mb-1">Games Log</h4>
+            <p class="text-muted small mb-0">Track appearances, minutes, and satisfaction after every game.</p>
+          </div>
+          <button
+            type="button"
+            class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#athletics-add-game-modal"
+          >
+            Add Game
+          </button>
+        </div>
+
+        <div class="card eture-card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr class="text-muted small text-uppercase">
+                    <th>Date</th>
+                    <th>Opponent</th>
+                    <th>Status</th>
+                    <th>Minutes</th>
+                    <th>Satisfaction</th>
+                    <th>Highlights</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Jan 18, 2026</td>
+                    <td>Lakeside FC</td>
+                    <td><span class="badge bg-success">Started</span></td>
+                    <td>78</td>
+                    <td><i class="bi bi-emoji-smile text-success"></i> Happy</td>
+                    <td>1 clip</td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                      <button type="button" class="btn btn-sm btn-outline-primary">Edit</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Jan 11, 2026</td>
+                    <td>Metro United</td>
+                    <td><span class="badge bg-warning text-dark">Sub</span></td>
+                    <td>32</td>
+                    <td><i class="bi bi-emoji-neutral text-warning"></i> Neutral</td>
+                    <td>N/A</td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                      <button type="button" class="btn btn-sm btn-outline-primary">Edit</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Jan 04, 2026</td>
+                    <td>River City</td>
+                    <td><span class="badge bg-secondary">Did not play</span></td>
+                    <td>0</td>
+                    <td><i class="bi bi-emoji-frown text-danger"></i> Unhappy</td>
+                    <td>N/A</td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
+                      <button type="button" class="btn btn-sm btn-outline-primary">Edit</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="tab-pane fade"
+        id="panel-athletics-stats"
+        role="tabpanel"
+        aria-labelledby="tab-athletics-stats"
+      >
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body">
+                <h4 class="card-title mb-1">Season Stats</h4>
+                <p class="text-muted small mb-0">Manual snapshot for the current season.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-3">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="text-muted small text-uppercase">Total Games</div>
+                <div class="display-6 fw-semibold">12</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-3">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="text-muted small text-uppercase">Total Minutes</div>
+                <div class="display-6 fw-semibold">812</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-3">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="text-muted small text-uppercase d-flex align-items-center gap-2">
+                  Goals
+                  <span class="badge bg-light text-dark">manual</span>
+                </div>
+                <div class="display-6 fw-semibold">4</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-3">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="text-muted small text-uppercase d-flex align-items-center gap-2">
+                  Assists
+                  <span class="badge bg-light text-dark">manual</span>
+                </div>
+                <div class="display-6 fw-semibold">6</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body py-3">
+                <div class="text-muted small text-uppercase">Starts</div>
+                <div class="fs-5 fw-semibold">9</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card border-0 bg-light h-100">
+              <div class="card-body py-3">
+                <div class="text-muted small text-uppercase">Sub appearances</div>
+                <div class="fs-5 fw-semibold">3</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="tab-pane fade"
+        id="panel-athletics-gym"
+        role="tabpanel"
+        aria-labelledby="tab-athletics-gym"
+      >
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body">
+                <h4 class="card-title mb-1">My Gym Plan</h4>
+                <p class="text-muted small mb-0">Weekly sessions assigned by your performance coach.</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="alert alert-light border d-none" id="my-gym-empty">
+              No gym sessions scheduled yet. Your coach will add plans here.
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h5 class="card-title mb-1">Strength & Mobility</h5>
+                    <p class="text-muted small mb-0">Week of Jan 27, 2026</p>
+                  </div>
+                  <span class="badge bg-light text-dark">Gym A</span>
+                </div>
+                <p class="small text-muted mb-3">Posterior chain, hip mobility, and resisted accelerations.</p>
+                <button type="button" class="btn btn-outline-primary btn-sm">Open PDF</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="card eture-card h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h5 class="card-title mb-1">Recovery & Stability</h5>
+                    <p class="text-muted small mb-0">Week of Feb 03, 2026</p>
+                  </div>
+                  <span class="badge bg-light text-dark">Gym B</span>
+                </div>
+                <p class="small text-muted mb-3">Breathing work, core stability, and low-impact conditioning.</p>
+                <button type="button" class="btn btn-outline-primary btn-sm">Open PDF</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="card eture-card">
+              <div class="card-body">
+                <h5 class="card-title mb-3">Weekly Schedule (mock)</h5>
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr class="text-muted small text-uppercase">
+                        <th>Day</th>
+                        <th>Session</th>
+                        <th>Focus</th>
+                        <th>Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Mon</td>
+                        <td>Strength & Mobility</td>
+                        <td>Lower body power</td>
+                        <td>7:30 AM</td>
+                      </tr>
+                      <tr>
+                        <td>Wed</td>
+                        <td>Recovery & Stability</td>
+                        <td>Mobility + Core</td>
+                        <td>6:00 AM</td>
+                      </tr>
+                      <tr>
+                        <td>Fri</td>
+                        <td>Speed Session</td>
+                        <td>Acceleration drills</td>
+                        <td>8:00 AM</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="athletics-add-game-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add Game</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="athletics-add-game-form">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="athletics-opponent">Opponent</label>
+                <input type="text" class="form-control" id="athletics-opponent" placeholder="e.g., Lakeside FC">
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label" for="athletics-date">Date</label>
+                <input type="date" class="form-control" id="athletics-date">
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label" for="athletics-time">Time</label>
+                <input type="time" class="form-control" id="athletics-time">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="athletics-status">Player status *</label>
+                <select class="form-select" id="athletics-status" required>
+                  <option value="" selected disabled>Select status</option>
+                  <option value="started">Started the game</option>
+                  <option value="sub">Came in as a substitute</option>
+                  <option value="sub-45">Played 45 minutes as a substitute</option>
+                  <option value="called-up">Was called up but did not play</option>
+                  <option value="injured">Injured (did not play)</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6" id="athletics-minutes-group">
+                <label class="form-label" for="athletics-minutes">Minutes played</label>
+                <input type="number" class="form-control" id="athletics-minutes" min="0" max="130" placeholder="e.g., 75">
+                <div class="form-text" id="athletics-minutes-help">Required if you played.</div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="athletics-position">Position</label>
+                <select class="form-select" id="athletics-position">
+                  <option value="" selected>Select position</option>
+                  <option value="goalkeeper">Goalkeeper</option>
+                  <option value="right-back">Right Back</option>
+                  <option value="left-back">Left Back</option>
+                  <option value="center-back">Center Back</option>
+                  <option value="defensive-midfielder">Defensive Midfielder</option>
+                  <option value="central-midfielder">Central Midfielder</option>
+                  <option value="attacking-midfielder">Attacking Midfielder</option>
+                  <option value="right-wing">Right Wing</option>
+                  <option value="left-wing">Left Wing</option>
+                  <option value="striker">Striker</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Satisfaction *</label>
+                <div class="d-flex flex-wrap gap-2">
+                  <input type="radio" class="btn-check" name="athletics-satisfaction" id="athletics-sat-happy" required>
+                  <label class="btn btn-outline-success px-4 py-3" for="athletics-sat-happy">
+                    <i class="bi bi-emoji-smile me-2"></i>
+                    Happy
+                  </label>
+
+                  <input type="radio" class="btn-check" name="athletics-satisfaction" id="athletics-sat-neutral" required>
+                  <label class="btn btn-outline-warning px-4 py-3" for="athletics-sat-neutral">
+                    <i class="bi bi-emoji-neutral me-2"></i>
+                    Neutral
+                  </label>
+
+                  <input type="radio" class="btn-check" name="athletics-satisfaction" id="athletics-sat-unhappy" required>
+                  <label class="btn btn-outline-danger px-4 py-3" for="athletics-sat-unhappy">
+                    <i class="bi bi-emoji-frown me-2"></i>
+                    Unhappy
+                  </label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="athletics-notes">Notes (optional)</label>
+                <textarea
+                  class="form-control"
+                  id="athletics-notes"
+                  rows="3"
+                  placeholder="Example: Felt fresh, good pressing, left hamstring tightness after 70'."
+                ></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Highlights (optional)</label>
+                <div class="border rounded p-3">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" for="athletics-highlight-upload">Upload file</label>
+                      <input type="file" class="form-control" id="athletics-highlight-upload">
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <label class="form-label" for="athletics-highlight-link">Paste link</label>
+                      <input
+                        type="url"
+                        class="form-control"
+                        id="athletics-highlight-link"
+                        placeholder="https://"
+                      >
+                    </div>
+                  </div>
+                  <p class="small text-muted mb-0 mt-2">Upload a clip or paste a link. No validation required.</p>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary">Save Game</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    const roleButtons = Array.from(document.querySelectorAll('[data-role-toggle]'));
+    const fieldStats = document.getElementById('athletics-key-stats-field');
+    const keeperStats = document.getElementById('athletics-key-stats-goalkeeper');
+
+    roleButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        roleButtons.forEach((btn) => {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', 'false');
+        });
+        button.classList.add('active');
+        button.setAttribute('aria-pressed', 'true');
+
+        const target = button.dataset.roleToggle;
+        if (target === 'goalkeeper') {
+          fieldStats?.classList.add('d-none');
+          keeperStats?.classList.remove('d-none');
+        } else {
+          keeperStats?.classList.add('d-none');
+          fieldStats?.classList.remove('d-none');
+        }
+      });
+    });
+
+    const statusSelect = document.getElementById('athletics-status');
+    const minutesInput = document.getElementById('athletics-minutes');
+    const minutesHelp = document.getElementById('athletics-minutes-help');
+
+    const playableStatuses = new Set(['started', 'sub', 'sub-45']);
+    const nonPlayableStatuses = new Set(['called-up', 'injured']);
+
+    const updateMinutesState = () => {
+      const statusValue = statusSelect?.value || '';
+      const isPlayable = playableStatuses.has(statusValue);
+      const isNonPlayable = nonPlayableStatuses.has(statusValue);
+
+      if (minutesInput) {
+        minutesInput.disabled = !isPlayable;
+        if (isNonPlayable) {
+          minutesInput.value = '0';
+        } else if (isPlayable && minutesInput.value === '0') {
+          minutesInput.value = '';
+        } else if (!isPlayable && !isNonPlayable) {
+          minutesInput.value = '';
+        }
+      }
+
+      if (minutesHelp) {
+        minutesHelp.classList.toggle('d-none', !isPlayable);
+      }
+    };
+
+    if (statusSelect) {
+      statusSelect.addEventListener('change', updateMinutesState);
+      updateMinutesState();
+    }
+  </script>
+</section>
